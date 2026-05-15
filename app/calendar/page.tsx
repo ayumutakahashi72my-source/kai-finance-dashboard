@@ -57,7 +57,7 @@ export default async function CalendarPage({
           <MonthSwitcher currentMonth={month} />
         </header>
 
-        <main className="mx-auto max-w-3xl px-4 py-5 pb-32 lg:pb-10">
+        <main className="mx-auto max-w-4xl px-4 py-5 pb-32 lg:pb-10">
           {/* Month summary */}
           <div
             className="mb-4 grid grid-cols-2 gap-3 rounded-[16px] p-4"
