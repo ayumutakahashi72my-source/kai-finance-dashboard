@@ -90,8 +90,8 @@ export function BudgetDashboard() {
   })
 
   const { mutate, isPending, error: mutateError } = useMutation({
-    mutationFn: () =>
-      fetch('/api/budget/suggest', { method: 'POST' }).then(async (r) => {
+    mutationFn: (force: boolean) =>
+      fetch(`/api/budget/suggest${force ? '?force=true' : ''}`, { method: 'POST' }).then(async (r) => {
         const json = await r.json()
         if (!r.ok) throw new Error(json.error ?? '生成失敗')
         return json
@@ -142,7 +142,7 @@ export function BudgetDashboard() {
 
         <div className="flex flex-col items-end gap-2">
           <button
-            onClick={() => mutate()}
+            onClick={() => mutate(!!budget)}
             disabled={isPending}
             className="rounded-[12px] px-4 py-2.5 text-[13px] font-semibold text-[#5eead4] transition-colors hover:bg-[#5eead4]/10 disabled:cursor-not-allowed disabled:opacity-40"
             style={{ border: '1px solid rgba(94,234,212,0.28)' }}

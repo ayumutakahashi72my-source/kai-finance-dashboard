@@ -2,14 +2,13 @@
 
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
-import { LayoutDashboard, PieChart, CalendarDays, Tag, Settings, type LucideIcon } from 'lucide-react'
+import { LayoutDashboard, PieChart, CalendarDays, Settings, type LucideIcon } from 'lucide-react'
 
 const NAV: { href: string; icon: LucideIcon; label: string }[] = [
-  { href: '/',           icon: LayoutDashboard, label: 'ダッシュボード' },
-  { href: '/budget',     icon: PieChart,        label: '予算' },
-  { href: '/calendar',   icon: CalendarDays,    label: 'カレンダー' },
-  { href: '/categories', icon: Tag,             label: 'カテゴリ管理' },
-  { href: '/settings',   icon: Settings,        label: '設定' },
+  { href: '/',         icon: LayoutDashboard, label: 'ダッシュボード' },
+  { href: '/budget',   icon: PieChart,        label: '予算' },
+  { href: '/calendar', icon: CalendarDays,    label: 'カレンダー' },
+  { href: '/settings', icon: Settings,        label: '設定' },
 ]
 
 export function Sidebar() {

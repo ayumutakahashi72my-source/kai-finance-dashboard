@@ -34,7 +34,7 @@ export async function GET() {
   return NextResponse.json({ data })
 }
 
-// POST: 今月分を生成（月1回制限）
+// POST: 今月分を生成（?force=true で再生成可）
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -47,11 +47,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'AI機能が設定されていません' }, { status: 503 })
   }
 
+  const force = new URL(req.url).searchParams.get('force') === 'true'
   const now = new Date()
   const year = now.getFullYear()
   const month = now.getMonth() + 1
 
-  // 月1回制限チェック
   const { data: existing } = await supabase
     .from('budget_suggestions')
     .select('id')
@@ -61,10 +61,13 @@ export async function POST(req: NextRequest) {
     .maybeSingle()
 
   if (existing) {
-    return NextResponse.json(
-      { error: '今月分の予算提案はすでに生成済みです' },
-      { status: 409 }
-    )
+    if (!force) {
+      return NextResponse.json(
+        { error: '今月分の予算提案はすでに生成済みです（再生成する場合は再生成ボタンを押してください）' },
+        { status: 409 }
+      )
+    }
+    await supabase.from('budget_suggestions').delete().eq('id', existing.id)
   }
 
   let advice

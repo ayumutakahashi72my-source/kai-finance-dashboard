@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { BottomBar } from '@/components/layout/BottomBar'
 import { MonthSwitcher } from '@/components/dashboard/MonthSwitcher'
@@ -34,6 +35,9 @@ export default async function CalendarPage({
   const { month: rawMonth } = await searchParams
   const month = rawMonth ?? currentMonthStr()
 
+  const displayName = user.user_metadata?.full_name ?? user.email ?? 'ユーザー'
+  const avatarUrl = user.user_metadata?.avatar_url as string | undefined
+
   const [transactions, categories] = await Promise.all([
     getTransactions(month) as Promise<Transaction[]>,
     getCategories() as Promise<Category[]>,
@@ -51,10 +55,20 @@ export default async function CalendarPage({
           className="flex items-center justify-between px-5 py-4"
           style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}
         >
-          <h1 className="text-sm font-bold" style={{ color: '#f0f0f5' }}>
-            カレンダー
-          </h1>
-          <MonthSwitcher currentMonth={month} />
+          <h1 className="text-sm font-bold" style={{ color: '#f0f0f5' }}>カレンダー</h1>
+          <div className="flex items-center gap-3">
+            <MonthSwitcher currentMonth={month} />
+            <Link href="/settings" className="shrink-0">
+              {avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={avatarUrl} alt={displayName} width={32} height={32} className="h-8 w-8 rounded-full ring-2 ring-[#5eead4]/30 transition-opacity hover:opacity-80" />
+              ) : (
+                <div className="flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold transition-opacity hover:opacity-80" style={{ background: 'rgba(94,234,212,0.15)', color: '#5eead4' }}>
+                  {displayName.charAt(0).toUpperCase()}
+                </div>
+              )}
+            </Link>
+          </div>
         </header>
 
         <main className="mx-auto max-w-4xl px-4 py-5 pb-32 lg:pb-10">

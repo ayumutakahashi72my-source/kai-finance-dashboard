@@ -69,6 +69,7 @@ export async function createCategory(input: {
   if (error) return { message: `カテゴリの作成に失敗しました: ${error.message}` }
 
   revalidatePath('/categories')
+  revalidatePath('/settings')
   return { success: true }
 }
 
@@ -92,6 +93,7 @@ export async function updateCategory(
   if (error) return { message: `更新に失敗しました: ${error.message}` }
 
   revalidatePath('/categories')
+  revalidatePath('/settings')
   return { success: true }
 }
 
@@ -104,5 +106,6 @@ export async function deleteCategory(id: string): Promise<{ success: boolean; me
   if (error) return { success: false, message: `削除に失敗しました: ${error.message}` }
 
   revalidatePath('/categories')
+  revalidatePath('/settings')
   return { success: true }
 }

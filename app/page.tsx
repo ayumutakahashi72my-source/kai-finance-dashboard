@@ -1,7 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { LogoutButton } from '@/components/auth/LogoutButton'
 import { TransactionList } from '@/components/transactions/TransactionList'
 import { SummaryCards } from '@/components/dashboard/SummaryCards'
 import { CategoryBreakdown } from '@/components/dashboard/CategoryBreakdown'
@@ -108,13 +107,16 @@ export default async function DashboardPage({
 
           <div className="flex items-center gap-3">
             <MonthSwitcher currentMonth={month} />
-            <Link href="/categories" className="hidden text-xs text-[#8b8ba0] transition-colors hover:text-[#f0f0f5] lg:block">
-              カテゴリ
+            <Link href="/settings" className="shrink-0">
+              {avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={avatarUrl} alt={displayName} width={32} height={32} className="h-8 w-8 rounded-full ring-2 ring-[#5eead4]/30 transition-opacity hover:opacity-80" />
+              ) : (
+                <div className="flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold transition-opacity hover:opacity-80" style={{ background: 'rgba(94,234,212,0.15)', color: '#5eead4' }}>
+                  {displayName.charAt(0).toUpperCase()}
+                </div>
+              )}
             </Link>
-            <Link href="/settings" className="hidden text-xs text-[#8b8ba0] transition-colors hover:text-[#f0f0f5] lg:block">
-              設定
-            </Link>
-            <LogoutButton />
           </div>
         </header>
 
