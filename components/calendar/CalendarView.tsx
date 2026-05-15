@@ -17,21 +17,20 @@ interface Props {
   month: string
 }
 
-// MFのCSVはカタカナ長音を「-」(ハイフン)で表記するため、マッチ前に正規化する
-// 例: PAYPAYカ-ド → PAYPAYカード / ラクテンカ-ドサ-ビス → ラクテンカードサービス
-function normalizePayee(payee: string): string {
-  return payee.replace(/-/g, 'ー')
-}
+// ヒートマップから除外すべき取引かどうか判定
+// MFのCSVはカタカナ長音を半角ハイフン「-」や全角「－」で表すことがある
+function isHeatExcluded(tx: Transaction): boolean {
+  if (tx.is_fixed) return true
 
-// クレジット・ローン等の引き落とし判定（実支出の二重計上になるため除外）
-const CREDIT_KEYWORD_PATTERNS =
-  /クレジット|カード引き?落とし|カードサービス|CARD|VisaDebit|JCB|Mastercard|AMEX|クレカ|オリコ|ガクセイシエンキコウ|奨学金|ローン返済|ラクテンカード|ペイペイカード/i
+  // 各種ハイフン・ダッシュをすべてーに統一して比較
+  const p = tx.payee.replace(/[-－‐–—ｰ]/g, 'ー')
 
-function isCreditPayment(tx: Transaction): boolean {
-  const normalized = normalizePayee(tx.payee)
-  // 末尾が「カード」で終わるpayee（PAYPAYカード・ラクテンカード等）
-  if (/カード$/.test(normalized)) return true
-  return CREDIT_KEYWORD_PATTERNS.test(normalized)
+  // 「カード」を含む = クレジットカード会社への月次支払い
+  if (p.includes('カード')) return true
+
+  // その他の除外キーワード
+  const keywords = ['クレジット', 'オリコ', 'ガクセイシエン', '奨学金', 'ローン']
+  return keywords.some((k) => p.includes(k))
 }
 
 function heatColor(ratio: number): string {
@@ -170,7 +169,7 @@ function DayDetailOverlay({
                           固定
                         </span>
                       )}
-                      {isCreditPayment(tx) && (
+                      {isHeatExcluded(tx) && !tx.is_fixed && (
                         <span className="rounded px-1 text-[10px] font-semibold" style={{ background: 'rgba(34,211,238,0.12)', color: '#22d3ee' }}>
                           クレカ
                         </span>
@@ -269,7 +268,7 @@ export function CalendarView({ transactions, categories, month }: Props) {
         const abs = Math.abs(tx.amount)
         map[d].expense += abs
         // ヒートマップ: 固定費・クレカ引き落としは除外
-        if (!tx.is_fixed && !isCreditPayment(tx)) {
+        if (!isHeatExcluded(tx)) {
           map[d].heatExpense += abs
         }
       }
@@ -281,6 +280,11 @@ export function CalendarView({ transactions, categories, month }: Props) {
   const maxHeat = useMemo(
     () => Math.max(1, ...Object.values(dayMap).map((d) => d.heatExpense)),
     [dayMap]
+  )
+
+  const excludedCount = useMemo(
+    () => transactions.filter((tx) => tx.amount < 0 && isHeatExcluded(tx)).length,
+    [transactions]
   )
 
   const selectedData = selectedDate
@@ -382,7 +386,10 @@ export function CalendarView({ transactions, categories, month }: Props) {
       <div className="mt-5">
         <div className="mb-1.5 flex items-center justify-between">
           <p className="text-[11px] font-semibold" style={{ color: '#8b8ba0' }}>
-            日別支出ヒートマップ <span style={{ color: 'rgba(139,139,160,0.6)', fontWeight: 400 }}>（固定費・クレカ除外）</span>
+            日別支出ヒートマップ{' '}
+            <span style={{ color: 'rgba(139,139,160,0.6)', fontWeight: 400 }}>
+              （固定費・クレカ除外 — {excludedCount}件除外中）
+            </span>
           </p>
           <div className="flex items-center gap-1">
             <span className="text-[10px]" style={{ color: '#8b8ba0' }}>少</span>
