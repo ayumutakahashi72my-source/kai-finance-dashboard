@@ -28,8 +28,8 @@ function isHeatExcluded(tx: Transaction): boolean {
   // 「カード」を含む = クレジットカード会社への月次支払い
   if (p.includes('カード')) return true
 
-  // その他の除外キーワード
-  const keywords = ['クレジット', 'オリコ', 'ガクセイシエン', '奨学金', 'ローン']
+  // その他の除外キーワード（クレカ・ローン・投資）
+  const keywords = ['クレジット', 'オリコ', 'ガクセイシエン', '奨学金', 'ローン', '証券', '投信', '積立', '投資']
   return keywords.some((k) => p.includes(k))
 }
 
