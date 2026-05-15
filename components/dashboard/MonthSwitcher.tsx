@@ -1,6 +1,6 @@
 'use client'
 
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react'
 
 function monthOffset(ym: string, delta: number): string {
@@ -16,12 +16,13 @@ function formatLabel(ym: string): string {
 
 export function MonthSwitcher({ currentMonth }: { currentMonth: string }) {
   const router = useRouter()
+  const pathname = usePathname()
   const searchParams = useSearchParams()
 
   const navigate = (ym: string) => {
     const params = new URLSearchParams(searchParams.toString())
     params.set('month', ym)
-    router.push(`/?${params.toString()}`)
+    router.push(`${pathname}?${params.toString()}`)
   }
 
   const now = new Date()
