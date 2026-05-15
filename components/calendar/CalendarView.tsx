@@ -17,11 +17,14 @@ interface Props {
   month: string
 }
 
-// クレジットカード引き落とし判定（支払い自体は二重計上になるので除外）
-const CREDIT_PATTERNS = /クレジット|カード引き?落とし|CARD|VisaDebit|JCB|Mastercard|AMEX|クレカ/i
+// クレジット・ローン等の引き落とし判定（実支出の二重計上になるため除外）
+const CREDIT_KEYWORD_PATTERNS =
+  /クレジット|カード引き?落とし|カードサービス|CARD|VisaDebit|JCB|Mastercard|AMEX|クレカ|オリコ|ガクセイシエンキコウ|奨学金|ローン返済/i
 
 function isCreditPayment(tx: Transaction): boolean {
-  return CREDIT_PATTERNS.test(tx.payee)
+  // 末尾が「カード」で終わるpayee（PAYPAYカード・ラクテンカード等）
+  if (/カード$/.test(tx.payee)) return true
+  return CREDIT_KEYWORD_PATTERNS.test(tx.payee)
 }
 
 function heatColor(ratio: number): string {
