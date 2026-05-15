@@ -7,18 +7,15 @@ import { createClient } from '@/lib/supabase/server'
 const TransactionSchema = z.object({
   amount: z.coerce
     .number({ error: '金額を入力してください' })
-    .positive('金額は0より大きい値を入力してください'),
-  description: z
+    .int('金額は整数で入力してください')
+    .refine((n) => n !== 0, '金額は0以外の値を入力してください'),
+  payee: z
     .string()
-    .min(1, '説明を入力してください')
-    .max(100, '説明は100文字以内で入力してください'),
-  category: z.enum(['food', 'transport', 'entertainment', 'utility', 'health', 'other'], {
-    error: 'カテゴリを選択してください',
-  }),
-  type: z.enum(['expense', 'income'], {
-    error: '種別を選択してください',
-  }),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, '日付の形式が正しくありません'),
+    .min(1, '支払先を入力してください')
+    .max(100, '支払先は100文字以内で入力してください'),
+  occurred_on: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, '日付の形式が正しくありません'),
+  category_id: z.string().uuid().nullable().optional(),
+  is_fixed: z.coerce.boolean().optional(),
 })
 
 export type TransactionFormState = {
@@ -27,16 +24,33 @@ export type TransactionFormState = {
   success?: boolean
 }
 
+async function getMembership() {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { supabase: null, householdId: null }
+
+  const { data } = await supabase
+    .from('household_members')
+    .select('household_id')
+    .eq('user_id', user.id)
+    .limit(1)
+    .single()
+
+  return { supabase, householdId: data?.household_id ?? null }
+}
+
 export async function createTransaction(
-  _prevState: TransactionFormState | Record<string, never>,
+  _prev: TransactionFormState | Record<string, never>,
   formData: FormData
 ): Promise<TransactionFormState> {
   const raw = {
     amount: formData.get('amount'),
-    description: formData.get('description'),
-    category: formData.get('category'),
-    type: formData.get('type'),
-    date: formData.get('date'),
+    payee: formData.get('payee'),
+    occurred_on: formData.get('occurred_on'),
+    category_id: formData.get('category_id') || null,
+    is_fixed: formData.get('is_fixed') ?? false,
   }
 
   const parsed = TransactionSchema.safeParse(raw)
@@ -44,13 +58,19 @@ export async function createTransaction(
     return { errors: parsed.error.flatten().fieldErrors }
   }
 
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { message: '認証が必要です' }
+  const { supabase, householdId } = await getMembership()
+  if (!supabase) return { message: '認証が必要です' }
+  if (!householdId) return { message: '世帯が見つかりません' }
 
-  const { error } = await supabase
-    .from('transactions')
-    .insert({ ...parsed.data, user_id: user.id })
+  const { error } = await supabase.from('transactions').insert({
+    household_id: householdId,
+    amount: parsed.data.amount,
+    payee: parsed.data.payee,
+    occurred_on: parsed.data.occurred_on,
+    category_id: parsed.data.category_id ?? null,
+    is_fixed: parsed.data.is_fixed ?? false,
+    source: 'manual',
+  })
 
   if (error) return { message: `保存に失敗しました: ${error.message}` }
 
@@ -58,18 +78,60 @@ export async function createTransaction(
   return { success: true }
 }
 
-export async function getTransactions() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return []
+const BAD_CATEGORY_NAMES = ['未分類', 'その他', '不明', 'unknown', 'other']
 
-  const { data } = await supabase
+export async function getUncategorizedCount(): Promise<number> {
+  const { supabase, householdId } = await getMembership()
+  if (!supabase || !householdId) return 0
+
+  const [{ count: nullCount }, { data: badCats }] = await Promise.all([
+    supabase
+      .from('transactions')
+      .select('id', { count: 'exact', head: true })
+      .eq('household_id', householdId)
+      .is('category_id', null),
+    supabase
+      .from('categories')
+      .select('id')
+      .eq('household_id', householdId)
+      .in('name', BAD_CATEGORY_NAMES),
+  ])
+
+  let badCount = 0
+  if (badCats?.length) {
+    const ids = badCats.map((c) => c.id)
+    const { count } = await supabase
+      .from('transactions')
+      .select('id', { count: 'exact', head: true })
+      .eq('household_id', householdId)
+      .in('category_id', ids)
+    badCount = count ?? 0
+  }
+
+  return (nullCount ?? 0) + badCount
+}
+
+export async function getTransactions(month?: string) {
+  const { supabase, householdId } = await getMembership()
+  if (!supabase || !householdId) return []
+
+  let query = supabase
     .from('transactions')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('date', { ascending: false })
+    .select('*, categories(name, color, icon)')
+    .eq('household_id', householdId)
+    .order('occurred_on', { ascending: false })
     .order('created_at', { ascending: false })
-    .limit(50)
 
+  if (month) {
+    const [y, m] = month.split('-').map(Number)
+    const nextMonth = m === 12
+      ? `${y + 1}-01-01`
+      : `${y}-${String(m + 1).padStart(2, '0')}-01`
+    query = query.gte('occurred_on', `${month}-01`).lt('occurred_on', nextMonth)
+  } else {
+    query = query.limit(100)
+  }
+
+  const { data } = await query
   return data ?? []
 }

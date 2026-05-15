@@ -1,38 +1,40 @@
-export type TransactionCategory =
-  | 'food'
-  | 'transport'
-  | 'entertainment'
-  | 'utility'
-  | 'health'
-  | 'other'
+export type TransactionSource = 'csv' | 'manual' | 'auto'
 
-export type TransactionType = 'expense' | 'income'
-
-export interface Transaction {
+export interface Category {
   id: string
-  user_id: string
-  amount: number
-  description: string
-  category: TransactionCategory
-  type: TransactionType
-  date: string
+  household_id: string
+  name: string
+  color: string | null
+  icon: string | null
+  is_fixed: boolean
   created_at: string
 }
 
-export const CATEGORY_LABELS: Record<TransactionCategory, string> = {
-  food: '食費',
-  transport: '交通費',
-  entertainment: '娯楽',
-  utility: '光熱費',
-  health: '医療・健康',
-  other: 'その他',
+export interface Transaction {
+  id: string
+  household_id: string
+  amount: number      // 正=収入, 負=支出
+  payee: string
+  occurred_on: string // YYYY-MM-DD
+  category_id: string | null
+  is_fixed: boolean
+  source: TransactionSource | null
+  source_hash: string | null
+  created_at: string
+  categories?: Pick<Category, 'name' | 'color' | 'icon'> | null
 }
 
-export const CATEGORY_COLORS: Record<TransactionCategory, string> = {
-  food: '#5eead4',
-  transport: '#22d3ee',
-  entertainment: '#a78bfa',
-  utility: '#fbbf24',
-  health: '#4ade80',
-  other: '#8b8ba0',
+export type TransactionType = 'expense' | 'income'
+
+// 旧 static カテゴリ（手動登録フォームのデフォルト表示用）
+export const DEFAULT_CATEGORY_COLORS: Record<string, string> = {
+  食費: '#5eead4',
+  交通費: '#22d3ee',
+  日用品: '#a78bfa',
+  光熱費: '#fbbf24',
+  '医療・健康': '#4ade80',
+  外食: '#f97316',
+  娯楽: '#ec4899',
+  収入: '#86efac',
+  その他: '#8b8ba0',
 }

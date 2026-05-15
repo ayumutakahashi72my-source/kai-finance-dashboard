@@ -1,13 +1,20 @@
 import type { Metadata } from 'next'
-import { Inter, Geist } from 'next/font/google'
+import { Noto_Sans_JP, JetBrains_Mono } from 'next/font/google'
 import './globals.css'
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils"
+import { Providers } from '@/components/providers'
 
-const geist = Geist({subsets:['latin'],variable:'--font-sans'});
-
-const inter = Inter({
+const notoSansJP = Noto_Sans_JP({
   subsets: ['latin'],
-  variable: '--font-inter',
+  weight: ['300', '400', '500', '700'],
+  variable: '--font-sans',
+  display: 'swap',
+})
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-jetbrains',
   display: 'swap',
 })
 
@@ -22,9 +29,9 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="ja" className={cn("h-full", inter.variable, "font-sans", geist.variable)}>
+    <html lang="ja" className={cn("h-full", notoSansJP.variable, jetbrainsMono.variable)}>
       <body className="min-h-full antialiased">
-        {children}
+        <Providers>{children}</Providers>
       </body>
     </html>
   )

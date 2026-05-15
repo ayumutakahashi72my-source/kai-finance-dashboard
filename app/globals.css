@@ -4,12 +4,58 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* KAI Design Animations */
+@keyframes revealUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes growBar {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+@keyframes pulseDot {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+@keyframes ticker {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes ringPulse {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50%       { opacity: 0.2; transform: scale(1.5); }
+}
+
+/* KAI Utility Classes */
+.mono {
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  font-feature-settings: 'tnum' 1;
+}
+.lbl {
+  font-size: 11px;
+  font-weight: 700;
+  color: #8b8ba0;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+}
+.reveal-up {
+  animation: revealUp 540ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.ticker-track {
+  animation: ticker 40s linear infinite;
+}
+
 :root {
   --bg-primary:     #0a0a10;
   --bg-panel:       rgba(20, 22, 32, 0.66);
   --bg-panel-solid: #14161f;
 
-  --border:     oklch(0.922 0 0);
+  --border:     rgba(255, 255, 255, 0.10);
   --border-strong:  rgba(255, 255, 255, 0.16);
 
   --text-primary:   #f0f0f5;
@@ -61,7 +107,7 @@
   --color-background: var(--bg-primary);
   --color-foreground: var(--text-primary);
   --font-sans:     var(--font-sans);
-  --font-mono: 'JetBrains Mono', monospace;
+  --font-mono: var(--font-jetbrains), 'JetBrains Mono', monospace;
   --font-heading:     var(--font-sans);
   --color-sidebar-ring:     var(--sidebar-ring);
   --color-sidebar-border:     var(--sidebar-border);
@@ -112,8 +158,20 @@ body {
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
+  .ticker-track { animation-play-state: paused !important; }
+}
+
+::-webkit-scrollbar { width: 3px; height: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.10); border-radius: 99px; }
+
+button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible {
+  outline: 2px solid #5eead4;
+  outline-offset: 2px;
 }
 
 .dark {
