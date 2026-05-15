@@ -17,14 +17,21 @@ interface Props {
   month: string
 }
 
+// MFのCSVはカタカナ長音を「-」(ハイフン)で表記するため、マッチ前に正規化する
+// 例: PAYPAYカ-ド → PAYPAYカード / ラクテンカ-ドサ-ビス → ラクテンカードサービス
+function normalizePayee(payee: string): string {
+  return payee.replace(/-/g, 'ー')
+}
+
 // クレジット・ローン等の引き落とし判定（実支出の二重計上になるため除外）
 const CREDIT_KEYWORD_PATTERNS =
-  /クレジット|カード引き?落とし|カードサービス|CARD|VisaDebit|JCB|Mastercard|AMEX|クレカ|オリコ|ガクセイシエンキコウ|奨学金|ローン返済/i
+  /クレジット|カード引き?落とし|カードサービス|CARD|VisaDebit|JCB|Mastercard|AMEX|クレカ|オリコ|ガクセイシエンキコウ|奨学金|ローン返済|ラクテンカード|ペイペイカード/i
 
 function isCreditPayment(tx: Transaction): boolean {
+  const normalized = normalizePayee(tx.payee)
   // 末尾が「カード」で終わるpayee（PAYPAYカード・ラクテンカード等）
-  if (/カード$/.test(tx.payee)) return true
-  return CREDIT_KEYWORD_PATTERNS.test(tx.payee)
+  if (/カード$/.test(normalized)) return true
+  return CREDIT_KEYWORD_PATTERNS.test(normalized)
 }
 
 function heatColor(ratio: number): string {
