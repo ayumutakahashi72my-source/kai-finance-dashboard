@@ -10,13 +10,15 @@ import { AddPickerSheet } from '@/components/layout/AddPickerSheet'
 const CORAL = KAI.coral
 const BLUE  = KAI.blue
 
-const LEFT_NAV  = [
+import type { IconName } from '@/components/kai/shared'
+
+const LEFT_NAV: { href: string; icon: IconName; label: string }[] = [
   { href: '/',         icon: 'grid',     label: 'ホーム' },
   { href: '/calendar', icon: 'calendar', label: 'カレンダー' },
 ]
-const RIGHT_NAV = [
+const RIGHT_NAV: { href: string; icon: IconName; label: string }[] = [
   { href: '/transactions', icon: 'pie', label: '収支' },
-  { href: '/summary', icon: 'msg', label: 'AI' },
+  { href: '/summary',      icon: 'msg', label: 'AI' },
 ]
 
 export function BottomBar() {

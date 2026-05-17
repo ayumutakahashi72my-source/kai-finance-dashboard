@@ -26,6 +26,7 @@ export const KAI = {
 
   // ── C-direction accents ──────────────────────────────
   coral:     '#fb9477',                          // PRIMARY accent (warm)
+  coralSoft: 'rgba(251,148,119,0.10)',           // translucent coral for backgrounds
   tangerine: '#fb9477',                          // alias used in MF screens
   blue:      '#7aa7ff',                          // SECONDARY accent
   peach:     '#f5d4b8',
