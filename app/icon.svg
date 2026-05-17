@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- background -->
+  <rect width="32" height="32" rx="7" fill="#0c0a14"/>
+  <!-- gradient border ring -->
+  <rect x="1" y="1" width="30" height="30" rx="6.5" stroke="url(#border-g)" stroke-width="1.2" fill="none" opacity="0.6"/>
+  <!-- EKG waveform path -->
+  <path
+    d="M2 17h5l4-9 7 18 4-9h8"
+    stroke="url(#wave-g)"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <defs>
+    <linearGradient id="wave-g" x1="2" y1="17" x2="30" y2="17" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#a78bfa"/>
+      <stop offset="100%" stop-color="#5eead4"/>
+    </linearGradient>
+    <linearGradient id="border-g" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#fb9477"/>
+      <stop offset="100%" stop-color="#7aa7ff"/>
+    </linearGradient>
+  </defs>
+</svg>

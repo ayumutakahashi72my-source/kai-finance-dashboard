@@ -1,6 +1,8 @@
 'use client'
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import Link from 'next/link'
+import { Skeleton } from '@/components/ui/Skeleton'
 
 interface SummaryData {
   year: number
@@ -17,12 +19,24 @@ function LiveDot() {
         width: 6,
         height: 6,
         borderRadius: 99,
-        background: '#5eead4',
-        animation: 'pulseDot 1.8s infinite',
-        boxShadow: '0 0 6px #5eead4',
+        background: '#fb9477',
+        animation: 'kai-pulse-coral 2.4s ease-in-out infinite',
+        boxShadow: '0 0 6px #fb9477',
       }}
     />
   )
+}
+
+/** 本文の最初の段落（見出し・空行を除いた最初の文章）を返す */
+function extractFirstParagraph(content: string): string {
+  const lines = content.split('\n')
+  for (const line of lines) {
+    const stripped = line.replace(/^#{1,3}\s+/, '').replace(/\*\*/g, '').trim()
+    if (stripped.length > 20) {
+      return stripped.length > 120 ? stripped.slice(0, 120) + '…' : stripped
+    }
+  }
+  return content.slice(0, 120)
 }
 
 export function AiSummaryCard() {
@@ -49,51 +63,67 @@ export function AiSummaryCard() {
     <div
       className="reveal-up rounded-[18px] p-4"
       style={{
-        background: 'linear-gradient(135deg,rgba(167,139,250,0.10),rgba(20,22,32,0.66))',
+        background: 'linear-gradient(135deg,rgba(251,148,119,0.10),rgba(122,167,255,0.06),rgba(20,22,32,0.66))',
         backdropFilter: 'blur(24px) saturate(160%)',
-        border: '1px solid rgba(167,139,250,0.18)',
+        border: '1px solid rgba(251,148,119,0.18)',
         animationDelay: '140ms',
       }}
     >
-      <div className="mb-2 flex items-center gap-2">
+      {/* Header */}
+      <div className="mb-2.5 flex items-center gap-2">
         <span
-          className="mono flex h-6 w-6 items-center justify-center rounded-[7px] text-[11px] font-black text-[#0a0a10]"
-          style={{ background: 'linear-gradient(135deg,#a78bfa,#5eead4)' }}
+          className="flex h-6 w-6 items-center justify-center rounded-[7px]"
+          style={{ background: 'linear-gradient(135deg,#fb9477,#f5d4b8)', flexShrink: 0 }}
         >
-          AI
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <path d="M6 1L7.2 4.8H11L8 7.2L9.2 11L6 8.8L2.8 11L4 7.2L1 4.8H4.8L6 1Z" fill="rgba(10,10,16,0.85)" />
+          </svg>
         </span>
-        <span className="text-[13px] font-bold text-[#a78bfa]">今月のサマリー</span>
+        <span className="text-[13px] font-bold text-[#fb9477]">今日のひとこと</span>
         <LiveDot />
-        <div className="ml-auto">
-          <button
-            onClick={() => mutate()}
-            disabled={isPending || isLoading}
-            className="rounded-lg px-3 py-2 text-xs font-semibold text-[#a78bfa] transition-colors hover:bg-[#a78bfa]/10 disabled:cursor-not-allowed disabled:opacity-40"
-            style={{ minHeight: 32, border: '1px solid rgba(167,139,250,0.25)' }}
-          >
-            {isPending ? '生成中…' : summary ? '⟲ 再生成' : '今月分を生成'}
-          </button>
-        </div>
       </div>
 
+      {/* Body — compact */}
       {isLoading ? (
-        <div className="h-12 animate-pulse rounded-lg bg-white/5" />
+        <div className="space-y-2">
+          <Skeleton variant="line-md" />
+          <Skeleton variant="line-sm" className="w-3/4" />
+        </div>
       ) : summary ? (
-        <>
-          <p className="text-[14px] leading-[1.75] text-[#c4c4d0]">{summary.content}</p>
-          <p className="mt-2 text-right text-[11px] text-[#5e5e72]">
-            {summary.year}年{summary.month}月 生成
-          </p>
-        </>
+        <p className="text-[14px] leading-[1.75] text-[#c4c4d0]">
+          {extractFirstParagraph(summary.content)}
+        </p>
       ) : (
-        <p className="py-4 text-center text-sm text-[#5e5e72]">
+        <p className="text-[13px] text-[#5e5e72]">
           今月のサマリーはまだ生成されていません
         </p>
       )}
 
       {error && (
-        <p className="mt-2 text-xs text-[#fb7185]">{(error as Error).message}</p>
+        <p className="mt-1.5 text-xs text-[#fb7185]">{(error as Error).message}</p>
       )}
+
+      {/* Footer actions */}
+      <div className="mt-3 flex items-center justify-between">
+        {summary ? (
+          <Link
+            href="/summary"
+            className="text-[13px] font-semibold text-[#fb9477] transition-colors hover:text-[#c4b5fd]"
+          >
+            全文を見る <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ display: 'inline', verticalAlign: 'middle' }}><path d="M5 2.5L9 6L5 9.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </Link>
+        ) : (
+          <span />
+        )}
+        <button
+          onClick={() => mutate()}
+          disabled={isPending || isLoading}
+          className="rounded-[8px] px-3 py-1.5 text-[12px] font-semibold text-[#fb9477] transition-colors hover:bg-[#a78bfa]/10 disabled:cursor-not-allowed disabled:opacity-40"
+          style={{ border: '1px solid rgba(251,148,119,0.25)', minHeight: 32 }}
+        >
+          {isPending ? '生成中…' : summary ? '再生成' : '今月分を生成'}
+        </button>
+      </div>
     </div>
   )
 }

@@ -16,7 +16,7 @@ function bar(actual: number, suggested: number) {
   const pct = Math.min((actual / suggested) * 100, 100)
   const over = actual > suggested
   const close = !over && pct >= 80
-  const color = over ? '#fb7185' : close ? '#fbbf24' : '#5eead4'
+  const color = over ? '#fb7185' : close ? '#fbbf24' : '#fb9477'
   return { pct, color, over }
 }
 
@@ -25,19 +25,19 @@ export function BudgetSuggestCard({ suggestions, actualByCategory }: Props) {
     <div
       className="rounded-[18px] p-4"
       style={{
-        background: 'linear-gradient(135deg,rgba(94,234,212,0.06),rgba(20,22,32,0.66))',
+        background: 'linear-gradient(135deg,rgba(251,148,119,0.06),rgba(20,22,32,0.66))',
         backdropFilter: 'blur(24px) saturate(160%)',
-        border: '1px solid rgba(94,234,212,0.14)',
+        border: '1px solid rgba(251,148,119,0.14)',
       }}
     >
       <div className="mb-3 flex items-center gap-2">
         <span
           className="mono flex h-6 w-6 items-center justify-center rounded-[7px] text-[11px] font-black text-[#0a0a10]"
-          style={{ background: 'linear-gradient(135deg,#5eead4,#22d3ee)' }}
+          style={{ background: 'linear-gradient(135deg,#fb9477,#22d3ee)' }}
         >
           ¥
         </span>
-        <span className="text-[13px] font-bold text-[#5eead4]">カテゴリ別予算</span>
+        <span className="text-[13px] font-bold text-[#fb9477]">カテゴリ別予算</span>
       </div>
 
       <div className="space-y-3">

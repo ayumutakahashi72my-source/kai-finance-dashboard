@@ -1,109 +1,229 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { BudgetSuggestCard } from './BudgetSuggestCard'
-import { SpendingPatternCard } from './SpendingPatternCard'
+import { Skeleton } from '@/components/ui/Skeleton'
+import { useCountUp } from '@/components/kai/hooks'
+import { getCategoryIcon } from '@/lib/category-icons'
+import { KAI } from '@/lib/kai-tokens'
+import type { Transaction, Category } from '@/lib/types'
+
+/* ─── types ─────────────────────────────────────────────────────── */
 
 interface Suggestion {
-  category_name: string
+  category_name:    string
   suggested_amount: number
-  reason: string
+  reason:           string
 }
-
 interface BudgetData {
-  year: number
-  month: number
-  suggestions: Suggestion[]
+  year:             number
+  month:            number
+  suggestions:      Suggestion[]
   spending_pattern: { summary: string; habits: string[] }
-  created_at: string
+  created_at:       string
 }
 
-interface Transaction {
-  amount: number
-  categories: { name: string } | null
-}
+/* ─── helpers ───────────────────────────────────────────────────── */
 
 function currentMonthStr() {
   const d = new Date()
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
 }
 
-function computeScore(suggestions: Suggestion[], actualByCategory: Record<string, number>): number {
-  if (!suggestions.length) return 0
-  let totalBudget = 0
-  let totalWithin = 0
-  for (const s of suggestions) {
-    const actual = actualByCategory[s.category_name] ?? 0
-    totalBudget += s.suggested_amount
-    totalWithin += Math.min(actual, s.suggested_amount)
-  }
-  if (totalBudget === 0) return 100
-  return Math.round((totalWithin / totalBudget) * 100)
+function prevMonthStr(month: string) {
+  const [y, m] = month.split('-').map(Number)
+  const d = new Date(y, m - 2, 1)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
 }
 
-function ScoreRing({ score }: { score: number }) {
-  const r = 42
-  const circ = 2 * Math.PI * r
-  const offset = circ * (1 - score / 100)
-  const color = score >= 80 ? '#5eead4' : score >= 60 ? '#fbbf24' : '#fb7185'
-  const grade = score >= 90 ? 'S' : score >= 80 ? 'A' : score >= 70 ? 'B' : score >= 60 ? 'C' : 'D'
+function parseMonth(month: string) {
+  const [y, m] = month.split('-').map(Number)
+  return { year: y, month: m }
+}
+
+const MONO: React.CSSProperties = {
+  fontFamily: 'var(--font-jetbrains), "JetBrains Mono", monospace',
+}
+
+const CAT_COLORS = [
+  KAI.coral, KAI.blue, KAI.violet, KAI.success,
+  KAI.warning, KAI.mint, KAI.cyan, KAI.danger,
+  KAI.amber, KAI.mintExtra,
+]
+
+
+/* ─── OverallBar (全体収支横棒グラフ) ───────────────────────────── */
+
+function OverallBar({
+  label, value, maxValue, color, idx,
+}: {
+  label: string; value: number; maxValue: number; color: string; idx: number
+}) {
+  const pct         = maxValue > 0 ? Math.min(100, (value / maxValue) * 100) : 0
+  const animatedPct = useCountUp(pct, { duration: 1000, delay: 100 + idx * 150 })
 
   return (
-    <div className="flex flex-col items-center gap-2">
-      <svg width={100} height={100} viewBox="0 0 100 100">
-        <circle cx={50} cy={50} r={r} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={8} />
-        <circle
-          cx={50} cy={50} r={r}
-          fill="none"
-          stroke={color}
-          strokeWidth={8}
-          strokeDasharray={circ}
-          strokeDashoffset={offset}
-          strokeLinecap="round"
-          transform="rotate(-90 50 50)"
-          style={{ transition: 'stroke-dashoffset 0.8s ease', filter: `drop-shadow(0 0 6px ${color})` }}
-        />
-        <text x={50} y={46} textAnchor="middle" fill={color} fontSize={22} fontWeight={800} fontFamily="monospace">
-          {grade}
-        </text>
-        <text x={50} y={63} textAnchor="middle" fill="#8b8ba0" fontSize={12} fontFamily="monospace">
-          {score}%
-        </text>
-      </svg>
-      <p className="text-[12px] text-[#8b8ba0]">今月の予算達成スコア</p>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+      {/* ラベル + 金額 */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+        <span style={{ fontSize: 11, fontWeight: 700, color, letterSpacing: '.06em' }}>{label}</span>
+        <span style={{ fontSize: 15, fontWeight: 800, color, ...MONO, letterSpacing: '-.02em' }}>
+          ¥{value.toLocaleString('ja-JP')}
+        </span>
+      </div>
+
+      {/* 横棒（全幅） */}
+      <div style={{
+        width: '100%', height: 12, borderRadius: 99,
+        background: 'rgba(255,255,255,.05)', overflow: 'hidden',
+      }}>
+        <div style={{
+          height: '100%',
+          width: `${animatedPct}%`,
+          background: `linear-gradient(90deg, ${color}, ${color}88)`,
+          borderRadius: 99,
+        }}/>
+      </div>
     </div>
   )
 }
 
-export function BudgetDashboard() {
-  const qc = useQueryClient()
-  const month = currentMonthStr()
+/* ─── CategoryBar (カテゴリ別横棒グラフ) ────────────────────────── */
 
+function CategoryBar({
+  cat, idx, totalBudget, onManage,
+}: {
+  cat: { name: string; color: string; used: number; budget: number }
+  idx: number
+  totalBudget: number
+  onManage: () => void
+}) {
+  const effectiveBudget = cat.budget > 0 ? cat.budget : totalBudget
+  const pct             = effectiveBudget > 0 ? Math.min(100, (cat.used / effectiveBudget) * 100) : 0
+  const animatedPct     = useCountUp(pct, { duration: 1100, delay: 200 + idx * 70 })
+  const over            = cat.budget > 0 && cat.used > cat.budget
+  const barColor        = over ? KAI.danger : cat.color
+  const CatIcon         = getCategoryIcon(cat.name)
+
+  return (
+    <div style={{
+      padding: '11px 14px',
+      animation: `kai-rise .4s ${.2 + idx * .04}s ease-out both`,
+    }}>
+      {/* 上段: アイコン・名前・管理ボタン */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 7 }}>
+        <div style={{
+          width: 26, height: 26, borderRadius: 8, flexShrink: 0,
+          background: `${cat.color}1c`, border: `1px solid ${cat.color}33`, color: cat.color,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <CatIcon size={13} strokeWidth={1.8}/>
+        </div>
+
+        <span style={{ fontSize: 12.5, fontWeight: 600, color: KAI.text1, flex: 1 }}>
+          {cat.name}
+        </span>
+
+        <span style={{ display: 'flex', alignItems: 'baseline', gap: 3, ...MONO }}>
+          <span style={{ fontSize: 13, fontWeight: 700, color: over ? KAI.danger : KAI.text1, letterSpacing: '-.01em' }}>
+            ¥{cat.used.toLocaleString('ja-JP')}
+          </span>
+          {cat.budget > 0 && (
+            <span style={{ fontSize: 10, color: KAI.text4 }}>/ ¥{cat.budget.toLocaleString('ja-JP')}</span>
+          )}
+        </span>
+
+        <button
+          type="button"
+          onClick={onManage}
+          style={{
+            fontSize: 10, fontWeight: 600, color: KAI.coral,
+            background: `${KAI.coral}12`, border: `1px solid ${KAI.coral}30`,
+            borderRadius: 6, padding: '2px 8px', cursor: 'pointer',
+            fontFamily: 'inherit', whiteSpace: 'nowrap', flexShrink: 0,
+          }}
+        >管理 ›</button>
+      </div>
+
+      {/* 下段: 横棒グラフ */}
+      <div style={{ height: 7, borderRadius: 99, background: 'rgba(255,255,255,.05)', overflow: 'hidden' }}>
+        <div style={{
+          height: '100%',
+          width: `${Math.min(100, animatedPct)}%`,
+          background: over
+            ? KAI.danger
+            : `linear-gradient(90deg, ${barColor}, ${barColor}88)`,
+          borderRadius: 99,
+        }}/>
+      </div>
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 3 }}>
+        <span style={{ fontSize: 9.5, color: KAI.text4, ...MONO }}>
+          {cat.budget > 0
+            ? `${Math.round(pct)}% · 残 ¥${Math.max(0, cat.budget - cat.used).toLocaleString('ja-JP')}`
+            : `支出の ${Math.round(pct)}%`}
+        </span>
+        {over && (
+          <span style={{ fontSize: 9.5, color: KAI.danger, fontWeight: 700 }}>超過</span>
+        )}
+      </div>
+    </div>
+  )
+}
+
+/* ─── BudgetDashboard ───────────────────────────────────────────── */
+
+export function BudgetDashboard({ month: monthProp }: { month?: string } = {}) {
+  const qc     = useQueryClient()
+  const router = useRouter()
+  const month  = monthProp ?? currentMonthStr()
+  const prev   = prevMonthStr(month)
+
+  /* ─── queries ─── */
   const { data: budgetRes, isLoading: budgetLoading } = useQuery<{ data: BudgetData | null }>({
     queryKey: ['budget_suggest'],
-    queryFn: () => fetch('/api/budget/suggest').then((r) => r.json()),
+    queryFn:  () => fetch('/api/budget/suggest').then((r) => r.json()),
   })
-
   const { data: txRes, isLoading: txLoading } = useQuery<{ data: Transaction[] }>({
     queryKey: ['transactions', month],
-    queryFn: () => fetch(`/api/transactions?month=${month}`).then((r) => r.json()),
+    queryFn:  () => fetch(`/api/transactions?month=${month}`).then((r) => r.json()),
+  })
+  const { data: prevTxRes } = useQuery<{ data: Transaction[] }>({
+    queryKey: ['transactions', prev],
+    queryFn:  () => fetch(`/api/transactions?month=${prev}`).then((r) => r.json()),
+  })
+  const { data: catRes } = useQuery<{ data: Category[] }>({
+    queryKey: ['categories'],
+    queryFn:  () => fetch('/api/categories').then((r) => r.json()),
   })
 
-  const { mutate, isPending, error: mutateError } = useMutation({
+  /* ─── AI generate ─── */
+  const { mutate: generateBudget, isPending, error: genError } = useMutation({
     mutationFn: (force: boolean) =>
       fetch(`/api/budget/suggest${force ? '?force=true' : ''}`, { method: 'POST' }).then(async (r) => {
-        const json = await r.json()
-        if (!r.ok) throw new Error(json.error ?? '生成失敗')
-        return json
+        const j = await r.json()
+        if (!r.ok) throw new Error(j.error ?? '生成失敗')
+        return j
       }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['budget_suggest'] }),
   })
 
-  const budget = budgetRes?.data
+  /* ─── derived ─── */
+  const budget       = budgetRes?.data
   const transactions = txRes?.data ?? []
-  const isLoading = budgetLoading || txLoading
+  const prevTxs      = prevTxRes?.data ?? []
+  const allCats      = catRes?.data ?? []
+  const isLoading    = budgetLoading || txLoading
 
-  // カテゴリ別実績集計（支出のみ: amount < 0）
+  /* 今月の収入・支出 */
+  const totalIncome  = transactions.filter((tx) => tx.amount > 0).reduce((s, tx) => s + tx.amount, 0)
+  const totalExpense = transactions.filter((tx) => tx.amount < 0).reduce((s, tx) => s + Math.abs(tx.amount), 0)
+  const balance      = totalIncome - totalExpense
+
+  /* 先月収入 */
+  const prevMonthIncome = prevTxs.filter((tx) => tx.amount > 0).reduce((s, tx) => s + tx.amount, 0)
+
+  /* カテゴリ別支出集計 */
   const actualByCategory: Record<string, number> = {}
   for (const tx of transactions) {
     if (tx.amount >= 0) continue
@@ -111,79 +231,224 @@ export function BudgetDashboard() {
     actualByCategory[name] = (actualByCategory[name] ?? 0) + Math.abs(tx.amount)
   }
 
-  const score = budget ? computeScore(budget.suggestions, actualByCategory) : null
+  /* カテゴリリスト: AI提案 ∪ 実績 */
+  const suggestionMap = new Map(
+    (budget?.suggestions ?? []).map((s, i) => [s.category_name, { budget: s.suggested_amount, idx: i }])
+  )
+  const catNames   = new Set([...Array.from(suggestionMap.keys()), ...Object.keys(actualByCategory)])
+  const categories = Array.from(catNames).map((name, i) => {
+    const sug     = suggestionMap.get(name)
+    const catMeta = allCats.find((c) => c.name === name)
+    return {
+      name,
+      color:  sug
+        ? CAT_COLORS[sug.idx % CAT_COLORS.length]
+        : (catMeta?.color ?? CAT_COLORS[i % CAT_COLORS.length]),
+      used:   actualByCategory[name] ?? 0,
+      budget: sug?.budget ?? 0,
+    }
+  }).sort((a, b) => b.used - a.used)
 
+  /* 合計予算: AI提案合計 → 先月収入 → 支出×1.2 */
+  const aiTotal     = budget?.suggestions.reduce((s, x) => s + x.suggested_amount, 0) ?? 0
+  const totalBudget = aiTotal > 0
+    ? aiTotal
+    : prevMonthIncome > 0
+      ? prevMonthIncome
+      : Math.round(totalExpense * 1.2)
+
+  /* 期間 */
+  const { year: mYear, month: mMonth } = parseMonth(month)
+  const periodLabel = `${mYear}年${mMonth}月`
+
+  /* AI提案テキスト用：超過カテゴリ */
+  const overCat = categories.find((c) => c.budget > 0 && c.used > c.budget)
+
+  /* maxValue for overall bars */
+  const overallMax = Math.max(totalIncome, totalExpense, 1)
+
+  /* ─── skeleton ─── */
   if (isLoading) {
     return (
       <div className="space-y-3">
-        <div className="h-28 animate-pulse rounded-[18px] bg-white/5" />
-        <div className="h-64 animate-pulse rounded-[18px] bg-white/5" />
-        <div className="h-40 animate-pulse rounded-[18px] bg-white/5" />
+        <Skeleton variant="panel" className="h-36"/>
+        <Skeleton variant="panel" className="h-64"/>
+        <Skeleton variant="panel" className="h-20"/>
       </div>
     )
   }
 
   return (
-    <div className="space-y-3">
-      {/* Score + generate button */}
-      <div
-        className="reveal-up flex items-center justify-between rounded-[18px] px-5 py-4"
-        style={{
-          background: 'rgba(20,22,32,0.7)',
-          backdropFilter: 'blur(24px) saturate(160%)',
-          border: '1px solid rgba(255,255,255,0.08)',
-        }}
-      >
-        {score !== null ? (
-          <ScoreRing score={score} />
-        ) : (
-          <div className="text-sm text-[#5e5e72]">予算提案を生成してスコアを確認</div>
-        )}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
 
-        <div className="flex flex-col items-end gap-2">
-          <button
-            onClick={() => mutate(!!budget)}
-            disabled={isPending}
-            className="rounded-[12px] px-4 py-2.5 text-[13px] font-semibold text-[#5eead4] transition-colors hover:bg-[#5eead4]/10 disabled:cursor-not-allowed disabled:opacity-40"
-            style={{ border: '1px solid rgba(94,234,212,0.28)' }}
-          >
-            {isPending ? '生成中…' : budget ? '⟲ 再生成' : '今月分を生成'}
-          </button>
-          {budget && (
-            <p className="text-[11px] text-[#5e5e72]">
-              {budget.year}年{budget.month}月 生成済み
+      {/* ── 1. 全体収支横棒グラフ ── */}
+      <section style={{
+        background: 'rgba(255,255,255,.02)', border: '1px solid rgba(255,255,255,.06)',
+        borderRadius: 18, padding: '16px 18px',
+        animation: 'kai-rise .5s ease-out both',
+      }}>
+        {/* ヘッダー */}
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 14 }}>
+          <div>
+            <span style={{ fontSize: 10, fontWeight: 700, color: KAI.text4, letterSpacing: '.12em', textTransform: 'uppercase' }}>
+              全体収支
+            </span>
+            <span style={{ fontSize: 11, color: KAI.text4, marginLeft: 8 }}>{periodLabel}</span>
+          </div>
+          {/* 収支差額バッジ */}
+          <span style={{
+            fontSize: 12, fontWeight: 700, ...MONO,
+            color: balance >= 0 ? KAI.success : KAI.danger,
+            background: balance >= 0 ? 'rgba(74,222,128,.10)' : 'rgba(251,113,133,.10)',
+            border: `1px solid ${balance >= 0 ? 'rgba(74,222,128,.25)' : 'rgba(251,113,133,.25)'}`,
+            borderRadius: 8, padding: '3px 10px',
+          }}>
+            {balance >= 0 ? '+' : ''}¥{Math.abs(balance).toLocaleString('ja-JP')}
+          </span>
+        </div>
+
+        {/* 収入バー */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <OverallBar label="収入" value={totalIncome}  maxValue={overallMax} color="#4ade80" idx={0}/>
+          <OverallBar label="支出" value={totalExpense} maxValue={overallMax} color="#fb7185" idx={1}/>
+        </div>
+
+        {/* フッター */}
+        {prevMonthIncome > 0 && (
+          <div style={{ marginTop: 10, fontSize: 10, color: KAI.text4, ...MONO }}>
+            先月収入 ¥{prevMonthIncome.toLocaleString('ja-JP')}
+          </div>
+        )}
+      </section>
+
+      {/* ── 2. カテゴリ別横棒グラフ ── */}
+      <section style={{ animation: 'kai-rise .5s .1s ease-out both' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+          <span style={{ fontSize: 10, color: KAI.text4, letterSpacing: '.14em', fontWeight: 700, textTransform: 'uppercase' }}>
+            カテゴリ別
+          </span>
+        </div>
+
+        {categories.length > 0 ? (
+          <div style={{
+            background: 'rgba(255,255,255,.02)', border: '1px solid rgba(255,255,255,.06)',
+            borderRadius: 14, overflow: 'hidden',
+          }}>
+            {categories.map((c, i) => (
+              <div key={c.name} style={{ borderBottom: i < categories.length - 1 ? '1px solid rgba(255,255,255,.04)' : 'none' }}>
+                <CategoryBar
+                  cat={c} idx={i}
+                  totalBudget={totalBudget}
+                  onManage={() => router.push(`/budget/category/${encodeURIComponent(c.name)}?month=${month}`)}
+                />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div style={{
+            background: 'rgba(255,255,255,.02)', border: '1px solid rgba(255,255,255,.06)',
+            borderRadius: 14, padding: '32px 20px', textAlign: 'center',
+          }}>
+            <p style={{ fontSize: 14, color: KAI.text3 }}>支出データがありません</p>
+            <p style={{ fontSize: 12, color: KAI.text4, marginTop: 6 }}>
+              {month.replace('-', '年') + '月'}に支出の取引がありません
+            </p>
+          </div>
+        )}
+      </section>
+
+      {/* ── 3. AI提案 ── */}
+      <section style={{
+        background: 'linear-gradient(135deg, rgba(167,139,250,.08), rgba(251,148,119,.04))',
+        border: `1px solid ${KAI.violet}2e`,
+        borderRadius: 14, padding: '11px 12px',
+        display: 'flex', alignItems: 'flex-start', gap: 10,
+        animation: 'kai-rise .5s .2s ease-out both',
+        marginBottom: 14,
+      }}>
+        <div style={{
+          width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
+          background: `linear-gradient(135deg, ${KAI.coral}, ${KAI.peach})`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14,
+        }}>✨</div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 10, color: KAI.violet, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase' }}>
+            提案
+          </div>
+
+          {budget?.spending_pattern ? (
+            <>
+              <div style={{ fontSize: 12, color: '#e8e8f0', marginTop: 3, lineHeight: 1.55 }}>
+                {overCat ? (
+                  <>
+                    <span style={{ color: KAI.amber, fontWeight: 700 }}>{overCat.name}</span>
+                    {' が '}
+                    <span style={{ color: KAI.danger, fontWeight: 700 }}>
+                      +¥{(overCat.used - overCat.budget).toLocaleString('ja-JP')} 超過
+                    </span>
+                    {'。来月は '}
+                    <span style={{ color: KAI.coral, fontWeight: 700 }}>
+                      ¥{(Math.round(overCat.used * 1.1 / 1000) * 1000).toLocaleString('ja-JP')}
+                    </span>
+                    {' に調整するのがおすすめ。'}
+                  </>
+                ) : budget.spending_pattern.summary}
+              </div>
+              <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+                <button
+                  type="button"
+                  onClick={() => generateBudget(true)}
+                  disabled={isPending}
+                  style={{
+                    fontSize: 11, padding: '5px 10px', borderRadius: 8,
+                    background: `linear-gradient(135deg, ${KAI.coral}, ${KAI.blue})`,
+                    color: KAI.bg, fontWeight: 700, border: 'none',
+                    cursor: isPending ? 'not-allowed' : 'pointer',
+                    fontFamily: 'inherit', opacity: isPending ? 0.6 : 1,
+                  }}
+                >{isPending ? '適用中…' : '適用する'}</button>
+                <button
+                  type="button"
+                  style={{
+                    fontSize: 11, padding: '5px 10px', borderRadius: 8,
+                    background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.12)',
+                    color: KAI.text2, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+                  }}
+                >後で</button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div style={{ fontSize: 12, color: '#e8e8f0', marginTop: 3, lineHeight: 1.55 }}>
+                {prevMonthIncome > 0
+                  ? <>先月の収入 <span style={{ color: KAI.success, fontWeight: 700 }}>¥{prevMonthIncome.toLocaleString('ja-JP')}</span> をもとに今月の予算を提案します</>
+                  : '過去の支出を分析して今月の予算を提案します'}
+              </div>
+              <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+                <button
+                  type="button"
+                  onClick={() => generateBudget(false)}
+                  disabled={isPending}
+                  style={{
+                    fontSize: 11, padding: '5px 10px', borderRadius: 8,
+                    background: `linear-gradient(135deg, ${KAI.coral}, ${KAI.blue})`,
+                    color: KAI.bg, fontWeight: 700, border: 'none',
+                    cursor: isPending ? 'not-allowed' : 'pointer',
+                    fontFamily: 'inherit', opacity: isPending ? 0.6 : 1,
+                  }}
+                >{isPending ? '生成中…' : '提案を生成'}</button>
+              </div>
+            </>
+          )}
+
+          {genError && (
+            <p style={{ fontSize: 11, color: KAI.danger, marginTop: 6 }}>
+              {(genError as Error).message}
             </p>
           )}
-          {mutateError && (
-            <p className="text-[11px] text-[#fb7185]">{(mutateError as Error).message}</p>
-          )}
         </div>
-      </div>
+      </section>
 
-      {budget ? (
-        <>
-          <div className="reveal-up" style={{ animationDelay: '60ms' }}>
-            <BudgetSuggestCard
-              suggestions={budget.suggestions}
-              actualByCategory={actualByCategory}
-            />
-          </div>
-          <div className="reveal-up" style={{ animationDelay: '120ms' }}>
-            <SpendingPatternCard pattern={budget.spending_pattern} />
-          </div>
-        </>
-      ) : (
-        <div
-          className="reveal-up flex flex-col items-center gap-3 rounded-[18px] py-12 text-center"
-          style={{
-            background: 'rgba(20,22,32,0.5)',
-            border: '1px solid rgba(255,255,255,0.06)',
-          }}
-        >
-          <p className="text-[15px] text-[#8b8ba0]">まだ今月の予算提案がありません</p>
-          <p className="text-[13px] text-[#5e5e72]">「今月分を生成」ボタンを押してください</p>
-        </div>
-      )}
     </div>
   )
 }

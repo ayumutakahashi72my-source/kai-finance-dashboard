@@ -45,7 +45,7 @@ function LogDetail({ steps }: { steps: MfLoginStep[] }) {
             {s.status === 0 ? '---' : s.status}
           </span>
           <div className="min-w-0 flex-1">
-            <span className="font-mono text-[#5eead4]">{s.step}</span>
+            <span className="font-mono text-[#fb9477]">{s.step}</span>
             <span className="ml-2 break-all text-[#5e5e72]">
               {s.url.replace('https://', '')}
             </span>

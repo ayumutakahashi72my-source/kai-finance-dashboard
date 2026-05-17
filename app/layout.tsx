@@ -1,8 +1,15 @@
 import type { Metadata } from 'next'
-import { Noto_Sans_JP, JetBrains_Mono } from 'next/font/google'
+import { Inter, Noto_Sans_JP, JetBrains_Mono } from 'next/font/google'
 import './globals.css'
 import { cn } from "@/lib/utils"
 import { Providers } from '@/components/providers'
+
+const inter = Inter({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800'],
+  variable: '--font-inter',
+  display: 'swap',
+})
 
 const notoSansJP = Noto_Sans_JP({
   subsets: ['latin'],
@@ -13,7 +20,7 @@ const notoSansJP = Noto_Sans_JP({
 
 const jetbrainsMono = JetBrains_Mono({
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
+  weight: ['400', '500', '600', '700', '800'],
   variable: '--font-jetbrains',
   display: 'swap',
 })
@@ -21,6 +28,11 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: 'KAI — 家計簿管理システム',
   description: 'AI × 家計管理。支出の削減・節約をサポートするダッシュボード。',
+  icons: {
+    icon: '/icon.svg',
+    shortcut: '/icon.svg',
+    apple: '/icon.svg',
+  },
 }
 
 export default function RootLayout({
@@ -29,8 +41,8 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="ja" className={cn("h-full", notoSansJP.variable, jetbrainsMono.variable)}>
-      <body className="min-h-full antialiased">
+    <html lang="ja" className={cn("h-full", inter.variable, notoSansJP.variable, jetbrainsMono.variable)}>
+      <body className="min-h-full antialiased" style={{ fontFamily: "var(--font-inter), var(--font-sans), sans-serif" }}>
         <Providers>{children}</Providers>
       </body>
     </html>

@@ -75,7 +75,7 @@ export function CategoryBreakdown({ transactions }: { transactions: Transaction[
                       background: color,
                       boxShadow: `0 0 8px ${color}66`,
                       transformOrigin: 'left',
-                      animation: 'growBar 1.2s cubic-bezier(0.16,1,0.3,1) both',
+                      animation: 'kai-bar-grow-x 1.2s cubic-bezier(0.16,1,0.3,1) both',
                       animationDelay: `${0.1 + i * 0.08}s`,
                     }}
                   />

@@ -52,7 +52,7 @@ export function MonthSwitcher({ currentMonth }: { currentMonth: string }) {
       {!isCurrentMonth && (
         <button
           onClick={() => navigate(thisMonth)}
-          className="rounded-md px-2 py-0.5 text-xs text-[#5eead4] transition-colors hover:bg-[#5eead4]/10"
+          className="rounded-md px-2 py-0.5 text-xs text-[#fb9477] transition-colors hover:bg-[#fb9477]/10"
         >
           今月
         </button>

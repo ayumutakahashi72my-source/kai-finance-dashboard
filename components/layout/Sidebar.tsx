@@ -1,81 +1,115 @@
 'use client'
 
-import { usePathname } from 'next/navigation'
+import { useState, useCallback } from 'react'
+import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { LayoutDashboard, PieChart, CalendarDays, Settings, type LucideIcon } from 'lucide-react'
+import { KAI } from '@/lib/kai-tokens'
+import { Icon, KaiSystemBrand } from '@/components/kai/shared'
+import { AddPickerSheet } from '@/components/layout/AddPickerSheet'
 
-const NAV: { href: string; icon: LucideIcon; label: string }[] = [
-  { href: '/',         icon: LayoutDashboard, label: 'ダッシュボード' },
-  { href: '/budget',   icon: PieChart,        label: '予算' },
-  { href: '/calendar', icon: CalendarDays,    label: 'カレンダー' },
-  { href: '/settings', icon: Settings,        label: '設定' },
+const CORAL = KAI.coral
+const CORAL_SOFT = 'rgba(251,148,119,0.10)'
+
+const NAV: { href: string; icon: import('@/components/kai/shared').IconName; label: string }[] = [
+  { href: '/',         icon: 'grid',     label: 'ダッシュボード' },
+  { href: '/transactions', icon: 'pie', label: '収支' },
+  { href: '/calendar', icon: 'calendar', label: 'カレンダー' },
+  { href: '/summary',  icon: 'msg',      label: 'AIサマリー' },
 ]
 
 export function Sidebar() {
   const pathname = usePathname()
+  const router = useRouter()
+  const [pickerOpen, setPickerOpen] = useState(false)
+
+  const handlePickerDone = useCallback(() => {
+    setPickerOpen(false)
+    router.push('/')
+  }, [router])
 
   return (
-    <div className="fixed left-0 top-0 z-40 hidden h-screen w-[220px] flex-col border-r border-white/10 bg-[rgba(8,8,14,0.75)] backdrop-blur-[24px] lg:flex">
-      {/* Logo */}
-      <div className="flex items-center gap-3 border-b border-white/10 px-[18px] py-[22px]">
-        <div
-          className="flex h-9 w-9 items-center justify-center rounded-[11px]"
-          style={{
-            background: 'linear-gradient(135deg,#5eead4,#22d3ee)',
-            boxShadow: '0 0 18px rgba(94,234,212,0.28)',
-          }}
-        >
-          <span className="mono text-[15px] font-black text-[#0a0a10]">K</span>
-        </div>
-        <div>
-          <p className="mono text-sm font-bold tracking-[0.04em] text-[#f0f0f5]">KAKEIBO AI</p>
-          <p className="mono text-[11px] text-[#8b8ba0] tracking-[0.06em]">v0.1 · BETA</p>
-        </div>
+    <>
+      <AddPickerSheet open={pickerOpen} onClose={() => setPickerOpen(false)} onDone={handlePickerDone} />
+    <aside className="fixed left-0 top-0 z-40 hidden h-screen w-[220px] flex-col lg:flex"
+      style={{
+        background: 'rgba(8,8,14,0.75)',
+        backdropFilter: 'blur(24px)',
+        borderRight: '1px solid rgba(255,255,255,0.10)',
+      }}
+    >
+      {/* Brand */}
+      <div style={{ padding: '20px 16px', borderBottom: '1px solid rgba(255,255,255,0.10)' }}>
+        <KaiSystemBrand size="md" />
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 p-2.5">
-        {NAV.map((n) => {
+      <nav style={{ flex: 1, padding: 10 }}>
+        {NAV.map((n, i) => {
           const active = pathname === n.href
           return (
             <Link
               key={n.href}
               href={n.href}
               aria-current={active ? 'page' : undefined}
-              className="relative flex min-h-[44px] items-center gap-3 rounded-[11px] px-3.5 py-3 text-sm font-medium transition-all"
               style={{
-                color: active ? '#5eead4' : '#c4c4d0',
-                background: active ? 'rgba(94,234,212,0.08)' : 'transparent',
+                display: 'flex', alignItems: 'center', gap: 12,
+                padding: '11px 14px', borderRadius: 11,
+                fontSize: 14, fontWeight: 500, textDecoration: 'none',
+                color: active ? CORAL : KAI.text2,
+                background: active ? CORAL_SOFT : 'transparent',
+                position: 'relative',
+                animation: `kai-rise .5s ${50 * i}ms both ease-out`,
               }}
             >
               {active && (
-                <span
-                  className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-full"
-                  style={{ background: '#5eead4', boxShadow: '0 0 12px rgba(94,234,212,0.28)' }}
-                />
+                <span style={{
+                  position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)',
+                  width: 3, height: 20, background: CORAL, borderRadius: 99,
+                  boxShadow: `0 0 12px ${CORAL}55`,
+                }}/>
               )}
-              <n.icon className="size-[18px] shrink-0" />
+              <Icon name={n.icon} size={18}/>
               {n.label}
             </Link>
           )
         })}
       </nav>
 
-      {/* Footer */}
-      <div className="border-t border-white/10 p-3.5">
-        <div className="flex items-center gap-2.5">
-          <div
-            className="flex h-9 w-9 items-center justify-center rounded-[11px] border border-white/16"
-            style={{ background: 'linear-gradient(135deg,rgba(167,139,250,0.4),rgba(94,234,212,0.3))' }}
-          >
-            <span className="text-sm font-bold text-[#f0f0f5]">家</span>
-          </div>
+      {/* 取り込みボタン */}
+      <div style={{ padding: '0 10px 10px' }}>
+        <button
+          onClick={() => setPickerOpen(true)}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 10,
+            width: '100%', padding: '11px 14px', borderRadius: 11,
+            background: `linear-gradient(135deg, ${CORAL} 0%, ${KAI.blue} 100%)`,
+            border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+            fontSize: 14, fontWeight: 700, color: KAI.bg,
+            boxShadow: `0 6px 20px ${CORAL}44`,
+          }}
+        >
+          <Icon name="plus" size={18} stroke={2.4}/>
+          取り込む
+        </button>
+      </div>
+
+      {/* Footer — household badge */}
+      <div style={{ borderTop: '1px solid rgba(255,255,255,0.10)', padding: 14 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{
+            width: 36, height: 36, borderRadius: 11,
+            background: `linear-gradient(135deg, rgba(251,148,119,0.35), rgba(122,167,255,0.25))`,
+            border: '1px solid rgba(255,255,255,0.16)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 14, fontWeight: 700, color: KAI.text1,
+          }}>家</div>
           <div>
-            <p className="text-[13px] font-semibold text-[#f0f0f5]">マイホーム</p>
-            <p className="mono text-[11px] tracking-[0.04em] text-[#8b8ba0]">HOUSEHOLD</p>
+            <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: KAI.text1 }}>マイホーム</p>
+            <p style={{ margin: 0, fontSize: 11, color: KAI.text3, fontFamily: 'var(--font-jetbrains), JetBrains Mono, monospace', letterSpacing: '.04em' }}>HOUSEHOLD</p>
           </div>
         </div>
       </div>
-    </div>
+    </aside>
+    </>
   )
 }

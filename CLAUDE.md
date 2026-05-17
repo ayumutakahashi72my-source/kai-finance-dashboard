@@ -58,7 +58,7 @@ RLSでデータが見えない時：Supabaseテーブルエディタで直接確
 
 ## 現在のPhase
 
-**Phase 1 / Week 9** — ダッシュボードUI強化（月切替・AI統合）完了
+**Phase 2 / Week 11** — 取引編集削除・スコア永続化・月初Cron 完了
 
 | Week | 内容 | 状態 |
 |------|------|------|
@@ -71,21 +71,21 @@ RLSでデータが見えない時：Supabaseテーブルエディタで直接確
 | 7 | 予算提案＋支出クセ（Haiku 統合呼び出し） | ✅ |
 | 8 | 月次サマリー（Sonnet）・AIチャット | ✅ |
 | 9 | ダッシュボードUI（月切替・AiSummaryCard・AiChatPanel） | ✅ |
-| 10 | 予算ダッシュボード・スコア表示 | 未 |
+| 10 | 予算ダッシュボード（BudgetDashboard・ScoreRing・BudgetSuggestCard・SpendingPatternCard） | ✅ |
+| 11 | 取引編集・削除（PATCH/DELETE API + UI）・monthly_scoresマイグレーション・スコア計算ライブラリ・月初Cron | ✅ |
+| 12 | Skeleton UI全画面適用・固定費管理UI・ダッシュボードにスコアカード追加 | 未 |
 
-### Week 9 実装内容
-- `@tanstack/react-query` インストール
-- `components/providers.tsx` — QueryClientProvider（layout.tsx に統合）
-- `app/api/transactions/route.ts` — GET ?month= フィルター（TanStack Query 用）
-- `app/actions/transactions.ts` — getTransactions(month?) 月フィルター追加
-- `components/dashboard/MonthSwitcher.tsx` — URL params（?month=YYYY-MM）で月切替
-- `components/dashboard/AiSummaryCard.tsx` — useQuery + useMutation で月次サマリー表示＆生成
-- `components/dashboard/AiChatPanel.tsx` — 折りたたみUI・20回/¥2,000制限表示・タイピングインジケーター
-- `app/page.tsx` — MonthSwitcher・AiSummaryCard・AiChatPanel 統合。月フィルター済みデータとトレンドチャート用データを並行取得
+### Week 11 実装内容
+- `supabase/migrations/20260515000013_monthly_scores.sql` — monthly_scores・fixed_expense_suggestions テーブル
+- `lib/score-calculator.ts` — recalculateScore(supabase, householdId, month)
+- `app/api/transactions/[id]/route.ts` — PATCH・DELETE（スコア再計算統合）
+- `components/transactions/TransactionList.tsx` — ⋯メニュー・編集ダイアログ・削除確認ダイアログ追加
+- `app/api/cron/monthly/route.ts` — 月初Cron（スコア確定・月次サマリー・予算提案・固定費検出・クリーンアップ）
+- `vercel.json` — `/api/cron/monthly` schedule追加（毎月1日 00:01 JST）
 
 ### 次の指示
-Week 10: **予算ダッシュボード**を実装してください。
-- `app/budget/page.tsx` — 予算提案一覧・達成率表示
-- `components/budget/BudgetSuggestCard.tsx` — カテゴリ別予算 vs 実績バー
-- `components/budget/SpendingPatternCard.tsx` — 支出クセ表示
-- `app/api/budget/suggest/route.ts` は既存。GET で最新、POST で生成（月1回）
+Week 12: **Skeleton UI全画面適用 + ダッシュボードにスコアカード追加**を実装してください。
+- `components/ui/Skeleton.tsx` — shimmerアニメーションのSkeletonアトム（panel / line-sm / line-md / line-lg / block バリアント）
+- `components/dashboard/ScoreCard.tsx` — monthly_scoresからスコアを取得して表示（TanStack Query）
+- `app/page.tsx` — ScoreCardをAiSummaryCardの上に配置
+- 各ページの isLoading 時に Skeleton を適用（BudgetDashboard は実装済み・他ページも統一）

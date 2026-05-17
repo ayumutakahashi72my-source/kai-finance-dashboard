@@ -22,7 +22,7 @@ export function SpendingPatternCard({ pattern }: Props) {
       <div className="mb-3 flex items-center gap-2">
         <span
           className="mono flex h-6 w-6 items-center justify-center rounded-[7px] text-[11px] font-black text-[#0a0a10]"
-          style={{ background: 'linear-gradient(135deg,#a78bfa,#5eead4)' }}
+          style={{ background: 'linear-gradient(135deg,#a78bfa,#fb9477)' }}
         >
           AI
         </span>

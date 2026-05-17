@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { generateMonthlySummary } from '@/lib/monthly-summary'
 import { FALLBACK } from '@/lib/fallback-messages'
@@ -13,14 +13,43 @@ async function getHouseholdId(supabase: Awaited<ReturnType<typeof createClient>>
   return data?.household_id ?? null
 }
 
-// GET: 最新の月次サマリーを返す
-export async function GET() {
+// GET: 月次サマリーを返す
+// ?list=true → 存在する年月一覧
+// ?year=YYYY&month=MM → 指定月のサマリー
+// (パラメータなし) → 最新のサマリー
+export async function GET(req: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: '認証が必要です' }, { status: 401 })
 
   const householdId = await getHouseholdId(supabase, user.id)
   if (!householdId) return NextResponse.json({ error: '世帯が見つかりません' }, { status: 400 })
+
+  const { searchParams } = new URL(req.url)
+
+  if (searchParams.get('list') === 'true') {
+    const { data } = await supabase
+      .from('monthly_summaries')
+      .select('year, month, created_at')
+      .eq('household_id', householdId)
+      .order('year', { ascending: false })
+      .order('month', { ascending: false })
+    return NextResponse.json({ data: data ?? [] })
+  }
+
+  const yearParam = searchParams.get('year')
+  const monthParam = searchParams.get('month')
+
+  if (yearParam && monthParam) {
+    const { data } = await supabase
+      .from('monthly_summaries')
+      .select('year, month, content, created_at')
+      .eq('household_id', householdId)
+      .eq('year', parseInt(yearParam, 10))
+      .eq('month', parseInt(monthParam, 10))
+      .maybeSingle()
+    return NextResponse.json({ data })
+  }
 
   const { data } = await supabase
     .from('monthly_summaries')

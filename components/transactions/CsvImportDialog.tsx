@@ -21,8 +21,8 @@ interface ImportResult {
   parseErrors: string[]
 }
 
-export function CsvImportDialog({ onImported }: { onImported?: () => void }) {
-  const [open, setOpen] = useState(false)
+export function CsvImportDialog({ onImported, defaultOpen = false }: { onImported?: () => void; defaultOpen?: boolean }) {
+  const [open, setOpen] = useState(defaultOpen)
   const [file, setFile] = useState<File | null>(null)
   const [preview, setPreview] = useState<{ count: number; errors: string[] } | null>(null)
   const [result, setResult] = useState<ImportResult | null>(null)
@@ -166,7 +166,7 @@ export function CsvImportDialog({ onImported }: { onImported?: () => void }) {
                 　スキップ: <span className="text-[#f0f0f5]">{result.skipped}件</span>
               </p>
               <p className="mt-0.5 text-xs text-[#8b8ba0]">
-                カテゴリ分類: <span className="text-[#5eead4]">{result.classified}件</span>
+                カテゴリ分類: <span className="text-[#fb9477]">{result.classified}件</span>
                 {result.categoriesCreated > 0 && (
                   <span className="ml-2 text-[#a78bfa]">（{result.categoriesCreated}カテゴリを自動作成）</span>
                 )}
@@ -179,7 +179,7 @@ export function CsvImportDialog({ onImported }: { onImported?: () => void }) {
           {result ? (
             <Button
               onClick={() => setOpen(false)}
-              className="w-full bg-[#5eead4] text-[#0a0a10] font-semibold hover:bg-[#5eead4]/90"
+              className="w-full bg-[#fb9477] text-[#0a0a10] font-semibold hover:bg-[#fb9477]/90"
             >
               閉じる
             </Button>

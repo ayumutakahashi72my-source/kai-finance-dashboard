@@ -43,17 +43,9 @@ function isHeatExcluded(tx: Transaction): boolean {
 
 function heatColor(ratio: number): string {
   if (ratio <= 0) return 'transparent'
-  // 低: teal系 → 高: red系
-  const stops = [
-    [94, 234, 212, 0.15],  // teal (very low)
-    [251, 191, 36, 0.35],  // amber
-    [249, 115, 22, 0.5],   // orange
-    [239, 68, 68, 0.65],   // red
-  ]
-  const idx = Math.min(3, Math.floor(ratio * 4))
-  const [r, g, b, a] = stops[idx]
-  const intensity = 0.6 + ratio * 0.4
-  return `rgba(${r},${g},${b},${(a * intensity).toFixed(2)})`
+  // Direction C: coral intensity scale
+  const alpha = 0.18 + ratio * 0.67
+  return `rgba(251,148,119,${alpha.toFixed(2)})`
 }
 
 function fmt(n: number) {
@@ -95,11 +87,11 @@ function DayDetailOverlay({
     <div className="flex flex-col gap-3">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <p className="text-base font-bold" style={{ color: '#5eead4' }}>
+        <p className="text-base font-bold" style={{ color: '#fb9477' }}>
           {data.date.replace(/-/g, '/')}
         </p>
         <button onClick={onClose} className="flex h-7 w-7 items-center justify-center rounded-full text-sm transition-colors hover:bg-white/10" style={{ color: '#8b8ba0' }}>
-          ✕
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 3L11 11M11 3L3 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
         </button>
       </div>
 
@@ -344,11 +336,11 @@ export function CalendarView({ transactions, categories, month }: Props) {
               onClick={() => setSelectedDate(isSelected ? null : dateStr)}
               className="relative flex min-h-[80px] flex-col items-start rounded-[12px] p-2 text-left transition-all active:scale-95 sm:min-h-[88px]"
               style={{
-                background: isSelected ? 'rgba(94,234,212,0.12)' : (ratio > 0 ? heatColor(ratio) : 'rgba(255,255,255,0.03)'),
+                background: isSelected ? 'rgba(251,148,119,0.12)' : (ratio > 0 ? heatColor(ratio) : 'rgba(255,255,255,0.03)'),
                 border: isSelected
-                  ? '1.5px solid rgba(94,234,212,0.6)'
+                  ? '1.5px solid rgba(251,148,119,0.6)'
                   : isToday
-                  ? '1.5px solid rgba(94,234,212,0.3)'
+                  ? '1.5px solid rgba(251,148,119,0.3)'
                   : '1px solid rgba(255,255,255,0.07)',
               }}
             >
@@ -356,7 +348,7 @@ export function CalendarView({ transactions, categories, month }: Props) {
               <span
                 className="mb-1 flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold"
                 style={{
-                  background: isToday ? '#5eead4' : 'transparent',
+                  background: isToday ? '#fb9477' : 'transparent',
                   color: isToday ? '#0a0a10' : dow === 0 ? '#f87171' : dow === 6 ? '#60a5fa' : '#c4c4d0',
                 }}
               >
@@ -421,7 +413,7 @@ export function CalendarView({ transactions, categories, month }: Props) {
                 style={{
                   height: 22,
                   background: ratio > 0 ? heatColor(ratio) : 'rgba(255,255,255,0.05)',
-                  border: isSelected ? '1px solid rgba(94,234,212,0.7)' : '1px solid transparent',
+                  border: isSelected ? '1px solid rgba(251,148,119,0.7)' : '1px solid transparent',
                 }}
                 title={`${i + 1}日 ¥${(data?.expense ?? 0).toLocaleString()}`}
               />

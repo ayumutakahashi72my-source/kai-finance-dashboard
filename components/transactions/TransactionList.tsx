@@ -1,8 +1,8 @@
 'use client'
 
-import { useOptimistic, useTransition, useState } from 'react'
+import { useOptimistic, useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { TrendingUp } from 'lucide-react'
+import { TrendingUp, Pencil, Trash2 } from 'lucide-react'
 import { getCategoryIcon } from '@/lib/category-icons'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -20,10 +20,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog'
-import { CsvImportDialog } from '@/components/transactions/CsvImportDialog'
-import { createTransaction, type TransactionFormState } from '@/app/actions/transactions'
 import type { Transaction, Category } from '@/lib/types'
 import { DEFAULT_CATEGORY_COLORS } from '@/lib/types'
 
@@ -48,14 +45,14 @@ function groupByDate(transactions: Transaction[]) {
   }
   return Object.entries(groups)
     .sort(([a], [b]) => b.localeCompare(a))
-    .slice(0, 10) // show last 10 days
+    .slice(0, 10)
 }
 
 function formatDateLabel(dateStr: string): string {
   const d = new Date(dateStr + 'T00:00:00')
   const now = new Date()
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-  const diff = Math.floor((today.getTime() - d.getTime()) / 86400000)
+  const todayD = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const diff = Math.floor((todayD.getTime() - d.getTime()) / 86400000)
   const dows = ['日', '月', '火', '水', '木', '金', '土']
   const dow = dows[d.getDay()]
   const base = `${d.getMonth() + 1}月${d.getDate()}日 · ${dow}`
@@ -70,70 +67,240 @@ interface Props {
   uncategorizedCount?: number
 }
 
+// ── 編集ダイアログ ──────────────────────────────────────────────────────────
+function EditDialog({
+  tx,
+  categories,
+  onClose,
+  onSaved,
+}: {
+  tx: Transaction
+  categories: Category[]
+  onClose: () => void
+  onSaved: () => void
+}) {
+  const isIncomeTx = tx.amount > 0
+  const [isIncome, setIsIncome] = useState(isIncomeTx)
+  const [amount, setAmount] = useState(String(Math.abs(tx.amount)))
+  const [payee, setPayee] = useState(tx.payee)
+  const [occurredOn, setOccurredOn] = useState(tx.occurred_on)
+  const [categoryId, setCategoryId] = useState(tx.category_id ?? '')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+
+  async function handleSave() {
+    const parsedAmount = parseInt(amount, 10)
+    if (!payee.trim() || !parsedAmount || !occurredOn) return
+    setSaving(true)
+    setError('')
+    try {
+      const finalAmount = isIncome ? Math.abs(parsedAmount) : -Math.abs(parsedAmount)
+      const res = await fetch(`/api/transactions/${tx.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: finalAmount,
+          payee: payee.trim(),
+          occurred_on: occurredOn,
+          category_id: categoryId || null,
+        }),
+      })
+      if (!res.ok) {
+        const j = await res.json()
+        setError(j.error ?? '保存に失敗しました')
+        return
+      }
+      onSaved()
+      onClose()
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <Dialog open onOpenChange={(o) => { if (!o) onClose() }}>
+      <DialogContent className="bg-[#14161f] border-white/10 text-[#f0f0f5] sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="text-[#f0f0f5]">取引を編集</DialogTitle>
+        </DialogHeader>
+
+        <div className="grid gap-4 pt-2">
+          <div className="grid gap-1.5">
+            <Label className="text-[#8b8ba0] text-xs">種別</Label>
+            <div className="grid grid-cols-2 gap-2">
+              {[false, true].map((inc) => (
+                <button
+                  key={String(inc)}
+                  type="button"
+                  onClick={() => setIsIncome(inc)}
+                  className={`rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+                    isIncome === inc
+                      ? inc
+                        ? 'border-[#4ade80]/40 bg-[#4ade80]/10 text-[#4ade80]'
+                        : 'border-[#fb7185]/40 bg-[#fb7185]/10 text-[#fb7185]'
+                      : 'border-white/10 text-[#8b8ba0] hover:border-white/20'
+                  }`}
+                >
+                  {inc ? '収入' : '支出'}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid gap-1.5">
+            <Label className="text-[#8b8ba0] text-xs">日付</Label>
+            <Input
+              type="date"
+              value={occurredOn}
+              onChange={(e) => setOccurredOn(e.target.value)}
+              required
+              className="bg-[#0a0a10] border-white/10 text-[#f0f0f5] focus-visible:border-[#fb9477]/50 focus-visible:ring-[#fb9477]/20"
+            />
+          </div>
+
+          <div className="grid gap-1.5">
+            <Label className="text-[#8b8ba0] text-xs">金額（円）</Label>
+            <Input
+              type="number"
+              min="1"
+              step="1"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              required
+              className="bg-[#0a0a10] border-white/10 text-[#f0f0f5] placeholder:text-[#5e5e72] focus-visible:border-[#fb9477]/50 focus-visible:ring-[#fb9477]/20"
+            />
+          </div>
+
+          <div className="grid gap-1.5">
+            <Label className="text-[#8b8ba0] text-xs">カテゴリ</Label>
+            <Select value={categoryId} onValueChange={(v) => setCategoryId(v ?? '')}>
+              <SelectTrigger className="w-full bg-[#0a0a10] border-white/10 text-[#f0f0f5] focus-visible:border-[#fb9477]/50">
+                <SelectValue placeholder="選択なし" />
+              </SelectTrigger>
+              <SelectContent className="bg-[#14161f] border-white/10 text-[#f0f0f5]">
+                {categories.map((cat) => (
+                  <SelectItem
+                    key={cat.id}
+                    value={cat.id}
+                    className="focus:bg-white/5 focus:text-[#f0f0f5]"
+                  >
+                    <span className="flex items-center gap-2">
+                      {cat.icon && <span>{cat.icon}</span>}
+                      {cat.name}
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid gap-1.5">
+            <Label className="text-[#8b8ba0] text-xs">支払先</Label>
+            <Input
+              type="text"
+              maxLength={100}
+              value={payee}
+              onChange={(e) => setPayee(e.target.value)}
+              required
+              className="bg-[#0a0a10] border-white/10 text-[#f0f0f5] placeholder:text-[#5e5e72] focus-visible:border-[#fb9477]/50 focus-visible:ring-[#fb9477]/20"
+            />
+          </div>
+
+          {error && (
+            <p className="rounded-lg border border-[#fb7185]/20 bg-[#fb7185]/5 px-3 py-2 text-xs text-[#fb7185]">
+              {error}
+            </p>
+          )}
+        </div>
+
+        <DialogFooter className="border-white/10 bg-transparent -mx-4 -mb-4 px-4 pb-4 pt-2 gap-2">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={onClose}
+            className="text-[#8b8ba0] hover:text-[#f0f0f5] hover:bg-white/5"
+          >
+            キャンセル
+          </Button>
+          <Button
+            onClick={handleSave}
+            disabled={saving}
+            className="bg-[#fb9477] text-[#0a0a10] font-semibold hover:bg-[#fb9477]/90 disabled:opacity-50"
+          >
+            {saving ? '保存中…' : '保存'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+// ── 削除確認ダイアログ ───────────────────────────────────────────────────────
+function DeleteConfirmDialog({
+  tx,
+  onClose,
+  onDeleted,
+}: {
+  tx: Transaction
+  onClose: () => void
+  onDeleted: () => void
+}) {
+  const [deleting, setDeleting] = useState(false)
+
+  async function handleDelete() {
+    setDeleting(true)
+    try {
+      await fetch(`/api/transactions/${tx.id}`, { method: 'DELETE' })
+      onDeleted()
+      onClose()
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  return (
+    <Dialog open onOpenChange={(o) => { if (!o) onClose() }}>
+      <DialogContent className="bg-[#14161f] border-white/10 text-[#f0f0f5] sm:max-w-sm">
+        <DialogHeader>
+          <DialogTitle className="text-[#f0f0f5]">取引を削除</DialogTitle>
+        </DialogHeader>
+        <p className="text-[14px] text-[#c4c4d0]">
+          「{tx.payee}」(¥{Math.abs(tx.amount).toLocaleString()}) を削除しますか？この操作は取り消せません。
+        </p>
+        <DialogFooter className="border-white/10 bg-transparent -mx-4 -mb-4 px-4 pb-4 pt-2 gap-2">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={onClose}
+            className="text-[#8b8ba0] hover:text-[#f0f0f5] hover:bg-white/5"
+          >
+            キャンセル
+          </Button>
+          <Button
+            onClick={handleDelete}
+            disabled={deleting}
+            className="bg-[#fb7185]/20 text-[#fb7185] border border-[#fb7185]/30 font-semibold hover:bg-[#fb7185]/30 disabled:opacity-50"
+          >
+            {deleting ? '削除中…' : '削除する'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+// ── メインコンポーネント ─────────────────────────────────────────────────────
 export function TransactionList({ initial, categories, uncategorizedCount = 0 }: Props) {
   const router = useRouter()
-  const [open, setOpen] = useState(false)
-  const [isPending, startTransition] = useTransition()
-  const [fieldErrors, setFieldErrors] = useState<TransactionFormState>({})
 
-  const [optimisticItems, addOptimistic] = useOptimistic(
+  const [editingTx, setEditingTx] = useState<Transaction | null>(null)
+  const [deletingTx, setDeletingTx] = useState<Transaction | null>(null)
+  const [actionMenuId, setActionMenuId] = useState<string | null>(null)
+
+  const [optimisticItems] = useOptimistic(
     initial,
     (state: Transaction[], newItem: Transaction) => [newItem, ...state]
   )
-
-  const [amount, setAmount] = useState('')
-  const [payee, setPayee] = useState('')
-  const [occurred_on, setOccurredOn] = useState(today())
-  const [isIncome, setIsIncome] = useState(false)
-  const [categoryId, setCategoryId] = useState<string>('')
-
-  function resetForm() {
-    setAmount('')
-    setPayee('')
-    setOccurredOn(today())
-    setIsIncome(false)
-    setCategoryId('')
-    setFieldErrors({})
-  }
-
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    const parsedAmount = parseInt(amount, 10)
-    if (!payee.trim() || !parsedAmount || !occurred_on) return
-
-    const finalAmount = isIncome ? Math.abs(parsedAmount) : -Math.abs(parsedAmount)
-    const formData = new FormData()
-    formData.set('amount', String(finalAmount))
-    formData.set('payee', payee.trim())
-    formData.set('occurred_on', occurred_on)
-    if (categoryId) formData.set('category_id', categoryId)
-
-    const cat = categories.find((c) => c.id === categoryId)
-    const optimistic: Transaction = {
-      id: crypto.randomUUID(),
-      household_id: '',
-      amount: finalAmount,
-      payee: payee.trim(),
-      occurred_on,
-      category_id: categoryId || null,
-      is_fixed: false,
-      source: 'manual',
-      source_hash: null,
-      created_at: new Date().toISOString(),
-      categories: cat ? { name: cat.name, color: cat.color, icon: cat.icon } : null,
-    }
-
-    startTransition(async () => {
-      addOptimistic(optimistic)
-      setOpen(false)
-      resetForm()
-      const result = await createTransaction({}, formData)
-      if (!result.success) {
-        setFieldErrors(result)
-        if (result.errors || result.message) setOpen(true)
-      }
-    })
-  }
 
   const groups = groupByDate(optimisticItems)
   const BAD_NAMES = ['未分類', 'その他', '不明']
@@ -157,6 +324,25 @@ export function TransactionList({ initial, categories, uncategorizedCount = 0 }:
 
   return (
     <div>
+      {/* 編集ダイアログ */}
+      {editingTx && (
+        <EditDialog
+          tx={editingTx}
+          categories={categories}
+          onClose={() => setEditingTx(null)}
+          onSaved={() => router.refresh()}
+        />
+      )}
+
+      {/* 削除確認ダイアログ */}
+      {deletingTx && (
+        <DeleteConfirmDialog
+          tx={deletingTx}
+          onClose={() => setDeletingTx(null)}
+          onDeleted={() => router.refresh()}
+        />
+      )}
+
       {/* Header */}
       <div className="mb-3 flex items-center justify-between">
         <p className="lbl">取引履歴</p>
@@ -174,142 +360,6 @@ export function TransactionList({ initial, categories, uncategorizedCount = 0 }:
                   : `未分類 ${uncategorizedCount}件を一括再分類`}
             </button>
           )}
-          <CsvImportDialog onImported={() => router.refresh()} />
-          <Dialog
-            open={open}
-            onOpenChange={(next) => { setOpen(next); if (!next) resetForm() }}
-          >
-            <DialogTrigger
-              render={
-                <button
-                  className="mono min-h-[44px] rounded-[10px] px-4 py-2.5 text-[13px] font-bold text-[#0a0a10]"
-                  style={{
-                    background: 'linear-gradient(135deg,#5eead4,#22d3ee)',
-                    boxShadow: '0 4px 18px rgba(94,234,212,0.28)',
-                    border: 'none',
-                  }}
-                />
-              }
-            >
-              ＋ 追加
-            </DialogTrigger>
-
-            <DialogContent className="bg-[#14161f] border-white/10 text-[#f0f0f5] sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle className="text-[#f0f0f5]">取引を登録</DialogTitle>
-              </DialogHeader>
-
-              <form onSubmit={handleSubmit} className="grid gap-4 pt-2">
-                <div className="grid gap-1.5">
-                  <Label className="text-[#8b8ba0] text-xs">種別</Label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {[false, true].map((inc) => (
-                      <button
-                        key={String(inc)}
-                        type="button"
-                        onClick={() => setIsIncome(inc)}
-                        className={`rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
-                          isIncome === inc
-                            ? inc
-                              ? 'border-[#4ade80]/40 bg-[#4ade80]/10 text-[#4ade80]'
-                              : 'border-[#fb7185]/40 bg-[#fb7185]/10 text-[#fb7185]'
-                            : 'border-white/10 text-[#8b8ba0] hover:border-white/20'
-                        }`}
-                      >
-                        {inc ? '収入' : '支出'}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="grid gap-1.5">
-                  <Label htmlFor="occurred_on" className="text-[#8b8ba0] text-xs">日付</Label>
-                  <Input
-                    id="occurred_on"
-                    type="date"
-                    value={occurred_on}
-                    onChange={(e) => setOccurredOn(e.target.value)}
-                    required
-                    className="bg-[#0a0a10] border-white/10 text-[#f0f0f5] focus-visible:border-[#5eead4]/50 focus-visible:ring-[#5eead4]/20"
-                  />
-                </div>
-
-                <div className="grid gap-1.5">
-                  <Label htmlFor="amount" className="text-[#8b8ba0] text-xs">金額（円）</Label>
-                  <Input
-                    id="amount"
-                    type="number"
-                    min="1"
-                    step="1"
-                    placeholder="0"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    required
-                    className="bg-[#0a0a10] border-white/10 text-[#f0f0f5] placeholder:text-[#5e5e72] focus-visible:border-[#5eead4]/50 focus-visible:ring-[#5eead4]/20"
-                  />
-                  {fieldErrors.errors?.amount && (
-                    <p className="text-xs text-[#fb7185]">{fieldErrors.errors.amount[0]}</p>
-                  )}
-                </div>
-
-                <div className="grid gap-1.5">
-                  <Label className="text-[#8b8ba0] text-xs">カテゴリ</Label>
-                  <Select value={categoryId} onValueChange={(v) => setCategoryId(v ?? '')}>
-                    <SelectTrigger className="w-full bg-[#0a0a10] border-white/10 text-[#f0f0f5] focus-visible:border-[#5eead4]/50">
-                      <SelectValue placeholder="選択なし" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-[#14161f] border-white/10 text-[#f0f0f5]">
-                      {categories.map((cat) => (
-                        <SelectItem
-                          key={cat.id}
-                          value={cat.id}
-                          className="focus:bg-white/5 focus:text-[#f0f0f5]"
-                        >
-                          <span className="flex items-center gap-2">
-                            {cat.icon && <span>{cat.icon}</span>}
-                            {cat.name}
-                          </span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="grid gap-1.5">
-                  <Label htmlFor="payee" className="text-[#8b8ba0] text-xs">支払先</Label>
-                  <Input
-                    id="payee"
-                    type="text"
-                    placeholder="例：セブンイレブン、電車代…"
-                    maxLength={100}
-                    value={payee}
-                    onChange={(e) => setPayee(e.target.value)}
-                    required
-                    className="bg-[#0a0a10] border-white/10 text-[#f0f0f5] placeholder:text-[#5e5e72] focus-visible:border-[#5eead4]/50 focus-visible:ring-[#5eead4]/20"
-                  />
-                  {fieldErrors.errors?.payee && (
-                    <p className="text-xs text-[#fb7185]">{fieldErrors.errors.payee[0]}</p>
-                  )}
-                </div>
-
-                {fieldErrors.message && (
-                  <p className="rounded-lg border border-[#fb7185]/20 bg-[#fb7185]/5 px-3 py-2 text-xs text-[#fb7185]">
-                    {fieldErrors.message}
-                  </p>
-                )}
-
-                <DialogFooter className="border-white/10 bg-transparent -mx-4 -mb-4 px-4 pb-4 pt-2">
-                  <Button
-                    type="submit"
-                    disabled={isPending}
-                    className="w-full bg-[#5eead4] text-[#0a0a10] font-semibold hover:bg-[#5eead4]/90 disabled:opacity-50"
-                  >
-                    {isPending ? '保存中…' : '登録する'}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
         </div>
       </div>
 
@@ -319,7 +369,7 @@ export function TransactionList({ initial, categories, uncategorizedCount = 0 }:
           className="rounded-[18px] px-4 py-8 text-center text-sm text-[#5e5e72]"
           style={{ background: 'rgba(20,22,32,0.66)', border: '1px solid rgba(255,255,255,0.10)' }}
         >
-          取引がありません。「追加」ボタンから登録してください。
+          取引がありません。＋ボタンから記録してください。
         </div>
       ) : (
         groups.map(([date, txs], gi) => {
@@ -344,10 +394,11 @@ export function TransactionList({ initial, categories, uncategorizedCount = 0 }:
               >
                 {txs.map((tx, i) => {
                   const color = categoryColor(tx)
+                  const isMenuOpen = actionMenuId === tx.id
                   return (
                     <div
                       key={tx.id}
-                      className="flex min-h-[48px] cursor-pointer items-center gap-3 py-3.5"
+                      className="relative flex min-h-[48px] items-center gap-3 py-3.5"
                       style={{ borderBottom: i < txs.length - 1 ? '1px solid rgba(255,255,255,0.07)' : 'none' }}
                     >
                       <div
@@ -381,6 +432,49 @@ export function TransactionList({ initial, categories, uncategorizedCount = 0 }:
                       >
                         {tx.amount >= 0 ? '+' : ''}¥{Math.abs(tx.amount).toLocaleString()}
                       </span>
+
+                      {/* アクションメニュー */}
+                      <div className="relative ml-1">
+                        <button
+                          onClick={() => setActionMenuId(isMenuOpen ? null : tx.id)}
+                          className="flex h-8 w-8 items-center justify-center rounded-full text-[#5e5e72] transition-colors hover:bg-white/5 hover:text-[#8b8ba0]"
+                          aria-label="アクション"
+                        >
+                          ⋯
+                        </button>
+                        {isMenuOpen && (
+                          <>
+                            {/* 背景クリックで閉じる */}
+                            <div
+                              className="fixed inset-0 z-10"
+                              onClick={() => setActionMenuId(null)}
+                            />
+                            <div
+                              className="absolute right-0 top-9 z-20 min-w-[120px] overflow-hidden rounded-[12px]"
+                              style={{
+                                background: 'rgba(20,22,32,0.98)',
+                                border: '1px solid rgba(255,255,255,0.12)',
+                                boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+                              }}
+                            >
+                              <button
+                                onClick={() => { setActionMenuId(null); setEditingTx(tx) }}
+                                className="flex w-full items-center gap-2 px-4 py-2.5 text-[13px] text-[#c4c4d0] transition-colors hover:bg-white/5 hover:text-[#f0f0f5]"
+                              >
+                                <Pencil className="size-3.5" />
+                                編集
+                              </button>
+                              <button
+                                onClick={() => { setActionMenuId(null); setDeletingTx(tx) }}
+                                className="flex w-full items-center gap-2 px-4 py-2.5 text-[13px] text-[#fb7185] transition-colors hover:bg-[#fb7185]/10"
+                              >
+                                <Trash2 className="size-3.5" />
+                                削除
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
                     </div>
                   )
                 })}

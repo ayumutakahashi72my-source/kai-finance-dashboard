@@ -25,7 +25,10 @@ export async function GET(req: NextRequest) {
     .order('created_at', { ascending: false })
 
   if (month) {
-    query = query.gte('occurred_on', `${month}-01`).lte('occurred_on', `${month}-31`)
+    const [y, m] = month.split('-').map(Number)
+    const lastDay = new Date(y, m, 0).getDate()
+    const lastDate = `${month}-${String(lastDay).padStart(2, '0')}`
+    query = query.gte('occurred_on', `${month}-01`).lte('occurred_on', lastDate)
   } else {
     query = query.limit(100)
   }

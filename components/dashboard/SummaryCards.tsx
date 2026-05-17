@@ -32,7 +32,7 @@ function Spark({ data, w = 220, h = 32 }: { data: number[]; w?: number; h?: numb
   const d = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ')
   return (
     <svg width={w} height={h} style={{ overflow: 'visible' }}>
-      <path d={d} fill="none" stroke="#5eead4" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+      <path d={d} fill="none" stroke="#fb9477" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
 }
@@ -67,15 +67,15 @@ export function SummaryCards({ transactions, allTransactions }: Props) {
     <div
       className="reveal-up relative overflow-hidden rounded-[18px] p-[22px]"
       style={{
-        background: 'linear-gradient(135deg,rgba(94,234,212,0.10),rgba(20,22,32,0.66))',
+        background: 'linear-gradient(135deg,rgba(251,148,119,0.10),rgba(20,22,32,0.66))',
         backdropFilter: 'blur(24px) saturate(160%)',
-        border: '1px solid rgba(94,234,212,0.22)',
+        border: '1px solid rgba(251,148,119,0.22)',
       }}
     >
       {/* glow */}
       <div
         className="pointer-events-none absolute -right-10 -top-10 h-36 w-36 rounded-full"
-        style={{ background: 'radial-gradient(circle,rgba(94,234,212,0.28),transparent 70%)', filter: 'blur(20px)' }}
+        style={{ background: 'radial-gradient(circle,rgba(251,148,119,0.28),transparent 70%)', filter: 'blur(20px)' }}
       />
 
       <div className="flex items-start justify-between">
@@ -89,7 +89,10 @@ export function SummaryCards({ transactions, allTransactions }: Props) {
               border: `1px solid ${balance >= 0 ? 'rgba(74,222,128,0.25)' : 'rgba(251,113,133,0.25)'}`,
             }}
           >
-            {balance >= 0 ? '▲' : '▼'} {balance >= 0 ? '+' : '-'}¥{Math.abs(balance).toLocaleString()}
+            {balance >= 0
+              ? <svg width="8" height="8" viewBox="0 0 8 8" fill="none" style={{ display:'inline',verticalAlign:'middle',marginRight:3 }}><path d="M4 1L7 7H1L4 1Z" fill="currentColor"/></svg>
+              : <svg width="8" height="8" viewBox="0 0 8 8" fill="none" style={{ display:'inline',verticalAlign:'middle',marginRight:3 }}><path d="M4 7L1 1H7L4 7Z" fill="currentColor"/></svg>
+            }{balance >= 0 ? '+' : '-'}¥{Math.abs(balance).toLocaleString()}
           </span>
         )}
       </div>
@@ -99,8 +102,8 @@ export function SummaryCards({ transactions, allTransactions }: Props) {
         style={{
           fontSize: 44,
           fontWeight: 700,
-          color: balance >= 0 ? '#5eead4' : '#fb7185',
-          textShadow: balance >= 0 ? '0 0 32px rgba(94,234,212,0.28)' : '0 0 32px rgba(251,113,133,0.28)',
+          color: balance >= 0 ? '#fb9477' : '#fb7185',
+          textShadow: balance >= 0 ? '0 0 32px rgba(251,148,119,0.28)' : '0 0 32px rgba(251,113,133,0.28)',
           letterSpacing: '-0.02em',
         }}
       >

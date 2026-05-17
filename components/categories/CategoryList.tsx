@@ -18,7 +18,7 @@ import { PencilIcon, Trash2Icon, PlusIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const PRESET_COLORS = [
-  '#5eead4', '#22d3ee', '#a78bfa', '#fbbf24',
+  '#fb9477', '#22d3ee', '#a78bfa', '#fbbf24',
   '#4ade80', '#f97316', '#fb7185', '#60a5fa',
   '#e879f9', '#8b8ba0',
 ]
@@ -105,7 +105,7 @@ function CategoryDialog({
               maxLength={30}
               required
               autoFocus
-              className="bg-[#0a0a10] border-white/10 text-[#f0f0f5] placeholder:text-[#5e5e72] focus-visible:border-[#5eead4]/50 focus-visible:ring-[#5eead4]/20"
+              className="bg-[#0a0a10] border-white/10 text-[#f0f0f5] placeholder:text-[#5e5e72] focus-visible:border-[#fb9477]/50 focus-visible:ring-[#fb9477]/20"
             />
           </div>
           <div className="grid gap-1.5">
@@ -129,7 +129,7 @@ function CategoryDialog({
             <Button
               type="submit"
               disabled={isPending}
-              className="bg-[#5eead4] text-[#0a0a10] font-semibold hover:bg-[#5eead4]/90 disabled:opacity-50"
+              className="bg-[#fb9477] text-[#0a0a10] font-semibold hover:bg-[#fb9477]/90 disabled:opacity-50"
             >
               {isPending ? '保存中…' : '保存'}
             </Button>
@@ -140,7 +140,7 @@ function CategoryDialog({
   )
 }
 
-export function CategoryList({ initial }: { initial: Category[] }) {
+export function CategoryList({ initial, showTitle = true }: { initial: Category[]; showTitle?: boolean }) {
   const router = useRouter()
   const [addOpen, setAddOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<Category | null>(null)
@@ -187,14 +187,14 @@ export function CategoryList({ initial }: { initial: Category[] }) {
   return (
     <>
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-lg font-semibold text-[#f0f0f5]">カテゴリ管理</h1>
+        {showTitle && <h1 className="text-lg font-semibold text-[#f0f0f5]">カテゴリ管理</h1>}
         <Button
           onClick={() => {
             setFormError(null)
             setAddOpen(true)
           }}
           size="sm"
-          className="bg-[#5eead4] text-[#0a0a10] font-semibold hover:bg-[#5eead4]/90"
+          className={`bg-[#fb9477] text-[#0a0a10] font-semibold hover:bg-[#fb9477]/90 ${!showTitle ? 'ml-auto' : ''}`}
         >
           <PlusIcon className="h-3.5 w-3.5 mr-1" />
           カテゴリを追加

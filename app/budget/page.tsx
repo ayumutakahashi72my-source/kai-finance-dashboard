@@ -1,15 +1,12 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import Link from 'next/link'
+import { ProfileDropdown } from '@/components/layout/ProfileDropdown'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { BottomBar } from '@/components/layout/BottomBar'
 import { MonthSwitcher } from '@/components/dashboard/MonthSwitcher'
+import { KaiSystemBrand } from '@/components/kai/shared'
 import { BudgetDashboard } from '@/components/budget/BudgetDashboard'
-import { TransactionList } from '@/components/transactions/TransactionList'
-import { getTransactions, getUncategorizedCount } from '@/app/actions/transactions'
-import { getCategories } from '@/app/actions/categories'
 import { getHousehold } from '@/app/actions/households'
-import type { Transaction, Category } from '@/lib/types'
 
 function currentMonthStr() {
   const d = new Date()
@@ -34,61 +31,39 @@ export default async function BudgetPage({
   const displayName = user.user_metadata?.full_name ?? user.email ?? 'ユーザー'
   const avatarUrl = user.user_metadata?.avatar_url as string | undefined
 
-  const [transactions, categories, uncategorizedCount] = await Promise.all([
-    getTransactions(month) as Promise<Transaction[]>,
-    getCategories() as Promise<Category[]>,
-    getUncategorizedCount(),
-  ])
 
   return (
-    <div className="min-h-screen" style={{ background: '#0a0a10' }}>
-      <div aria-hidden className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div
-          className="absolute left-1/2 -translate-x-1/2"
-          style={{ top: -160, width: 600, height: 600, borderRadius: '50%', background: 'rgba(94,234,212,0.04)', filter: 'blur(120px)' }}
-        />
-      </div>
+    <div className="min-h-screen" style={{ background: '#0c0a14' }}>
+      {/* Mesh background */}
+      <div aria-hidden className="mesh-bg pointer-events-none fixed inset-0" style={{ zIndex: 0, backgroundImage: `radial-gradient(ellipse 700px 500px at 80% 8%, rgba(251,148,119,.09), transparent 55%),radial-gradient(ellipse 500px 400px at 12% 78%, rgba(122,167,255,.06), transparent 55%)` }} />
+      <div aria-hidden className="pointer-events-none fixed inset-0" style={{ zIndex: 1, backgroundImage: `linear-gradient(rgba(255,255,255,.012) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.012) 1px,transparent 1px)`, backgroundSize: '40px 40px' }} />
 
       <Sidebar />
 
-      <div className="relative min-h-screen lg:pl-[220px]">
+      <div className="relative min-h-screen lg:pl-[220px]" style={{ zIndex: 2 }}>
         <header
-          className="flex items-center justify-between px-5 py-4"
-          style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}
+          className="sticky top-0 z-30 flex items-center justify-between px-6 py-[14px]"
+          style={{ background: 'rgba(8,8,14,.55)', backdropFilter: 'blur(24px)', borderBottom: '1px solid rgba(255,255,255,0.10)' }}
         >
-          <div className="flex items-center gap-2.5">
-            <div className="flex items-center gap-2.5 lg:hidden">
-              <div
-                className="flex h-8 w-8 items-center justify-center rounded-[9px]"
-                style={{ background: 'linear-gradient(135deg,#5eead4,#22d3ee)', boxShadow: '0 0 14px rgba(94,234,212,0.28)' }}
-              >
-                <span className="mono text-[13px] font-black text-[#0a0a10]">K</span>
-              </div>
-              <span className="mono text-[13px] font-bold tracking-[0.04em] text-[#f0f0f5]">KAKEIBO AI</span>
+          <div className="flex items-center gap-3">
+            {/* mobile logo */}
+            <div className="lg:hidden">
+              <KaiSystemBrand size="sm"/>
             </div>
-            <h1 className="hidden text-[15px] font-bold text-[#f0f0f5] lg:block">予算ダッシュボード</h1>
+            <div className="hidden lg:block">
+              <h1 className="text-[17px] font-bold" style={{ color: '#f0f0f5' }}>予算管理</h1>
+              <p style={{ fontSize: 11, color: '#5e5e72', marginTop: 1 }}>{month.replace('-', '年') + '月'}</p>
+            </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             <MonthSwitcher currentMonth={month} />
-            <Link href="/settings" className="shrink-0">
-              {avatarUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={avatarUrl} alt={displayName} width={32} height={32} className="h-8 w-8 rounded-full ring-2 ring-[#5eead4]/30 transition-opacity hover:opacity-80" />
-              ) : (
-                <div className="flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold transition-opacity hover:opacity-80" style={{ background: 'rgba(94,234,212,0.15)', color: '#5eead4' }}>
-                  {displayName.charAt(0).toUpperCase()}
-                </div>
-              )}
-            </Link>
+            <ProfileDropdown displayName={displayName} avatarUrl={avatarUrl} />
           </div>
         </header>
 
         <main className="mx-auto max-w-2xl space-y-3 px-4 py-5 pb-32 lg:pb-10">
-          <BudgetDashboard />
-          <div className="reveal-up pt-1">
-            <TransactionList initial={transactions} categories={categories} uncategorizedCount={uncategorizedCount} />
-          </div>
+          <BudgetDashboard month={month} />
         </main>
       </div>
 
