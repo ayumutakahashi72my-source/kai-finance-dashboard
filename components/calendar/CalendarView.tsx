@@ -334,7 +334,7 @@ export function CalendarView({ transactions, categories, month }: Props) {
             <button
               key={dateStr}
               onClick={() => setSelectedDate(isSelected ? null : dateStr)}
-              className="relative flex min-h-[80px] flex-col items-start rounded-[12px] p-2 text-left transition-all active:scale-95 sm:min-h-[88px]"
+              className="relative flex min-h-[52px] flex-col items-start justify-between rounded-[12px] p-2 text-left transition-all active:scale-95 sm:min-h-[58px]"
               style={{
                 background: isSelected ? 'rgba(251,148,119,0.12)' : (ratio > 0 ? heatColor(ratio) : 'rgba(255,255,255,0.03)'),
                 border: isSelected
@@ -346,7 +346,7 @@ export function CalendarView({ transactions, categories, month }: Props) {
             >
               {/* Date number */}
               <span
-                className="mb-1 flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold"
+                className="flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold"
                 style={{
                   background: isToday ? '#fb9477' : 'transparent',
                   color: isToday ? '#0a0a10' : dow === 0 ? '#f87171' : dow === 6 ? '#60a5fa' : '#c4c4d0',
@@ -355,27 +355,19 @@ export function CalendarView({ transactions, categories, month }: Props) {
                 {day}
               </span>
 
+              {/* Bottom indicators */}
               {data && (
-                <div className="w-full space-y-[2px]">
+                <div className="flex w-full items-center gap-[3px]">
                   {data.income > 0 && (
-                    <div className="truncate text-[11px] font-bold leading-tight sm:text-[12px]" style={{ color: '#4ade80', textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}>
-                      +{fmt(data.income)}
-                    </div>
+                    <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: '#4ade80' }} />
                   )}
                   {data.expense > 0 && (
-                    <div className="truncate text-[11px] font-bold leading-tight sm:text-[12px]" style={{ color: '#fca5a5', textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}>
-                      -{fmt(data.expense)}
-                    </div>
+                    <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: '#fb9477' }} />
+                  )}
+                  {data?.transactions.some((t) => t.is_fixed) && (
+                    <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: '#a78bfa' }} />
                   )}
                 </div>
-              )}
-
-              {/* Fixed expense dot */}
-              {data?.transactions.some((t) => t.is_fixed) && (
-                <span
-                  className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full"
-                  style={{ background: '#a78bfa' }}
-                />
               )}
             </button>
           )

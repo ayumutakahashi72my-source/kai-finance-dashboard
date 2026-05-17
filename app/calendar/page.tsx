@@ -117,21 +117,20 @@ export default async function CalendarPage({
           </div>
 
           {/* Legend */}
-          <div className="reveal-up mb-3 flex items-center justify-end gap-3 text-[12px]" style={{ animationDelay: '60ms' }}>
+          <div className="reveal-up mb-3 flex flex-wrap items-center justify-end gap-x-3 gap-y-1.5 text-[11px]" style={{ animationDelay: '60ms' }}>
             {[
-              { dot: 'rgba(251,148,119,.25)', label: '少' },
-              { dot: 'rgba(251,148,119,.52)', label: '中' },
-              { dot: 'rgba(251,148,119,.85)', label: '多' },
+              { dot: 'rgba(251,148,119,.25)', label: '支出少' },
+              { dot: 'rgba(251,148,119,.85)', label: '支出多' },
+              { dot: '#4ade80', label: '収入あり' },
+              { dot: '#fb9477', label: '支出あり' },
+              { dot: '#a78bfa', label: '固定費' },
             ].map(({ dot, label }) => (
-              <span key={label} className="flex items-center gap-1.5">
-                <span style={{ width: 10, height: 10, borderRadius: 2, background: dot, display: 'inline-block' }} />
+              <span key={label} className="flex items-center gap-1">
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: dot, display: 'inline-block', flexShrink: 0 }} />
                 <span style={{ color: '#8b8ba0', fontWeight: 600 }}>{label}</span>
               </span>
             ))}
-            <span className="flex items-center gap-1.5">
-              <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{ display: 'inline-block' }}><rect x="1.5" y="1.5" width="7" height="7" rx="1" stroke="#7aa7ff" strokeWidth="1.2"/><rect x="3.5" y="3.5" width="3" height="3" rx="0.5" fill="#7aa7ff"/></svg>
-              <span style={{ color: '#8b8ba0', fontWeight: 600 }}>固定費</span>
-            </span>
+            <span style={{ color: '#5e5e72', fontSize: 10 }}>（日付をタップで詳細）</span>
           </div>
 
           {/* Calendar grid */}
