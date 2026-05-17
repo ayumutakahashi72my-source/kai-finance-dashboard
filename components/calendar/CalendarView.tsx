@@ -356,14 +356,14 @@ export function CalendarView({ transactions, categories, month }: Props) {
               </span>
 
               {data && (
-                <div className="w-full space-y-[3px]">
+                <div className="w-full space-y-[2px]">
                   {data.income > 0 && (
-                    <div className="truncate text-[10px] font-semibold leading-tight sm:text-[11px]" style={{ color: '#4ade80' }}>
+                    <div className="truncate text-[11px] font-bold leading-tight sm:text-[12px]" style={{ color: '#4ade80', textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}>
                       +{fmt(data.income)}
                     </div>
                   )}
                   {data.expense > 0 && (
-                    <div className="truncate text-[10px] font-semibold leading-tight sm:text-[11px]" style={{ color: '#fca5a5' }}>
+                    <div className="truncate text-[11px] font-bold leading-tight sm:text-[12px]" style={{ color: '#fca5a5', textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}>
                       -{fmt(data.expense)}
                     </div>
                   )}

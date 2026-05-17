@@ -53,10 +53,18 @@ export default async function TransactionsPage({
             </div>
           </div>
           <div className="flex items-center gap-2.5">
-            <MonthSwitcher currentMonth={month} />
+            <div className="hidden lg:block"><MonthSwitcher currentMonth={month} /></div>
             <ProfileDropdown displayName={displayName} avatarUrl={avatarUrl} />
           </div>
         </header>
+
+        {/* Mobile: MonthSwitcher below header */}
+        <div
+          className="lg:hidden sticky top-[57px] z-20 flex justify-center py-2"
+          style={{ background: 'rgba(8,8,14,.72)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(255,255,255,0.07)' }}
+        >
+          <MonthSwitcher currentMonth={month} />
+        </div>
 
         <main className="mx-auto max-w-2xl space-y-3 px-4 py-5 pb-32 lg:pb-10">
           <TransactionsView month={month} />
