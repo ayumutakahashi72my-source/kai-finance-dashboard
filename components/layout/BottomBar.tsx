@@ -34,7 +34,7 @@ export function BottomBar() {
         style={{ background: 'linear-gradient(180deg, transparent, rgba(10,10,16,0.92) 30%)' }}
       >
         <div
-          className="relative mx-3.5 flex items-center justify-between rounded-[24px] px-3 py-2"
+          className="relative mx-3.5 flex items-center rounded-[24px] px-3 py-2"
           style={{
             background: 'rgba(20,22,32,0.88)',
             backdropFilter: 'blur(20px) saturate(160%)',
@@ -42,44 +42,48 @@ export function BottomBar() {
             boxShadow: '0 8px 32px rgba(0,0,0,0.55)',
           }}
         >
-          {/* Left items */}
-          {LEFT_NAV.map((it) => {
-            const active = pathname === it.href
-            return (
-              <Link
-                key={it.href}
-                href={it.href}
-                aria-label={it.label}
-                aria-current={active ? 'page' : undefined}
-                className="flex min-h-[48px] min-w-[48px] flex-col items-center gap-[3px] p-[8px_10px]"
-                style={{ color: active ? CORAL : KAI.text3, textDecoration: 'none' }}
-              >
-                <Icon name={it.icon} size={20}/>
-                <span style={{ fontSize: 11, fontWeight: 600 }}>{it.label}</span>
-              </Link>
-            )
-          })}
+          {/* Left items — flex-1 so both sides are equal width */}
+          <div className="flex flex-1 items-center justify-around">
+            {LEFT_NAV.map((it) => {
+              const active = pathname === it.href
+              return (
+                <Link
+                  key={it.href}
+                  href={it.href}
+                  aria-label={it.label}
+                  aria-current={active ? 'page' : undefined}
+                  className="flex min-h-[48px] flex-col items-center gap-[3px] px-2 py-2"
+                  style={{ color: active ? CORAL : KAI.text3, textDecoration: 'none' }}
+                >
+                  <Icon name={it.icon} size={20}/>
+                  <span style={{ fontSize: 11, fontWeight: 600 }}>{it.label}</span>
+                </Link>
+              )
+            })}
+          </div>
 
           {/* Center FAB spacer */}
-          <div className="w-[54px]" />
+          <div className="w-[62px] shrink-0" />
 
-          {/* Right items */}
-          {RIGHT_NAV.map((it) => {
-            const active = pathname === it.href
-            return (
-              <Link
-                key={it.href}
-                href={it.href}
-                aria-label={it.label}
-                aria-current={active ? 'page' : undefined}
-                className="flex min-h-[48px] min-w-[48px] flex-col items-center gap-[3px] p-[8px_10px]"
-                style={{ color: active ? CORAL : KAI.text3, textDecoration: 'none' }}
-              >
-                <Icon name={it.icon} size={20}/>
-                <span style={{ fontSize: 11, fontWeight: 600 }}>{it.label}</span>
-              </Link>
-            )
-          })}
+          {/* Right items — flex-1 mirrors left */}
+          <div className="flex flex-1 items-center justify-around">
+            {RIGHT_NAV.map((it) => {
+              const active = pathname === it.href
+              return (
+                <Link
+                  key={it.href}
+                  href={it.href}
+                  aria-label={it.label}
+                  aria-current={active ? 'page' : undefined}
+                  className="flex min-h-[48px] flex-col items-center gap-[3px] px-2 py-2"
+                  style={{ color: active ? CORAL : KAI.text3, textDecoration: 'none' }}
+                >
+                  <Icon name={it.icon} size={20}/>
+                  <span style={{ fontSize: 11, fontWeight: 600 }}>{it.label}</span>
+                </Link>
+              )
+            })}
+          </div>
 
           {/* Center FAB */}
           <button
