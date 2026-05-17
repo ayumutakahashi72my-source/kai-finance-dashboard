@@ -9,18 +9,29 @@ import {
   TagIcon,
   BellIcon,
   ChevronRightIcon,
-  Link2Icon,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
+import type { ReactNode } from 'react'
+
+function MfIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="36" height="36" rx="9" fill="#f5c000"/>
+      <text x="18" y="25" textAnchor="middle" fontFamily="Arial,sans-serif" fontWeight="800" fontSize="17" fill="#0a0a10" letterSpacing="-0.5">MF</text>
+    </svg>
+  )
+}
 
 function SettingsRow({
   icon: Icon,
+  customIcon,
   title,
   description,
   href,
   accent = '#fb9477',
 }: {
-  icon: LucideIcon
+  icon?: LucideIcon
+  customIcon?: ReactNode
   title: string
   description?: string
   href: string
@@ -33,12 +44,12 @@ function SettingsRow({
     >
       <div
         className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px]"
-        style={{
+        style={customIcon ? {} : {
           background: `color-mix(in srgb, ${accent} 11%, transparent)`,
           border: `1px solid color-mix(in srgb, ${accent} 18%, transparent)`,
         }}
       >
-        <Icon className="size-[18px]" style={{ color: accent }} />
+        {customIcon ?? (Icon && <Icon className="size-[18px]" style={{ color: accent }} />)}
       </div>
       <div className="min-w-0 flex-1">
         <p className="text-[14px] font-medium leading-snug" style={{ color: '#e8e8f0' }}>
@@ -176,11 +187,10 @@ export default async function SettingsPage() {
             <p style={{ fontSize: 11, color: '#5e5e72', fontWeight: 700, letterSpacing: '.10em', marginBottom: 8, paddingLeft: 4 }}>連携</p>
             <Card>
               <SettingsRow
-                icon={Link2Icon}
+                customIcon={<MfIcon size={36} />}
                 title="MoneyForward Me 連携"
                 description="毎朝 6:00 に取引を自動取込"
                 href="/settings/integrations/mf"
-                accent="#7aa7ff"
               />
             </Card>
           </div>

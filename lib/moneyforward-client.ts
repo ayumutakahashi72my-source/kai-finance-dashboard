@@ -231,16 +231,16 @@ export async function mfLogin(
 
   if (!csrf) throw new Error('CSRFトークンが取得できませんでした')
 
-  // Step 3: POST ログイン
-  const loginBody = new URLSearchParams({
+  // Step 3: POST ログイン（まずメールアドレスだけ送信して2ステップに対応）
+  const emailBody = new URLSearchParams({
     ...hiddenFields,
     'user[email]': email,
-    'user[password]': password,
+    email: email,
     authenticity_token: csrf,
-    commit: 'ログイン',
+    commit: '次へ',
   })
 
-  const loginRes = await fetch(formAction, {
+  const emailRes = await fetch(formAction, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
@@ -250,28 +250,91 @@ export async function mfLogin(
       'User-Agent': UA,
       Referer: authPageUrl,
     },
-    body: loginBody.toString(),
+    body: emailBody.toString(),
     redirect: 'manual',
   })
-  jar.apply(formAction, loginRes)
+  jar.apply(formAction, emailRes)
 
   trace.push({
-    step: '3_post_login',
+    step: '3_post_email',
     url: formAction,
+    status: emailRes.status,
+    note: emailRes.headers.get('location')
+      ? `→ ${emailRes.headers.get('location')}`
+      : `cookies: [${jar.keys(formAction).join(', ')}]`,
+  })
+
+  // Step 3b: リダイレクト先でパスワードフォームがある場合（2ステップ）
+  const emailLocation = emailRes.headers.get('location')
+  let pwFormAction = formAction
+  let pwCsrf = csrf
+  let pwHiddenFields = hiddenFields
+
+  if (emailLocation) {
+    const pwPageUrl = emailLocation.startsWith('http') ? emailLocation : `${new URL(formAction).origin}${emailLocation}`
+    const { res: pwPageRes, url: resolvedPwUrl } = await followRedirects(pwPageUrl, jar, trace, '3b_pw_page')
+    const pwHtml = await pwPageRes.text()
+    const newCsrf = extractCsrfFromMeta(pwHtml)
+    const newAction = extractFormAction(pwHtml, resolvedPwUrl)
+    const newHidden = extractHiddenFields(pwHtml)
+
+    if (newCsrf) pwCsrf = newCsrf
+    if (newAction) pwFormAction = newAction
+    if (Object.keys(newHidden).length > 0) pwHiddenFields = newHidden
+
+    trace.push({
+      step: '3b_parse_pw_form',
+      url: resolvedPwUrl,
+      status: pwPageRes.status,
+      note: newCsrf ? `パスワードフォーム取得 csrf=${!!newCsrf} action=${pwFormAction}` : 'CSRFなし（1ステップ形式）',
+    })
+  }
+
+  // Step 4: パスワードをPOST
+  const pwBody = new URLSearchParams({
+    ...pwHiddenFields,
+    'user[email]': email,
+    'user[password]': password,
+    email: email,
+    password: password,
+    authenticity_token: pwCsrf,
+    commit: 'ログイン',
+  })
+
+  const loginRes = await fetch(pwFormAction, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'X-CSRF-Token': pwCsrf,
+      'X-Requested-With': 'XMLHttpRequest',
+      Cookie: jar.header(pwFormAction),
+      'User-Agent': UA,
+      Referer: emailLocation
+        ? (emailLocation.startsWith('http') ? emailLocation : `${new URL(formAction).origin}${emailLocation}`)
+        : authPageUrl,
+    },
+    body: pwBody.toString(),
+    redirect: 'manual',
+  })
+  jar.apply(pwFormAction, loginRes)
+
+  trace.push({
+    step: '4_post_password',
+    url: pwFormAction,
     status: loginRes.status,
     note: loginRes.headers.get('location')
       ? `→ ${loginRes.headers.get('location')}`
-      : `location header なし cookies: [${jar.keys(formAction).join(', ')}]`,
+      : `location header なし cookies: [${jar.keys(pwFormAction).join(', ')}]`,
   })
 
-  // Step 4: コールバックのリダイレクトチェーンを追跡
+  // Step 5: コールバックのリダイレクトチェーンを追跡
   const location = loginRes.headers.get('location')
   if (location) {
     const callbackUrl = location.startsWith('http') ? location : `${MF_BASE}${location}`
-    await followRedirects(callbackUrl, jar, trace, '4_callback')
+    await followRedirects(callbackUrl, jar, trace, '5_callback')
   }
 
-  // Step 5: 最終確認
+  // Step 6: 最終確認
   const mfCookieKeys = jar.keys(MF_BASE)
   trace.push({
     step: '5_final_check',
