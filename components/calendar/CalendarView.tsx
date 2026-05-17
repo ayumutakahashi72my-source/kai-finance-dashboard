@@ -146,7 +146,7 @@ function DayDetailOverlay({
       {data.transactions.length > 0 ? (
         <div>
           <p className="mb-2 text-xs font-semibold" style={{ color: '#8b8ba0' }}>取引一覧</p>
-          <div className="space-y-1.5 overflow-y-auto" style={{ maxHeight: 280 }}>
+          <div className="space-y-1.5">
             {data.transactions.map((tx) => {
               const cat = tx.category_id ? categoryMap[tx.category_id] : null
               return (
@@ -202,8 +202,10 @@ function DayDetailOverlay({
         />
         {/* Sheet */}
         <div
-          className="fixed bottom-0 left-0 right-0 z-50 rounded-t-[24px] px-4 pb-8 pt-4"
+          className="fixed bottom-0 left-0 right-0 z-50 flex flex-col rounded-t-[24px] px-4 pb-8 pt-4"
           style={{
+            maxHeight: '82vh',
+            overflowY: 'auto',
             background: 'rgba(16,18,28,0.98)',
             border: '1px solid rgba(255,255,255,0.12)',
             borderBottom: 'none',
@@ -212,7 +214,7 @@ function DayDetailOverlay({
           }}
         >
           {/* Handle */}
-          <div className="mx-auto mb-4 h-1 w-10 rounded-full" style={{ background: 'rgba(255,255,255,0.2)' }} />
+          <div className="mx-auto mb-4 h-1 w-10 shrink-0 rounded-full" style={{ background: 'rgba(255,255,255,0.2)' }} />
           {content}
         </div>
       </div>
