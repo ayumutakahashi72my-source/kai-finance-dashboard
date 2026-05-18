@@ -6,6 +6,7 @@ import { Skeleton } from '@/components/ui/Skeleton'
 import { useCountUp } from '@/components/kai/hooks'
 import { getCategoryIcon } from '@/lib/category-icons'
 import { KAI } from '@/lib/kai-tokens'
+import { FixedExpenseCard } from '@/components/budget/FixedExpenseCard'
 import type { Transaction, Category } from '@/lib/types'
 
 /* ─── types ─────────────────────────────────────────────────────── */
@@ -223,11 +224,11 @@ export function BudgetDashboard({ month: monthProp }: { month?: string } = {}) {
   /* 先月収入 */
   const prevMonthIncome = prevTxs.filter((tx) => tx.amount > 0).reduce((s, tx) => s + tx.amount, 0)
 
-  /* カテゴリ別支出集計 */
+  /* カテゴリ別支出集計（親カテゴリでロールアップ） */
   const actualByCategory: Record<string, number> = {}
   for (const tx of transactions) {
     if (tx.amount >= 0) continue
-    const name = tx.categories?.name ?? 'その他'
+    const name = tx.categories?.parent?.name ?? tx.categories?.name ?? 'その他'
     actualByCategory[name] = (actualByCategory[name] ?? 0) + Math.abs(tx.amount)
   }
 
@@ -357,7 +358,10 @@ export function BudgetDashboard({ month: monthProp }: { month?: string } = {}) {
         )}
       </section>
 
-      {/* ── 3. AI提案 ── */}
+      {/* ── 3. 固定費候補 ── */}
+      <FixedExpenseCard />
+
+      {/* ── 4. AI提案 ── */}
       <section style={{
         background: 'linear-gradient(135deg, rgba(167,139,250,.08), rgba(251,148,119,.04))',
         border: `1px solid ${KAI.violet}2e`,
