@@ -191,6 +191,22 @@ export function CategoryTransactionsPage({ catName, color, month, initialTxs, ca
   const [editingTx, setEditingTx]   = useState<Transaction | null>(null)
   const [deletingTx, setDeletingTx] = useState<Transaction | null>(null)
   const [menuId, setMenuId]         = useState<string | null>(null)
+  const [menuPos, setMenuPos]       = useState<{ top: number; right: number } | null>(null)
+  const [classifying, setClassifying]   = useState(false)
+  const [classifyResult, setClassifyResult] = useState<{ classified: number; total: number } | null>(null)
+
+  async function handleClassify() {
+    setClassifying(true)
+    setClassifyResult(null)
+    try {
+      const res  = await fetch('/api/transactions/classify', { method: 'POST' })
+      const data = await res.json() as { classified: number; total: number }
+      setClassifyResult(data)
+      qc.invalidateQueries({ queryKey: ['transactions', month] })
+    } finally {
+      setClassifying(false)
+    }
+  }
 
   /* クライアント側で再取得（編集・削除後のリフレッシュ用） */
   const { data: txRes } = useQuery<{ data: Transaction[] }>({
@@ -271,37 +287,21 @@ export function CategoryTransactionsPage({ catName, color, month, initialTxs, ca
                     <span style={{ fontSize: 14, fontWeight: 600, color: accent, fontFamily: MONO, letterSpacing: '-.01em' }}>
                       {tx.amount >= 0 ? '+' : ''}¥{Math.abs(tx.amount).toLocaleString('ja-JP')}
                     </span>
-                    <div style={{ position: 'relative' }}>
+                    <div>
                       <button
-                        onClick={() => setMenuId(isOpen ? null : tx.id)}
+                        onClick={(e) => {
+                          if (isOpen) { setMenuId(null); return }
+                          const rect = e.currentTarget.getBoundingClientRect()
+                          setMenuPos({ top: rect.bottom + 6, right: window.innerWidth - rect.right })
+                          setMenuId(tx.id)
+                        }}
                         style={{
-                          width: 30, height: 30, borderRadius: '50%',
+                          width: 36, height: 36, borderRadius: '50%',
                           background: 'transparent', border: 'none', cursor: 'pointer',
                           color: KAI.text4, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: 16,
+                          fontSize: 18,
                         }}
                       >⋯</button>
-                      {isOpen && (
-                        <>
-                          <div className="fixed inset-0 z-10" onClick={() => setMenuId(null)}/>
-                          <div style={{
-                            position: 'absolute', right: 0, top: 34, zIndex: 20,
-                            minWidth: 110, borderRadius: 12, overflow: 'hidden',
-                            background: 'rgba(20,22,32,.98)',
-                            border: '1px solid rgba(255,255,255,.12)',
-                            boxShadow: '0 8px 32px rgba(0,0,0,.6)',
-                          }}>
-                            <button
-                              onClick={() => { setMenuId(null); setEditingTx(tx) }}
-                              style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '10px 14px', fontSize: 13, color: '#c4c4d0', background: 'none', border: 'none', cursor: 'pointer' }}
-                            ><Pencil size={13}/> 編集</button>
-                            <button
-                              onClick={() => { setMenuId(null); setDeletingTx(tx) }}
-                              style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '10px 14px', fontSize: 13, color: '#fb7185', background: 'none', border: 'none', cursor: 'pointer' }}
-                            ><Trash2 size={13}/> 削除</button>
-                          </div>
-                        </>
-                      )}
                     </div>
                   </div>
                 )
@@ -348,6 +348,36 @@ export function CategoryTransactionsPage({ catName, color, month, initialTxs, ca
             {month.replace('-', '年')}月 · {transactions.length}件
           </div>
         </div>
+        <button
+          type="button"
+          onClick={handleClassify}
+          disabled={classifying}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 5,
+            padding: '7px 12px', borderRadius: 10, border: 'none', cursor: classifying ? 'not-allowed' : 'pointer',
+            background: classifyResult ? 'rgba(74,222,128,.12)' : 'rgba(251,191,36,.12)',
+            color: classifyResult ? '#4ade80' : '#fbbf24',
+            fontSize: 12, fontWeight: 600, fontFamily: 'inherit',
+            opacity: classifying ? 0.6 : 1,
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {classifying ? (
+            <>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#fbbf24', animation: 'kai-blink 1s steps(2) infinite', display: 'inline-block' }}/>
+              分類中…
+            </>
+          ) : classifyResult ? (
+            `✓ ${classifyResult.classified}件分類済`
+          ) : (
+            <>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 6v6l4 2"/><path d="M22 2 12 12"/>
+              </svg>
+              AI自動分類
+            </>
+          )}
+        </button>
       </header>
 
       {/* サマリーカード */}
@@ -410,6 +440,38 @@ export function CategoryTransactionsPage({ catName, color, month, initialTxs, ca
           </>
         )}
       </div>
+
+      {/* ⋯ メニュー（overflow:hidden の外に固定配置） */}
+      {menuId && menuPos && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setMenuId(null)}/>
+          <div style={{
+            position: 'fixed', top: menuPos.top, right: menuPos.right, zIndex: 50,
+            minWidth: 120, borderRadius: 12, overflow: 'hidden',
+            background: 'rgba(20,22,32,.98)',
+            border: '1px solid rgba(255,255,255,.12)',
+            boxShadow: '0 8px 32px rgba(0,0,0,.6)',
+          }}>
+            {(() => {
+              const tx = (txRes?.data ?? initialTxs).find((t) => t.id === menuId)
+              if (!tx) return null
+              return (
+                <>
+                  <button
+                    onClick={() => { setMenuId(null); setEditingTx(tx) }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '12px 16px', fontSize: 14, color: '#c4c4d0', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+                  ><Pencil size={14}/> 編集</button>
+                  <div style={{ height: 1, background: 'rgba(255,255,255,.06)' }}/>
+                  <button
+                    onClick={() => { setMenuId(null); setDeletingTx(tx) }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '12px 16px', fontSize: 14, color: '#fb7185', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+                  ><Trash2 size={14}/> 削除</button>
+                </>
+              )
+            })()}
+          </div>
+        </>
+      )}
 
       {/* ダイアログ */}
       {editingTx && (
