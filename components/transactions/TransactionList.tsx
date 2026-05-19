@@ -95,7 +95,9 @@ function EditDialog({
 
   async function handleSave() {
     const parsedAmount = parseInt(amount, 10)
-    if (!payee.trim() || !parsedAmount || !occurredOn) return
+    if (!payee.trim()) { setError('支払先を入力してください'); return }
+    if (!parsedAmount) { setError('金額を入力してください'); return }
+    if (!occurredOn)   { setError('日付を入力してください'); return }
     setSaving(true)
     setError('')
     try {
@@ -111,12 +113,18 @@ function EditDialog({
         }),
       })
       if (!res.ok) {
-        const j = await res.json()
-        setError(j.error ?? '保存に失敗しました')
+        let msg = '保存に失敗しました'
+        try {
+          const j = await res.json()
+          if (typeof j.error === 'string') msg = j.error
+        } catch { /* レスポンスがJSONでない場合は無視 */ }
+        setError(msg)
         return
       }
       onSaved()
       onClose()
+    } catch {
+      setError('通信エラーが発生しました')
     } finally {
       setSaving(false)
     }
@@ -180,7 +188,13 @@ function EditDialog({
             <Label className="text-[#8b8ba0] text-xs">カテゴリ</Label>
             <Select value={categoryId} onValueChange={(v) => setCategoryId(v ?? '')}>
               <SelectTrigger className="w-full bg-[#0a0a10] border-white/10 text-[#f0f0f5] focus-visible:border-[#fb9477]/50">
-                <SelectValue placeholder="選択なし" />
+                {(() => {
+                  if (!categoryId) return <span className="text-[#5e5e72]">選択なし</span>
+                  const found = categories.find((c) => c.id === categoryId)
+                  if (!found) return <span className="text-[#5e5e72]">選択なし</span>
+                  const parent = found.parent_id ? categories.find((c) => c.id === found.parent_id) : null
+                  return <span>{parent ? `${parent.name} › ${found.name}` : found.name}</span>
+                })()}
               </SelectTrigger>
               <SelectContent className="bg-[#14161f] border-white/10 text-[#f0f0f5]">
                 {sortedCategoryOptions(categories).map(({ cat, indent, parentName }) => (

@@ -38,7 +38,8 @@ export async function PATCH(
   if (!householdId) return NextResponse.json({ error: '世帯が見つかりません' }, { status: 400 })
 
   const { id } = await params
-  const body = await req.json()
+  let body: unknown
+  try { body = await req.json() } catch { return NextResponse.json({ error: 'リクエスト本文が不正です' }, { status: 400 }) }
   const parsed = UpdateSchema.safeParse(body)
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 })
@@ -67,39 +68,40 @@ export async function PATCH(
     return NextResponse.json({ error: error?.message ?? '取引が見つかりません' }, { status: 404 })
   }
 
-  // カテゴリが手動変更された場合
+  // カテゴリが手動変更された場合（失敗しても保存自体は成功扱い）
   if (parsed.data.category_id !== undefined && parsed.data.category_id !== null && updated.payee) {
-    const payeeKey = normalizeKeyword(updated.payee)
-    // 修正履歴を記録（直前に確定したカテゴリが存在し、それが変更された場合のみ）
-    // 初回設定（既存カテゴリ null）は「修正」ではないのでスキップ
-    if (existing?.category_id && parsed.data.category_id !== existing.category_id) {
-      await logCorrection(
-        householdId,
-        payeeKey,
-        existing.category_id,
-        parsed.data.category_id,
-        user.id,
-        supabase
-      )
-    }
-    // RAGキャッシュを即時更新
-    await supabase
-      .from('category_rag')
-      .upsert(
-        {
-          household_id: householdId,
-          payee_key: payeeKey,
-          category_id: parsed.data.category_id,
-          confidence: 1.0,
-          hit_count: 1,
-          last_seen: new Date().toISOString().slice(0, 10),
-        },
-        { onConflict: 'household_id,payee_key' }
-      )
+    try {
+      const payeeKey = normalizeKeyword(updated.payee)
+      if (existing?.category_id && parsed.data.category_id !== existing.category_id) {
+        await logCorrection(
+          householdId,
+          payeeKey,
+          existing.category_id,
+          parsed.data.category_id,
+          user.id,
+          supabase
+        )
+      }
+      await supabase
+        .from('category_rag')
+        .upsert(
+          {
+            household_id: householdId,
+            payee_key: payeeKey,
+            category_id: parsed.data.category_id,
+            confidence: 1.0,
+            hit_count: 1,
+            last_seen: new Date().toISOString().slice(0, 10),
+          },
+          { onConflict: 'household_id,payee_key' }
+        )
+    } catch { /* ログ・RAG更新の失敗は保存に影響させない */ }
   }
 
-  const month = updated.occurred_on.slice(0, 7)
-  await recalculateScore(supabase, householdId, month)
+  try {
+    const month = updated.occurred_on.slice(0, 7)
+    await recalculateScore(supabase, householdId, month)
+  } catch { /* スコア再計算の失敗は保存に影響させない */ }
 
   return NextResponse.json({ success: true })
 }

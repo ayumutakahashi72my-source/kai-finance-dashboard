@@ -75,10 +75,28 @@ export function TransactionFilters({ categories }: Props) {
   const active = isFilterActive(initial)
   const catIds = cat ? cat.split(',') : []
 
-  function toggleCat(id: string) {
-    const next = catIds.includes(id)
-      ? catIds.filter((x) => x !== id).join(',')
-      : [...catIds, id].join(',')
+  // 親カテゴリとその子IDをまとめたマップ
+  const parentGroups = new Map<string, string[]>()
+  for (const c of categories) {
+    if (!c.parent_id) parentGroups.set(c.id, [c.id])
+  }
+  for (const c of categories) {
+    if (c.parent_id && parentGroups.has(c.parent_id)) {
+      parentGroups.get(c.parent_id)!.push(c.id)
+    }
+  }
+  const parents = categories.filter((c) => !c.parent_id)
+
+  function isParentSelected(parentId: string) {
+    return (parentGroups.get(parentId) ?? []).some((id) => catIds.includes(id))
+  }
+
+  function toggleParent(parentId: string) {
+    const group = parentGroups.get(parentId) ?? [parentId]
+    const selected = group.some((id) => catIds.includes(id))
+    const next = selected
+      ? catIds.filter((id) => !group.includes(id)).join(',')
+      : [...catIds, ...group.filter((id) => !catIds.includes(id))].join(',')
     setCat(next)
     applyToUrl({ cat: next })
   }
@@ -144,22 +162,26 @@ export function TransactionFilters({ categories }: Props) {
         >
           {/* category chips */}
           <div>
-            <p style={{ fontSize: 10, color: KAI.text4, fontWeight: 700, letterSpacing: '.06em', margin: '0 0 6px' }}>カテゴリ</p>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-              {categories.map((c) => {
-                const selected = catIds.includes(c.id)
+            <p style={{ fontSize: 10, color: KAI.text4, fontWeight: 700, letterSpacing: '.06em', margin: '0 0 8px' }}>カテゴリ</p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {parents.map((c) => {
+                const selected = isParentSelected(c.id)
                 const color = c.color ?? KAI.text3
                 return (
                   <button
                     key={c.id}
                     type="button"
-                    onClick={() => toggleCat(c.id)}
+                    onClick={() => toggleParent(c.id)}
                     style={{
-                      fontSize: 11, padding: '4px 10px', borderRadius: 99,
-                      background: selected ? `${color}24` : 'rgba(255,255,255,.04)',
-                      border: `1px solid ${selected ? `${color}60` : 'rgba(255,255,255,.08)'}`,
-                      color: selected ? color : KAI.text3,
-                      cursor: 'pointer', fontWeight: 600,
+                      fontSize: 13,
+                      padding: '6px 14px',
+                      borderRadius: 99,
+                      background: selected ? `${color}28` : 'rgba(255,255,255,.05)',
+                      border: `1px solid ${selected ? `${color}70` : 'rgba(255,255,255,.10)'}`,
+                      color: selected ? color : KAI.text2,
+                      cursor: 'pointer',
+                      fontWeight: selected ? 700 : 500,
+                      whiteSpace: 'nowrap',
                     }}
                   >
                     {c.name}
