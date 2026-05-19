@@ -7,10 +7,12 @@ import { writeClassificationLogs, type ClassificationLogEntry } from './classifi
 import { trackCost, type TokenUsageAccum } from './cost-tracker'
 
 const MAX_BATCH = 10
-const RAG_EXACT_THRESHOLD = 0.90   // exact キャッシュの直接採用ライン
-const RAG_DIRECT_THRESHOLD = 0.92  // ベクトル検索で直接採用するライン
-const RAG_RERANK_THRESHOLD = 0.70  // LLM rerank の候補として使う下限
+const RAG_EXACT_THRESHOLD = 0.80   // exact キャッシュの直接採用ライン（LLM分類結果を再利用）
+const RAG_DIRECT_THRESHOLD = 0.88  // ベクトル検索で直接採用するライン
+const RAG_RERANK_THRESHOLD = 0.65  // LLM rerank の候補として使う下限
 const RAG_TOPK = 3                 // ベクトル検索の候補数
+
+const BAD_CATEGORY_NAMES = new Set(['未分類', 'その他', '不明', 'unknown', 'other'])
 
 // ===== 1. Merchant Normalization =====
 
@@ -69,7 +71,8 @@ async function fetchCategoryMaps(
   const idToName = new Map<string, string>()
   const parentIdById = new Map<string, string | null>()
   for (const c of data ?? []) {
-    nameToId.set(c.name, c.id)
+    // AI の選択肢から bad names を除外（分類先として選ばせない）
+    if (!BAD_CATEGORY_NAMES.has(c.name)) nameToId.set(c.name, c.id)
     idToName.set(c.id, c.name)
     parentIdById.set(c.id, c.parent_id ?? null)
   }
@@ -279,7 +282,8 @@ ${JSON.stringify(inputJson)}
 
 async function callHaikuFreeForm(
   items: ClassifyItem[],
-  client: Anthropic
+  client: Anthropic,
+  accum: TokenUsageAccum
 ): Promise<Array<{ index: number; categoryName: string }>> {
   const inputJson = items.map((it, localIndex) => ({
     index: localIndex,
@@ -306,6 +310,9 @@ ${JSON.stringify(inputJson)}
 [{"index": 0, "category_name": "外食"}, ...]`,
     }],
   })
+
+  accum.inputTokens  += msg.usage.input_tokens
+  accum.outputTokens += msg.usage.output_tokens
 
   const raw = msg.content[0].type === 'text' ? msg.content[0].text : ''
   const jsonMatch = raw.match(/\[[\s\S]*\]/)
@@ -507,7 +514,15 @@ export async function classifyTransactions(
       continue
     }
 
-    const best = candidates[0]
+    // bad category はベクトル候補から除外
+    const filteredCandidates = candidates.filter(
+      (c) => !BAD_CATEGORY_NAMES.has(idToName.get(c.category_id) ?? '')
+    )
+    if (!filteredCandidates.length) {
+      needsLLM.push(item)
+      continue
+    }
+    const best = filteredCandidates[0]
     if (best.similarity >= RAG_DIRECT_THRESHOLD) {
       // 高信頼度: 直接採用（confidence = similarity）
       categoryIdMap.set(item.index, best.category_id)
@@ -534,9 +549,9 @@ export async function classifyTransactions(
       })
     } else {
       // 曖昧: LLM rerank へ
-      const namedCandidates = candidates
+      const namedCandidates = filteredCandidates
         .map((c) => ({ ...c, category_name: idToName.get(c.category_id) ?? '' }))
-        .filter((c) => c.category_name)
+        .filter((c) => c.category_name && !BAD_CATEGORY_NAMES.has(c.category_name))
 
       if (!namedCandidates.length) {
         needsLLM.push(item)
@@ -709,6 +724,7 @@ export async function classifyFreeForm(
 
   const startTime = Date.now()
   const logs: ClassificationLogEntry[] = []
+  const tokenAccum: TokenUsageAccum = { inputTokens: 0, outputTokens: 0 }
 
   // ⓪ 修正履歴
   const allKeys = items.map((it) => normalizeKeyword(it.payee))
@@ -815,7 +831,10 @@ export async function classifyFreeForm(
   const needsLLM: ClassifyItem[] = []
 
   for (const item of remaining) {
-    const candidates = vecCandidates.get(item.index)
+    const rawCandidates = vecCandidates.get(item.index)
+    const candidates = rawCandidates?.filter(
+      (c) => !BAD_CATEGORY_NAMES.has(existingIdToName.get(c.category_id) ?? '')
+    )
     const best = candidates?.[0]
     if (best && best.similarity >= RAG_DIRECT_THRESHOLD) {
       categoryIdMap.set(item.index, best.category_id)
@@ -861,7 +880,7 @@ export async function classifyFreeForm(
   for (let i = 0; i < needsLLM.length; i += MAX_BATCH) {
     const batch = needsLLM.slice(i, i + MAX_BATCH)
     try {
-      allNamed.push(...await callHaikuFreeForm(batch, client))
+      allNamed.push(...await callHaikuFreeForm(batch, client, tokenAccum))
     } catch { /* バッチ失敗はスキップ */ }
   }
 
@@ -928,6 +947,16 @@ export async function classifyFreeForm(
   if (ragUpserts.length) {
     const { error: ragErr } = await supabase.from('category_rag').upsert(ragUpserts, { onConflict: 'household_id,payee_key' })
     if (ragErr) console.error('[classifier] category_rag upsert failed:', ragErr.message)
+  }
+
+  if (tokenAccum.inputTokens > 0 || tokenAccum.outputTokens > 0) {
+    void trackCost({
+      household_id: householdId,
+      model: 'claude-haiku-4-5-20251001',
+      feature: 'classification',
+      input_tokens: tokenAccum.inputTokens,
+      output_tokens: tokenAccum.outputTokens,
+    }, supabase)
   }
 
   void writeClassificationLogs(logs, supabase)

@@ -8,6 +8,7 @@ import { useCountUp } from '@/components/kai/hooks'
 import { getCategoryIcon } from '@/lib/category-icons'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { TransactionFilters, readFiltersFromUrl, isFilterActive } from '@/components/transactions/TransactionFilters'
+import { EditDialog, DeleteConfirmDialog } from '@/components/transactions/TransactionList'
 import type { Transaction, Category } from '@/lib/types'
 
 /* ─── helpers ─────────────────────────────────────────────────────── */
@@ -137,6 +138,7 @@ function CategoryBar({
 
 /* ─── TransactionsView ────────────────────────────────────────────── */
 
+
 export function TransactionsView({ month }: { month: string }) {
   const router = useRouter()
   const qc     = useQueryClient()
@@ -145,6 +147,13 @@ export function TransactionsView({ month }: { month: string }) {
   const hasFilter = isFilterActive(filters)
   const [classifying,    setClassifying]    = useState(false)
   const [classifyResult, setClassifyResult] = useState<{ classified: number; total: number } | null>(null)
+
+  // 編集・削除
+  const [editingTx,   setEditingTx]   = useState<Transaction | null>(null)
+  const [deletingTx,  setDeletingTx]  = useState<Transaction | null>(null)
+  const [menuId,      setMenuId]      = useState<string | null>(null)
+  const [menuPos,     setMenuPos]     = useState<{ top: number; right: number } | null>(null)
+  const [menuTx,      setMenuTx]      = useState<Transaction | null>(null)
 
   async function handleClassify() {
     setClassifying(true)
@@ -218,8 +227,62 @@ export function TransactionsView({ month }: { month: string }) {
     )
   }
 
+  function handleRefresh() {
+    qc.invalidateQueries({ queryKey: ['transactions'] })
+  }
+
+  function openMenu(e: React.MouseEvent, tx: Transaction) {
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+    setMenuPos({ top: rect.bottom + 6, right: window.innerWidth - rect.right })
+    setMenuTx(tx)
+    setMenuId(tx.id)
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+
+      {/* ── 編集・削除ダイアログ ── */}
+      {editingTx && (
+        <EditDialog
+          tx={editingTx}
+          categories={allCats}
+          onClose={() => setEditingTx(null)}
+          onSaved={() => { handleRefresh(); setEditingTx(null) }}
+        />
+      )}
+      {deletingTx && (
+        <DeleteConfirmDialog
+          tx={deletingTx}
+          onClose={() => setDeletingTx(null)}
+          onDeleted={() => { handleRefresh(); setDeletingTx(null) }}
+        />
+      )}
+
+      {/* ── ⋯ メニュー ── */}
+      {menuId && menuPos && menuTx && (
+        <>
+          <div style={{ position: 'fixed', inset: 0, zIndex: 40 }} onClick={() => setMenuId(null)} />
+          <div style={{
+            position: 'fixed', zIndex: 50,
+            top: menuPos.top, right: menuPos.right,
+            minWidth: 120, borderRadius: 12,
+            background: 'rgba(20,22,32,0.98)',
+            border: '1px solid rgba(255,255,255,0.12)',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+            overflow: 'hidden',
+          }}>
+            <button
+              onClick={() => { setMenuId(null); setEditingTx(menuTx) }}
+              style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '10px 14px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: KAI.text2, fontFamily: 'inherit' }}
+            >✏ 編集</button>
+            <div style={{ height: 1, background: 'rgba(255,255,255,0.06)' }} />
+            <button
+              onClick={() => { setMenuId(null); setDeletingTx(menuTx) }}
+              style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '10px 14px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: KAI.danger, fontFamily: 'inherit' }}
+            >🗑 削除</button>
+          </div>
+        </>
+      )}
 
       {/* ── 0. 検索・フィルタ ── */}
       <TransactionFilters categories={allCats} />
@@ -274,6 +337,10 @@ export function TransactionsView({ month }: { month: string }) {
                 }}>
                   {t.amount < 0 ? '−' : '+'}¥{Math.abs(t.amount).toLocaleString('ja-JP')}
                 </span>
+                <button
+                  onClick={(e) => { if (menuId === t.id) { setMenuId(null) } else { openMenu(e, t) } }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: KAI.text4, fontSize: 16, padding: '0 2px', lineHeight: 1, flexShrink: 0 }}
+                >⋯</button>
               </div>
             ))
           )}
@@ -380,6 +447,7 @@ export function TransactionsView({ month }: { month: string }) {
           </div>
         )}
       </section>
+
 
     </div>
   )

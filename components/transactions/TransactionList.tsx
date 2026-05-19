@@ -73,7 +73,7 @@ interface Props {
 }
 
 // ── 編集ダイアログ ──────────────────────────────────────────────────────────
-function EditDialog({
+export function EditDialog({
   tx,
   categories,
   onClose,
@@ -259,7 +259,7 @@ function EditDialog({
 }
 
 // ── 削除確認ダイアログ ───────────────────────────────────────────────────────
-function DeleteConfirmDialog({
+export function DeleteConfirmDialog({
   tx,
   onClose,
   onDeleted,

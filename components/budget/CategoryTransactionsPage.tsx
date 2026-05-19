@@ -242,91 +242,84 @@ export function CategoryTransactionsPage({ catName, color, month, initialTxs, ca
 
   const CatIcon = getCategoryIcon(catName)
 
-  function TxList({ groups, accent }: { groups: [string, Transaction[]][]; accent: string }) {
-    return (
-      <>
-        {groups.map(([date, txs]) => (
-          <div key={date} style={{ marginBottom: 12 }}>
-            <div style={{
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              padding: '5px 4px', marginBottom: 5,
-            }}>
-              <span style={{ fontSize: 12, fontWeight: 700, color: KAI.text4, letterSpacing: '.04em' }}>
-                {formatDate(date)}
-              </span>
-              <span style={{ fontSize: 11, color: KAI.text4, fontFamily: MONO }}>
-                ¥{Math.abs(txs.reduce((s, t) => s + t.amount, 0)).toLocaleString('ja-JP')}
-              </span>
-            </div>
-            <div style={{
-              background: 'rgba(20,22,32,0.66)',
-              border: '1px solid rgba(255,255,255,.08)',
-              borderRadius: 14, overflow: 'hidden',
-            }}>
-              {txs.map((tx, i) => {
-                const isOpen = menuId === tx.id
-                const TxIcon = getCategoryIcon(tx.categories?.name ?? '')
-                return (
-                  <div key={tx.id} style={{
-                    display: 'flex', alignItems: 'center', gap: 12,
-                    padding: '12px 14px', position: 'relative',
-                    borderBottom: i < txs.length - 1 ? '1px solid rgba(255,255,255,.05)' : 'none',
-                  }}>
-                    <div style={{
-                      width: 34, height: 34, borderRadius: 10, flexShrink: 0,
-                      background: `${accent}12`, border: `1px solid ${accent}28`, color: accent,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    }}>
-                      {tx.amount >= 0 ? <TrendingUp size={14}/> : <TxIcon size={14}/>}
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 500, color: KAI.text1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {tx.payee}
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 2 }}>
-                        <span style={{ fontSize: 11, color: KAI.text4 }}>
-                          {tx.categories
-                            ? tx.categories.parent
-                              ? `${tx.categories.parent.name} › ${tx.categories.name}`
-                              : tx.categories.name
-                            : tx.amount >= 0 ? '収入' : '支出'}
-                        </span>
-                        {tx.source === 'csv' && (
-                          <span style={{ fontSize: 10, background: 'rgba(167,139,250,.10)', color: '#a78bfa', borderRadius: 4, padding: '1px 5px' }}>CSV</span>
-                        )}
-                        {tx.source === 'auto' && (
-                          <span style={{ fontSize: 10, background: 'rgba(34,211,238,.10)', color: '#22d3ee', borderRadius: 4, padding: '1px 5px' }}>自動</span>
-                        )}
-                      </div>
-                    </div>
-                    <span style={{ fontSize: 14, fontWeight: 600, color: accent, fontFamily: MONO, letterSpacing: '-.01em' }}>
-                      {tx.amount >= 0 ? '+' : ''}¥{Math.abs(tx.amount).toLocaleString('ja-JP')}
-                    </span>
-                    <div>
-                      <button
-                        onClick={(e) => {
-                          if (isOpen) { setMenuId(null); return }
-                          const rect = e.currentTarget.getBoundingClientRect()
-                          setMenuPos({ top: rect.bottom + 6, right: window.innerWidth - rect.right })
-                          setMenuTx(tx)
-                          setMenuId(tx.id)
-                        }}
-                        style={{
-                          width: 36, height: 36, borderRadius: '50%',
-                          background: 'transparent', border: 'none', cursor: 'pointer',
-                          color: KAI.text4, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: 18,
-                        }}
-                      >⋯</button>
-                    </div>
+  function renderTxGroups(groups: [string, Transaction[]][], accent: string) {
+    return groups.map(([date, txs]) => (
+      <div key={date} style={{ marginBottom: 12 }}>
+        <div style={{
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          padding: '5px 4px', marginBottom: 5,
+        }}>
+          <span style={{ fontSize: 12, fontWeight: 700, color: KAI.text4, letterSpacing: '.04em' }}>
+            {formatDate(date)}
+          </span>
+          <span style={{ fontSize: 11, color: KAI.text4, fontFamily: MONO }}>
+            ¥{Math.abs(txs.reduce((s, t) => s + t.amount, 0)).toLocaleString('ja-JP')}
+          </span>
+        </div>
+        <div style={{
+          background: 'rgba(20,22,32,0.66)',
+          border: '1px solid rgba(255,255,255,.08)',
+          borderRadius: 14, overflow: 'hidden',
+        }}>
+          {txs.map((tx, i) => {
+            const TxIcon = getCategoryIcon(tx.categories?.name ?? '')
+            return (
+              <div key={tx.id} style={{
+                display: 'flex', alignItems: 'center', gap: 12,
+                padding: '12px 14px', position: 'relative',
+                borderBottom: i < txs.length - 1 ? '1px solid rgba(255,255,255,.05)' : 'none',
+              }}>
+                <div style={{
+                  width: 34, height: 34, borderRadius: 10, flexShrink: 0,
+                  background: `${accent}12`, border: `1px solid ${accent}28`, color: accent,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  {tx.amount >= 0 ? <TrendingUp size={14}/> : <TxIcon size={14}/>}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 500, color: KAI.text1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {tx.payee}
                   </div>
-                )
-              })}
-            </div>
-          </div>
-        ))}
-      </>
-    )
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 2 }}>
+                    <span style={{ fontSize: 11, color: KAI.text4 }}>
+                      {tx.categories
+                        ? tx.categories.parent
+                          ? `${tx.categories.parent.name} › ${tx.categories.name}`
+                          : tx.categories.name
+                        : tx.amount >= 0 ? '収入' : '支出'}
+                    </span>
+                    {tx.source === 'csv' && (
+                      <span style={{ fontSize: 10, background: 'rgba(167,139,250,.10)', color: '#a78bfa', borderRadius: 4, padding: '1px 5px' }}>CSV</span>
+                    )}
+                    {tx.source === 'auto' && (
+                      <span style={{ fontSize: 10, background: 'rgba(34,211,238,.10)', color: '#22d3ee', borderRadius: 4, padding: '1px 5px' }}>自動</span>
+                    )}
+                  </div>
+                </div>
+                <span style={{ fontSize: 14, fontWeight: 600, color: accent, fontFamily: MONO, letterSpacing: '-.01em' }}>
+                  {tx.amount >= 0 ? '+' : ''}¥{Math.abs(tx.amount).toLocaleString('ja-JP')}
+                </span>
+                <button
+                  onClick={(e) => {
+                    if (menuId === tx.id) { setMenuId(null); return }
+                    const rect = e.currentTarget.getBoundingClientRect()
+                    setMenuPos({ top: rect.bottom + 6, right: window.innerWidth - rect.right })
+                    setMenuTx(tx)
+                    setMenuId(tx.id)
+                  }}
+                  style={{
+                    width: 36, height: 36, borderRadius: '50%',
+                    background: 'transparent', border: 'none', cursor: 'pointer',
+                    color: KAI.text4, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 18,
+                  }}
+                >⋯</button>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    ))
   }
 
   return (
@@ -439,7 +432,7 @@ export function CategoryTransactionsPage({ catName, color, month, initialTxs, ca
                   fontSize: 10, fontWeight: 700, letterSpacing: '.12em', textTransform: 'uppercase',
                   color: '#fb7185', marginBottom: 8, paddingLeft: 2,
                 }}>出費</div>
-                <TxList groups={expenseGroups} accent="#fb7185"/>
+                {renderTxGroups(expenseGroups, '#fb7185')}
               </div>
             )}
 
@@ -450,7 +443,7 @@ export function CategoryTransactionsPage({ catName, color, month, initialTxs, ca
                   fontSize: 10, fontWeight: 700, letterSpacing: '.12em', textTransform: 'uppercase',
                   color: '#4ade80', marginBottom: 8, paddingLeft: 2,
                 }}>収入</div>
-                <TxList groups={incomeGroups} accent="#4ade80"/>
+                {renderTxGroups(incomeGroups, '#4ade80')}
               </div>
             )}
           </>
