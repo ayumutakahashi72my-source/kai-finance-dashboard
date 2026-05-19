@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Inter, Noto_Sans_JP, JetBrains_Mono } from 'next/font/google'
 import './globals.css'
 import { cn } from "@/lib/utils"
@@ -29,12 +29,15 @@ export const metadata: Metadata = {
   title: 'KAI — 家計簿管理システム',
   description: 'AI × 家計管理。支出の削減・節約をサポートするダッシュボード。',
   manifest: '/manifest.json',
-  themeColor: '#0d0d0d',
   icons: {
     icon: '/icon.svg',
     shortcut: '/icon.svg',
     apple: '/icon.svg',
   },
+}
+
+export const viewport: Viewport = {
+  themeColor: '#0d0d0d',
 }
 
 export default function RootLayout({
