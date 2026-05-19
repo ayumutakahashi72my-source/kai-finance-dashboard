@@ -388,7 +388,7 @@ export async function classifyTransactions(
   // ⓪ 修正履歴（最優先：ユーザーが手動修正した payee は即時確定）
   const allPayeeKeys = items.map((it) => normalizeKeyword(it.payee))
   const correctionMap = await checkCorrectionsBatch(allPayeeKeys, householdId, supabase)
-  let itemsAfterCorrections: ClassifyItem[] = []
+  const itemsAfterCorrections: ClassifyItem[] = []
   for (const item of items) {
     const correctedId = correctionMap.get(normalizeKeyword(item.payee))
     if (correctedId) {
@@ -429,7 +429,7 @@ export async function classifyTransactions(
     }
   }
 
-  let itemsAfterExactCache: ClassifyItem[] = []
+  const itemsAfterExactCache: ClassifyItem[] = []
   for (const item of itemsAfterCorrections) {
     const cached = exactCacheMap.get(normalizeKeyword(item.payee))
     if (cached) {
@@ -456,7 +456,7 @@ export async function classifyTransactions(
   }
 
   // ② Regex rule（DB 不要 — in-memory キーワードマッチ、純粋な perf optimization）
-  let remaining: ClassifyItem[] = []
+  const remaining: ClassifyItem[] = []
   for (const item of itemsAfterExactCache) {
     const payeeKey = normalizeKeyword(item.payee)
     const categoryName = classifyByKeyword(payeeKey)
@@ -713,7 +713,7 @@ export async function classifyFreeForm(
   // ⓪ 修正履歴
   const allKeys = items.map((it) => normalizeKeyword(it.payee))
   const correctionMap = await checkCorrectionsBatch(allKeys, householdId, supabase)
-  let itemsAfterCorrections: ClassifyItem[] = []
+  const itemsAfterCorrections: ClassifyItem[] = []
   for (const item of items) {
     const correctedId = correctionMap.get(normalizeKeyword(item.payee))
     if (correctedId) {
@@ -745,7 +745,7 @@ export async function classifyFreeForm(
     }
   }
 
-  let itemsAfterExactCache: ClassifyItem[] = []
+  const itemsAfterExactCache: ClassifyItem[] = []
   for (const item of itemsAfterCorrections) {
     const payeeKey = normalizeKeyword(item.payee)
     const cached = exactCacheMapFree.get(payeeKey)
@@ -773,7 +773,7 @@ export async function classifyFreeForm(
   }
 
   // ② Regex rule（DB 不要 — in-memory キーワードマッチ、純粋な perf optimization）
-  let remaining: ClassifyItem[] = []
+  const remaining: ClassifyItem[] = []
   for (const item of itemsAfterExactCache) {
     const payeeKey = normalizeKeyword(item.payee)
     const categoryName = classifyByKeyword(payeeKey)
