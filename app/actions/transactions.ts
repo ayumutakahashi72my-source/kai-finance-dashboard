@@ -129,7 +129,11 @@ export async function getTransactions(month?: string) {
       : `${y}-${String(m + 1).padStart(2, '0')}-01`
     query = query.gte('occurred_on', `${month}-01`).lt('occurred_on', nextMonth)
   } else {
-    query = query.limit(100)
+    // スパークライン（直近6ヶ月トレンド）用に全件取得。limit(100)だと古い月が切れる
+    const d = new Date()
+    d.setMonth(d.getMonth() - 6)
+    const since = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`
+    query = query.gte('occurred_on', since)
   }
 
   const { data } = await query

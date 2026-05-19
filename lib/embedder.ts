@@ -107,15 +107,19 @@ export async function embedTextsWithCache(
     if (cacheErr) console.error('[embedder] cache insert failed:', cacheErr.message)
   }
 
-  // ⑥ 元の順序で結果を組み立てて返す
+  // ⑥ 元の順序で結果を組み立てて返す（missIndexes.indexOf はO(n²)になるためMapに変換）
+  const missIndexMap = new Map<number, number>()
+  for (let j = 0; j < missIndexes.length; j++) {
+    missIndexMap.set(missIndexes[j], j)
+  }
   const result: number[][] = new Array(normalizedKeys.length)
   for (let i = 0; i < normalizedKeys.length; i++) {
     const fromCache = hitMap.get(hashes[i])
     if (fromCache) {
       result[i] = fromCache
     } else {
-      const missPos = missIndexes.indexOf(i)
-      result[i] = freshVectors[missPos] ?? []
+      const missPos = missIndexMap.get(i) ?? -1
+      result[i] = missPos >= 0 ? freshVectors[missPos] : []
     }
   }
   return result

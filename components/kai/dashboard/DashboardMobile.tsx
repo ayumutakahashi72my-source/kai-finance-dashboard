@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { Flame, Sparkles } from 'lucide-react';
 import { KAI } from '@/lib/kai-tokens';
 import {
@@ -33,18 +34,31 @@ const C_UPCOMING = [
 
 const C_GOAL = { name: '京都旅行', target: 150000, current: 80000 };
 
-function CategoryChip({ name, value, budget, color, icon, idx }: {
+// ── モジュールスコープ定数（毎レンダーでオブジェクト生成しない） ──
+const S_CHIP_WRAP = {
+  background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.06)',
+  borderRadius: 14, padding: '10px 12px',
+} as const;
+const S_CHIP_ROW = { display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 } as const;
+const S_CHIP_TRACK = { marginTop: 6, height: 3, borderRadius: 99, background: 'rgba(255,255,255,.06)', overflow: 'hidden' } as const;
+
+const S_RECENT_WRAP = {
+  background: 'rgba(255,255,255,.02)', border: '1px solid rgba(255,255,255,.06)',
+  borderRadius: 14, padding: '10px 12px', animation: 'kai-rise .6s .25s ease-out both',
+} as const;
+const S_RECENT_HDR = { display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 8 } as const;
+const S_RECENT_HDR_L = { display: 'flex', alignItems: 'baseline', gap: 8 } as const;
+const S_RECENT_ROWS = { display: 'flex', flexDirection: 'column' as const, gap: 5 };
+
+const CategoryChip = React.memo(function CategoryChip({ name, value, budget, color, icon, idx }: {
   name: string; value: number; budget: number; color: string; icon: string; idx: number;
 }) {
   const pct = Math.min(100, (value / budget) * 100);
   const over = value > budget;
   const animatedPct = useCountUp(pct, { duration: 1200, delay: 400 + idx * 80 });
   return (
-    <div style={{
-      background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.06)',
-      borderRadius: 14, padding: '10px 12px',
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+    <div style={S_CHIP_WRAP}>
+      <div style={S_CHIP_ROW}>
         <div style={{
           width: 22, height: 22, borderRadius: 7,
           background: `${color}22`, border: `1px solid ${color}44`,
@@ -58,7 +72,7 @@ function CategoryChip({ name, value, budget, color, icon, idx }: {
       <div style={{ fontSize: 14, fontWeight: 700, ...MONO_STYLE, color: over ? KAI.red : KAI.text1, letterSpacing: '-.01em' }}>
         ¥{value.toLocaleString('ja-JP')}
       </div>
-      <div style={{ marginTop: 6, height: 3, borderRadius: 99, background: 'rgba(255,255,255,.06)', overflow: 'hidden' }}>
+      <div style={S_CHIP_TRACK}>
         <div style={{
           height: '100%', width: `${Math.min(100, animatedPct)}%`,
           background: over ? KAI.red : color, borderRadius: 99,
@@ -69,7 +83,7 @@ function CategoryChip({ name, value, budget, color, icon, idx }: {
       </div>
     </div>
   );
-}
+});
 
 interface DashboardMobileProps {
   firstName?: string;
@@ -162,19 +176,16 @@ export function DashboardMobile({
         </div>
 
         {/* Today snapshot + recent transactions */}
-        <div style={{
-          background: 'rgba(255,255,255,.02)', border: '1px solid rgba(255,255,255,.06)',
-          borderRadius: 14, padding: '10px 12px', animation: 'kai-rise .6s .25s ease-out both',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 8 }}>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+        <div style={S_RECENT_WRAP}>
+          <div style={S_RECENT_HDR}>
+            <div style={S_RECENT_HDR_L}>
               <span style={{ fontSize: 10, color: KAI.text3, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase' }}>今日</span>
               <span style={{ fontSize: 16, fontWeight: 700, ...MONO_STYLE, color: KAI.text1, letterSpacing: '-.02em' }}>{yen(todayTotal)}</span>
               <span style={{ fontSize: 10, color: KAI.text4 }}>· 3件</span>
             </div>
             <span style={{ fontSize: 10, color: C_CORAL, fontWeight: 600 }}>詳細 ›</span>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+          <div style={S_RECENT_ROWS}>
             {C_RECENT.map((t, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 9, animation: `kai-rise .35s ${.35 + i * .05}s ease-out both` }}>
                 <div style={{

@@ -15,7 +15,8 @@ async function buildMonthContext(
   month: number
 ): Promise<string> {
   const since = `${year}-${String(month).padStart(2, '0')}-01`
-  const until = `${year}-${String(month).padStart(2, '0')}-31`
+  const lastDay = new Date(year, month, 0).getDate()
+  const until = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
 
   const { data: rows } = await supabase
     .from('transactions')
