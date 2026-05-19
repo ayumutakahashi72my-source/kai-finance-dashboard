@@ -148,9 +148,28 @@ VercelはPR時にプレビューデプロイ、`main`マージで本番デプロ
 
 ## 開発の流れ
 
-週次スプリントで約11週間かけて段階的に機能を追加。
-基本CRUDからAI統合、本番グレードのダッシュボードまでをインクリメンタルに実装。
-スキーマ変更は番号付きマイグレーションで追跡、各API設計は `docs/` に仕様書として残している。
+週次スプリント11週間で、基本CRUDからAI統合・本番グレードダッシュボードまでインクリメンタルに構築。
+スキーマ変更は番号付きマイグレーション25本で追跡し、各API設計は `docs/` に仕様書として残している。
 
-AI分類パイプラインは3段階で進化：キーワードルールのみ → キーワード＋Haikuフォールバック → キーワード＋pgvector RAG＋Haikuフォールバック。
+| Week | 実装内容 |
+|------|---------|
+| 1 | 環境構築（Next.js・Supabase・Vercel・Google OAuth） |
+| 2 | 取引CRUD基本（登録・一覧・削除） |
+| 3 | マルチ世帯スキーマ設計（households / household_members / transactions） |
+| 4 | カテゴリテーブル・階層構造設計 |
+| 5 | CSV取込み（Money Forward形式）＋MF非公式API連携・Vercel Cronによる自動取込み |
+| 6 | AI自動分類（Haiku）・RAGキャッシュ（キーワード + pgvector embedding 2段階ルックアップ） |
+| 7 | 予算提案・支出クセ分析（Haiku 統合呼び出し） |
+| 8 | 月次サマリー生成（Sonnet）・AIチャット機能 |
+| 9 | ダッシュボードUI（月切替・AiSummaryCard・AiChatPanel・カレンダービュー） |
+| 10 | 予算ダッシュボード（BudgetDashboard・ScoreRing・BudgetSuggestCard・SpendingPatternCard） |
+| 11 | 取引編集・削除（PATCH/DELETE API + UI）・月次スコア永続化・月初Cron（スコア確定・サマリー・予算提案・固定費検出） |
+
+**AI分類パイプラインの進化：**
+キーワードルールのみ → キーワード＋Haikuフォールバック → キーワード＋pgvector RAG＋Haikuフォールバック（3段階）。
 RAGレイヤーの導入でHaiku呼び出しを約80%削減しながら分類精度を維持。
+
+**設計上の試行錯誤：**
+- MF連携はPlaywrightヘッドレスブラウザ＋セッション管理で実装。Vercel Lambdaのバンドルサイズ制限に対応するため `@sparticuz/chromium-min` を採用し、`outputFileTracingIncludes` で `browsers.json` を強制コピーする対応が必要だった
+- スコア計算は取引の編集・削除のたびにリアルタイム再計算し、月初Cronで確定値として `monthly_scores` テーブルに永続化する2段階設計
+- Push通知はService Worker + Web Push APIで実装。Vercel Serverless環境でのVAPID鍵管理に注意が必要
