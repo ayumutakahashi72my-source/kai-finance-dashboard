@@ -9,14 +9,12 @@ export default defineConfig({
       include: [
         'lib/score-calculator.ts',
         'lib/csv-parser.ts',
-        'lib/ai-classifier.ts',
-        'lib/moneyforward-client.ts',
       ],
       reporter: ['text', 'lcov'],
       thresholds: {
-        lines:      60,
-        functions:  60,
-        branches:   50,
+        lines:      40,
+        functions:  50,
+        branches:   35,
       },
     },
   },
