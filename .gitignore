@@ -42,3 +42,14 @@ next-env.d.ts
 
 .vercel
 .env*.local
+
+# internal planning / design mockups
+*.md~
+KAI_計画書_*.md
+kai-design-implementation-plan.md
+mockup.html
+mock/*.html
+mock/*.png
+mock/*.bmp
+mock/design_handoff_*/
+mock/nextjs/
