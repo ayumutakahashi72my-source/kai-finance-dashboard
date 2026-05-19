@@ -1,11 +1,13 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
-import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { KAI } from '@/lib/kai-tokens'
 import { useCountUp } from '@/components/kai/hooks'
 import { getCategoryIcon } from '@/lib/category-icons'
 import { Skeleton } from '@/components/ui/Skeleton'
+import { TransactionFilters, readFiltersFromUrl, isFilterActive } from '@/components/transactions/TransactionFilters'
 import type { Transaction, Category } from '@/lib/types'
 
 /* ─── helpers ─────────────────────────────────────────────────────── */
@@ -137,10 +139,45 @@ function CategoryBar({
 
 export function TransactionsView({ month }: { month: string }) {
   const router = useRouter()
+  const qc     = useQueryClient()
+  const searchParams = useSearchParams()
+  const filters = readFiltersFromUrl(searchParams)
+  const hasFilter = isFilterActive(filters)
+  const [classifying,    setClassifying]    = useState(false)
+  const [classifyResult, setClassifyResult] = useState<{ classified: number; total: number } | null>(null)
+
+  async function handleClassify() {
+    setClassifying(true)
+    setClassifyResult(null)
+    try {
+      const res  = await fetch('/api/transactions/classify', { method: 'POST' })
+      const data = await res.json() as { classified: number; total: number }
+      setClassifyResult(data)
+      qc.invalidateQueries({ queryKey: ['transactions'] })
+    } finally {
+      setClassifying(false)
+    }
+  }
+
+  // URL から API パラメータを構築
+  const apiUrl = (() => {
+    const sp = new URLSearchParams()
+    if (filters.from || filters.to) {
+      if (filters.from) sp.set('from', filters.from)
+      if (filters.to)   sp.set('to', filters.to)
+    } else {
+      sp.set('month', month)
+    }
+    if (filters.q)   sp.set('q', filters.q)
+    if (filters.cat) sp.set('cat', filters.cat)
+    if (filters.min) sp.set('min', filters.min)
+    if (filters.max) sp.set('max', filters.max)
+    return `/api/transactions?${sp.toString()}`
+  })()
 
   const { data: txRes, isLoading } = useQuery<{ data: Transaction[] }>({
-    queryKey: ['transactions', month],
-    queryFn:  () => fetch(`/api/transactions?month=${month}`).then((r) => r.json()),
+    queryKey: ['transactions', month, filters.q, filters.cat, filters.from, filters.to, filters.min, filters.max],
+    queryFn:  () => fetch(apiUrl).then((r) => r.json()),
   })
   const { data: catRes } = useQuery<{ data: Category[] }>({
     queryKey: ['categories'],
@@ -184,6 +221,70 @@ export function TransactionsView({ month }: { month: string }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
 
+      {/* ── 0. 検索・フィルタ ── */}
+      <TransactionFilters categories={allCats} />
+
+      {/* ── フィルタ active 時は flat list 表示 ── */}
+      {hasFilter && (
+        <section
+          style={{
+            background: 'rgba(255,255,255,.02)', border: '1px solid rgba(255,255,255,.06)',
+            borderRadius: 14, overflow: 'hidden',
+          }}
+        >
+          <div style={{ padding: '10px 14px', borderBottom: '1px solid rgba(255,255,255,.04)', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+            <span style={{ fontSize: 11, color: KAI.text3, fontWeight: 700, letterSpacing: '.08em' }}>
+              検索結果
+            </span>
+            <span style={{ fontSize: 11, color: KAI.text4, ...MONO }}>{transactions.length} 件</span>
+          </div>
+          {transactions.length === 0 ? (
+            <div style={{ padding: '32px 20px', textAlign: 'center' }}>
+              <p style={{ fontSize: 13, color: KAI.text3, margin: 0 }}>該当する取引がありません</p>
+            </div>
+          ) : (
+            transactions.slice(0, 100).map((t, i) => (
+              <div
+                key={t.id}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '10px 14px',
+                  borderBottom: i < Math.min(transactions.length, 100) - 1 ? '1px solid rgba(255,255,255,.04)' : 'none',
+                }}
+              >
+                <div style={{
+                  width: 28, height: 28, borderRadius: 8, flexShrink: 0,
+                  background: `${t.categories?.color ?? KAI.text3}1c`,
+                  border: `1px solid ${t.categories?.color ?? KAI.text3}33`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13,
+                }}>
+                  {t.categories?.icon ?? '·'}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontSize: 12.5, color: KAI.text2, fontWeight: 500, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {t.payee}
+                  </p>
+                  <p style={{ fontSize: 10, color: KAI.text4, margin: '2px 0 0', ...MONO }}>
+                    {t.occurred_on} · {t.categories?.name ?? '未分類'}
+                  </p>
+                </div>
+                <span style={{
+                  fontSize: 13, fontWeight: 700, ...MONO, flexShrink: 0,
+                  color: t.amount < 0 ? KAI.danger : KAI.success,
+                }}>
+                  {t.amount < 0 ? '−' : '+'}¥{Math.abs(t.amount).toLocaleString('ja-JP')}
+                </span>
+              </div>
+            ))
+          )}
+          {transactions.length > 100 && (
+            <div style={{ padding: '8px 14px', textAlign: 'center', fontSize: 11, color: KAI.text4 }}>
+              上位 100 件を表示中（条件を絞り込んでください）
+            </div>
+          )}
+        </section>
+      )}
+
       {/* ── 1. 全体収支（1本の横棒） ── */}
       <section style={{
         background: 'rgba(255,255,255,.02)', border: '1px solid rgba(255,255,255,.06)',
@@ -213,10 +314,45 @@ export function TransactionsView({ month }: { month: string }) {
 
       {/* ── 2. カテゴリ別横棒グラフ ── */}
       <section style={{ animation: 'kai-rise .5s .1s ease-out both' }}>
-        <div style={{ marginBottom: 6 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
           <span style={{ fontSize: 10, color: KAI.text4, letterSpacing: '.14em', fontWeight: 700, textTransform: 'uppercase' }}>
             カテゴリ別
           </span>
+          {(() => {
+            const BAD = ['未分類', 'その他', '不明']
+            const uncategorized = transactions.filter((t) => !t.category_id || BAD.includes(t.categories?.name ?? '')).length
+            if (uncategorized === 0 && !classifyResult) return null
+            return (
+              <button
+                type="button"
+                onClick={handleClassify}
+                disabled={classifying}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 5,
+                  padding: '7px 12px', borderRadius: 10, border: 'none', cursor: classifying ? 'not-allowed' : 'pointer',
+                  background: classifyResult ? 'rgba(74,222,128,.12)' : 'rgba(251,191,36,.12)',
+                  color: classifyResult ? '#4ade80' : '#fbbf24',
+                  fontSize: 12, fontWeight: 600, fontFamily: 'inherit',
+                  opacity: classifying ? 0.6 : 1,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {classifying ? (
+                  <>
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#fbbf24', animation: 'kai-blink 1s steps(2) infinite', display: 'inline-block' }}/>
+                    分類中…
+                  </>
+                ) : classifyResult ? (
+                  `✓ ${classifyResult.classified}件分類済`
+                ) : (
+                  <>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 6v6l4 2"/><path d="M22 2 12 12"/></svg>
+                    未分類 {uncategorized}件をAI自動分類
+                  </>
+                )}
+              </button>
+            )
+          })()}
         </div>
 
         {categories.length > 0 ? (

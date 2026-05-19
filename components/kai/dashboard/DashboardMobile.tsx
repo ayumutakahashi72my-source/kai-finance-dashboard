@@ -1,5 +1,6 @@
 'use client';
 
+import { Flame, Sparkles } from 'lucide-react';
 import { KAI } from '@/lib/kai-tokens';
 import {
   useCountUp, Icon, KaiSystemBrand, CAvatar,
@@ -115,7 +116,7 @@ export function DashboardMobile({
               background: 'rgba(251,148,119,.12)', border: '1px solid rgba(251,148,119,.25)',
               borderRadius: 99, padding: '4px 9px', fontSize: 11, color: C_CORAL, fontWeight: 700,
             }}>
-              🔥 <span style={{ ...MONO_STYLE }}>{streak}日</span>
+              <Flame size={12} strokeWidth={2}/> <span style={{ ...MONO_STYLE }}>{streak}日</span>
             </span>
           )}
           <CAvatar size={32} initial={firstName.charAt(0)}/>
@@ -126,7 +127,7 @@ export function DashboardMobile({
         {/* greeting line */}
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
           <div style={{ fontSize: 12.5, color: KAI.text2 }}>
-            {greeting}、<span style={{ color: KAI.text1, fontWeight: 600 }}>{firstName}さん</span> 👋
+            {greeting}、<span style={{ color: KAI.text1, fontWeight: 600 }}>{firstName}さん</span>
           </div>
           <span style={{ fontSize: 10, color: KAI.text4, ...MONO_STYLE, letterSpacing: '.1em' }}>{displayDate}</span>
         </div>
@@ -236,8 +237,8 @@ export function DashboardMobile({
           <div style={{
             width: 26, height: 26, borderRadius: '50%', flexShrink: 0,
             background: `linear-gradient(135deg, ${C_CORAL}, ${C_PEACH})`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13,
-          }}>✨</div>
+            display: 'flex', alignItems: 'center', justifyContent: 'center', color: C_PEACH,
+          }}><Sparkles size={13} strokeWidth={1.8}/></div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 11.5, color: KAI.textBody, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               今週は外食 +32%、でも全体ペースは順調 <span style={{ color: C_CORAL, fontWeight: 700 }}>· AIに訳を聞く</span>

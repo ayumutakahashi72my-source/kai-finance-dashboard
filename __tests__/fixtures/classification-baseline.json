@@ -1,0 +1,109 @@
+{
+  "generatedAt": "2026-05-19",
+  "description": "Baseline metrics computed from category-golden.json (offline keyword classifier). Use scripts/update-classification-baseline.ts to regenerate.",
+  "totalEntries": 104,
+  "classifiableEntries": 103,
+  "accuracy": 0.9902912621359223,
+  "coverage": 0.9903846153846154,
+  "macroP": 0.9960000000000001,
+  "macroR": 0.9923076923076923,
+  "macroF1": 0.9941504178272982,
+  "knownMisses": [
+    {
+      "text": "AEON Cinema",
+      "expected": "娯楽費",
+      "predicted": "食費",
+      "normalized": "aeoncinema",
+      "reason": "matched 食費 rule instead"
+    },
+    {
+      "text": "ゲオ",
+      "expected": "娯楽費",
+      "predicted": null,
+      "normalized": "ゲオ",
+      "reason": "no rule matched"
+    }
+  ],
+  "categoryMetrics": {
+    "食費": {
+      "precision": 0.96,
+      "recall": 1,
+      "f1": 0.9795918367346939,
+      "tp": 24,
+      "fp": 1,
+      "fn": 0
+    },
+    "交通費": {
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "tp": 16,
+      "fp": 0,
+      "fn": 0
+    },
+    "日用品": {
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "tp": 14,
+      "fp": 0,
+      "fn": 0
+    },
+    "光熱費": {
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "tp": 6,
+      "fp": 0,
+      "fn": 0
+    },
+    "通信費": {
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "tp": 6,
+      "fp": 0,
+      "fn": 0
+    },
+    "娯楽費": {
+      "precision": 1,
+      "recall": 0.9230769230769231,
+      "f1": 0.9600000000000001,
+      "tp": 12,
+      "fp": 0,
+      "fn": 1
+    },
+    "衣服費": {
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "tp": 8,
+      "fp": 0,
+      "fn": 0
+    },
+    "医療費": {
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "tp": 9,
+      "fp": 0,
+      "fn": 0
+    },
+    "教育費": {
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "tp": 4,
+      "fp": 0,
+      "fn": 0
+    },
+    "収入": {
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "tp": 3,
+      "fp": 0,
+      "fn": 0
+    }
+  }
+}

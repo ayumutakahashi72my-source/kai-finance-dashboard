@@ -2,6 +2,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { BudgetAdviceResponseSchema, type BudgetAdviceResponse } from './ai-schemas'
 import { retryWithBackoff } from './retry'
+import { trackCost } from './cost-tracker'
 
 interface CategoryTotal {
   name: string
@@ -114,6 +115,14 @@ export async function generateBudgetAdvice(
       }),
     { maxRetries: 3 }
   )
+
+  void trackCost({
+    household_id: householdId,
+    model: 'claude-haiku-4-5-20251001',
+    feature: 'budget_suggest',
+    input_tokens: raw.usage.input_tokens,
+    output_tokens: raw.usage.output_tokens,
+  }, supabase)
 
   const text = raw.content[0].type === 'text' ? raw.content[0].text : ''
   const jsonMatch = text.match(/\{[\s\S]*\}/)

@@ -9,6 +9,10 @@ import {
   TagIcon,
   BellIcon,
   ChevronRightIcon,
+  TargetIcon,
+  Brain,
+  BarChart2,
+  Crown,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
@@ -92,6 +96,14 @@ export default async function SettingsPage() {
 
   const displayName = user.user_metadata?.full_name ?? user.email ?? 'ユーザー'
   const avatarUrl = user.user_metadata?.avatar_url as string | undefined
+
+  const { data: member } = await supabase
+    .from('household_members')
+    .select('is_admin')
+    .eq('user_id', user.id)
+    .limit(1)
+    .single()
+  const isAdmin = !!member?.is_admin
 
   return (
     <div className="min-h-screen" style={{ background: '#0c0a14' }}>
@@ -179,6 +191,24 @@ export default async function SettingsPage() {
                 description="支出カテゴリの追加・編集・削除"
                 href="/settings/categories"
               />
+              <Divider />
+              <SettingsRow
+                icon={TargetIcon}
+                title="目標管理"
+                description="貯蓄目標・月次予算をAIが算出"
+                href="/settings/goals"
+                accent="#fb9477"
+              />
+              <Divider />
+              <SettingsRow
+                customIcon={
+                  <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(122,167,255,.12)', border: '1px solid rgba(122,167,255,.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#7aa7ff' }}><Brain size={17} strokeWidth={2}/></div>
+                }
+                title="AI修正フィードバック"
+                description="カテゴリ修正の学習状況を確認"
+                href="/settings/corrections"
+                accent="#7aa7ff"
+              />
             </Card>
           </div>
 
@@ -207,6 +237,38 @@ export default async function SettingsPage() {
               />
             </Card>
           </div>
+
+          {/* 管理者セクション（管理者のみ表示） */}
+          {isAdmin && (
+            <div>
+              <p style={{ fontSize: 11, color: '#5e5e72', fontWeight: 700, letterSpacing: '.10em', marginBottom: 8, paddingLeft: 4 }}>管理者</p>
+              <Card>
+                <SettingsRow
+                  customIcon={
+                    <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(251,148,119,.12)', border: '1px solid rgba(251,148,119,.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fb9477' }}>
+                      <BarChart2 size={17} strokeWidth={2}/>
+                    </div>
+                  }
+                  title="AI 分析"
+                  description="分類精度・コスト・キャッシュヒット率"
+                  href="/admin/analytics"
+                  accent="#fb9477"
+                />
+                <Divider />
+                <SettingsRow
+                  customIcon={
+                    <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(251,148,119,.12)', border: '1px solid rgba(251,148,119,.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fb9477' }}>
+                      <Crown size={17} strokeWidth={2}/>
+                    </div>
+                  }
+                  title="メンバー権限管理"
+                  description="世帯メンバーの管理者権限を変更"
+                  href="/settings/admin/members"
+                  accent="#fb9477"
+                />
+              </Card>
+            </div>
+          )}
 
           {/* ビルド情報 */}
           <div style={{ padding: '12px 4px', display: 'flex', justifyContent: 'center' }}>

@@ -39,6 +39,8 @@ export const KAI = {
   green:     '#4ade80',
   danger:    '#fb7185',
   warning:   '#fbbf24',
+  info:      '#38bdf8',                          // sky-blue — vector / 情報系
+  orange:    '#f97316',                          // 強めの警告 / llm_freeform
 
   // ── Extra category colors ────────────────────────────
   amber:     '#f9b27e',

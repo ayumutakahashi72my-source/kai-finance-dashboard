@@ -1,5 +1,6 @@
 'use client';
 
+import { Sparkles } from 'lucide-react';
 import { KAI } from '@/lib/kai-tokens';
 import {
   useCountUp, Icon, KaiSystemBrand, CAvatar,
@@ -23,10 +24,10 @@ const B_CATEGORIES = [
 
 function budgetStatus(used: number, budget: number) {
   const pct = used / budget;
-  if (pct > 1)   return { label: '超過',   tone: '#fb7185', mood: '😬' };
-  if (pct > 0.9) return { label: '要注意', tone: '#fbbf24', mood: '😐' };
-  if (pct > 0.5) return { label: '順調',   tone: '#4ade80', mood: '🙂' };
-  return { label: '余裕', tone: '#4ade80', mood: '😊' };
+  if (pct > 1)   return { label: '超過',   tone: '#fb7185' };
+  if (pct > 0.9) return { label: '要注意', tone: '#fbbf24' };
+  if (pct > 0.5) return { label: '順調',   tone: '#4ade80' };
+  return { label: '余裕', tone: '#4ade80' };
 }
 
 function BudgetRow({ cat, idx, big = false }: {
@@ -73,7 +74,8 @@ function BudgetRow({ cat, idx, big = false }: {
         <span style={{ fontSize: 9.5, color: KAI.text4, ...MONO_STYLE }}>
           {Math.round(pct)}% 消化 · 残り ¥{Math.max(0, cat.budget - cat.used).toLocaleString('ja-JP')}
         </span>
-        <span style={{ fontSize: 9.5, color: KAI.text4, ...MONO_STYLE }}>{status.mood}</span>
+        <span style={{ width: 6, height: 6, borderRadius: '50%', display: 'inline-block', background: status.tone }}/>
+
       </div>
     </div>
   );
@@ -234,8 +236,8 @@ export function BudgetScreenMobile({ onNavClick, onAddClick }: BudgetScreenProps
           <div style={{
             width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
             background: `linear-gradient(135deg, ${C_CORAL}, ${C_PEACH})`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14,
-          }}>✨</div>
+            display: 'flex', alignItems: 'center', justifyContent: 'center', color: C_PEACH,
+          }}><Sparkles size={14} strokeWidth={1.8}/></div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 10, color: '#a78bfa', fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase' }}>提案</div>
             <div style={{ fontSize: 12, color: KAI.textBody, marginTop: 3, lineHeight: 1.55 }}>
@@ -342,7 +344,7 @@ export function BudgetScreenDesktop({ onNavClick }: BudgetScreenProps) {
               display: 'flex', alignItems: 'flex-start', gap: 12,
               animation: 'kai-rise .5s .24s ease-out both', marginTop: 'auto',
             }}>
-              <div style={{ width: 32, height: 32, borderRadius: '50%', flexShrink: 0, background: `linear-gradient(135deg, ${C_CORAL}, ${C_PEACH})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>✨</div>
+              <div style={{ width: 32, height: 32, borderRadius: '50%', flexShrink: 0, background: `linear-gradient(135deg, ${C_CORAL}, ${C_PEACH})`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}><Sparkles size={16} strokeWidth={1.8}/></div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 10, color: '#a78bfa', fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase' }}>kai からの提案</div>
                 <div style={{ fontSize: 13, color: KAI.textBody, marginTop: 4, lineHeight: 1.6 }}>

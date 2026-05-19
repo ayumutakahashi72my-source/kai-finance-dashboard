@@ -23,17 +23,22 @@ import {
 } from '@/components/ui/dialog'
 import type { Transaction, Category } from '@/lib/types'
 import { DEFAULT_CATEGORY_COLORS } from '@/lib/types'
+import { sortedCategoryOptions } from '@/lib/utils'
 
 const today = () => new Date().toISOString().split('T')[0]
 
 function categoryColor(tx: Transaction): string {
   if (tx.categories?.color) return tx.categories.color
+  if (tx.categories?.parent?.color) return tx.categories.parent.color
   if (tx.categories?.name) return DEFAULT_CATEGORY_COLORS[tx.categories.name] ?? '#8b8ba0'
   return tx.amount >= 0 ? '#4ade80' : '#fb7185'
 }
 
 function categoryLabel(tx: Transaction): string {
-  return tx.categories?.name ?? (tx.amount >= 0 ? '収入' : '支出')
+  const cat = tx.categories
+  if (!cat) return tx.amount >= 0 ? '収入' : '支出'
+  if (cat.parent) return `${cat.parent.name} › ${cat.name}`
+  return cat.name
 }
 
 function groupByDate(transactions: Transaction[]) {
@@ -178,15 +183,19 @@ function EditDialog({
                 <SelectValue placeholder="選択なし" />
               </SelectTrigger>
               <SelectContent className="bg-[#14161f] border-white/10 text-[#f0f0f5]">
-                {categories.map((cat) => (
+                {sortedCategoryOptions(categories).map(({ cat, indent, parentName }) => (
                   <SelectItem
                     key={cat.id}
                     value={cat.id}
                     className="focus:bg-white/5 focus:text-[#f0f0f5]"
                   >
-                    <span className="flex items-center gap-2">
+                    <span className="flex items-center gap-1.5">
+                      {indent && <span style={{ color: '#5e5e72', fontSize: 11 }}>└</span>}
                       {cat.icon && <span>{cat.icon}</span>}
-                      {cat.name}
+                      <span>{cat.name}</span>
+                      {indent && parentName && (
+                        <span style={{ color: '#5e5e72', fontSize: 10 }}>{parentName}</span>
+                      )}
                     </span>
                   </SelectItem>
                 ))}
@@ -296,6 +305,8 @@ export function TransactionList({ initial, categories, uncategorizedCount = 0 }:
   const [editingTx, setEditingTx] = useState<Transaction | null>(null)
   const [deletingTx, setDeletingTx] = useState<Transaction | null>(null)
   const [actionMenuId, setActionMenuId] = useState<string | null>(null)
+  const [menuPos, setMenuPos]   = useState<{ top: number; right: number } | null>(null)
+  const [menuTx, setMenuTx]     = useState<Transaction | null>(null)
 
   const [optimisticItems] = useOptimistic(
     initial,
@@ -324,6 +335,36 @@ export function TransactionList({ initial, categories, uncategorizedCount = 0 }:
 
   return (
     <div>
+      {/* ⋯ メニュー（fixed で overflow:hidden の外に描画） */}
+      {actionMenuId && menuPos && menuTx && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setActionMenuId(null)} />
+          <div
+            className="fixed z-50 min-w-[120px] overflow-hidden rounded-[12px]"
+            style={{
+              top: menuPos.top, right: menuPos.right,
+              background: 'rgba(20,22,32,0.98)',
+              border: '1px solid rgba(255,255,255,0.12)',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+            }}
+          >
+            <button
+              onClick={() => { setActionMenuId(null); setEditingTx(menuTx) }}
+              className="flex w-full items-center gap-2 px-4 py-3 text-[14px] text-[#c4c4d0] transition-colors hover:bg-white/5"
+            >
+              <Pencil className="size-3.5" /> 編集
+            </button>
+            <div className="h-px bg-white/5" />
+            <button
+              onClick={() => { setActionMenuId(null); setDeletingTx(menuTx) }}
+              className="flex w-full items-center gap-2 px-4 py-3 text-[14px] text-[#fb7185] transition-colors hover:bg-[#fb7185]/10"
+            >
+              <Trash2 className="size-3.5" /> 削除
+            </button>
+          </div>
+        </>
+      )}
+
       {/* 編集ダイアログ */}
       {editingTx && (
         <EditDialog
@@ -434,46 +475,20 @@ export function TransactionList({ initial, categories, uncategorizedCount = 0 }:
                       </span>
 
                       {/* アクションメニュー */}
-                      <div className="relative ml-1">
+                      <div className="ml-1">
                         <button
-                          onClick={() => setActionMenuId(isMenuOpen ? null : tx.id)}
-                          className="flex h-8 w-8 items-center justify-center rounded-full text-[#5e5e72] transition-colors hover:bg-white/5 hover:text-[#8b8ba0]"
+                          onClick={(e) => {
+                            if (isMenuOpen) { setActionMenuId(null); return }
+                            const rect = e.currentTarget.getBoundingClientRect()
+                            setMenuPos({ top: rect.bottom + 6, right: window.innerWidth - rect.right })
+                            setMenuTx(tx)
+                            setActionMenuId(tx.id)
+                          }}
+                          className="flex h-9 w-9 items-center justify-center rounded-full text-[#5e5e72] transition-colors hover:bg-white/5 hover:text-[#8b8ba0]"
                           aria-label="アクション"
                         >
                           ⋯
                         </button>
-                        {isMenuOpen && (
-                          <>
-                            {/* 背景クリックで閉じる */}
-                            <div
-                              className="fixed inset-0 z-10"
-                              onClick={() => setActionMenuId(null)}
-                            />
-                            <div
-                              className="absolute right-0 top-9 z-20 min-w-[120px] overflow-hidden rounded-[12px]"
-                              style={{
-                                background: 'rgba(20,22,32,0.98)',
-                                border: '1px solid rgba(255,255,255,0.12)',
-                                boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
-                              }}
-                            >
-                              <button
-                                onClick={() => { setActionMenuId(null); setEditingTx(tx) }}
-                                className="flex w-full items-center gap-2 px-4 py-2.5 text-[13px] text-[#c4c4d0] transition-colors hover:bg-white/5 hover:text-[#f0f0f5]"
-                              >
-                                <Pencil className="size-3.5" />
-                                編集
-                              </button>
-                              <button
-                                onClick={() => { setActionMenuId(null); setDeletingTx(tx) }}
-                                className="flex w-full items-center gap-2 px-4 py-2.5 text-[13px] text-[#fb7185] transition-colors hover:bg-[#fb7185]/10"
-                              >
-                                <Trash2 className="size-3.5" />
-                                削除
-                              </button>
-                            </div>
-                          </>
-                        )}
                       </div>
                     </div>
                   )

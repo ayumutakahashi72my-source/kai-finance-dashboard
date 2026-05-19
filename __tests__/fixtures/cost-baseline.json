@@ -1,0 +1,20 @@
+{
+  "generatedAt": "2026-05-19",
+  "description": "Baseline API call pressure metrics. Higher pressure = more LLM calls = higher cost. Regenerate with: npm run test:baseline:update",
+  "totalEntries": 104,
+  "classifiableEntries": 103,
+  "llmPressure": 0.009615384615384616,
+  "llmFallthrough": 1,
+  "cacheHitProxy": 0.990384615384615,
+  "apiCallsPerBatch": 0.1,
+  "models": {
+    "claude-haiku-4-5-20251001": { "input_per_mtok": 0.80, "output_per_mtok": 4.00 },
+    "claude-sonnet-4-6":         { "input_per_mtok": 3.00, "output_per_mtok": 15.00 }
+  },
+  "estimatedCostPerClassificationBatch": {
+    "description": "Estimated USD cost for one Haiku call classifying up to 10 items (typical token counts)",
+    "typicalInputTokens": 500,
+    "typicalOutputTokens": 100,
+    "costUsd": 0.0000008
+  }
+}

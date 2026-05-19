@@ -6,6 +6,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Pencil, Trash2, ArrowLeft, TrendingUp } from 'lucide-react'
 import { KAI } from '@/lib/kai-tokens'
 import { getCategoryIcon } from '@/lib/category-icons'
+import { sortedCategoryOptions } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -111,10 +112,15 @@ function EditDialog({ tx, categories, onClose, onSaved }: {
                 <SelectValue placeholder="選択なし"/>
               </SelectTrigger>
               <SelectContent className="bg-[#14161f] border-white/10 text-[#f0f0f5]">
-                {categories.map((cat) => (
+                {sortedCategoryOptions(categories).map(({ cat, indent, parentName }) => (
                   <SelectItem key={cat.id} value={cat.id} className="focus:bg-white/5">
-                    <span className="flex items-center gap-2">
-                      {cat.icon && <span>{cat.icon}</span>}{cat.name}
+                    <span className="flex items-center gap-1.5">
+                      {indent && <span style={{ color: '#5e5e72', fontSize: 11 }}>└</span>}
+                      {cat.icon && <span>{cat.icon}</span>}
+                      <span>{cat.name}</span>
+                      {indent && parentName && (
+                        <span style={{ color: '#5e5e72', fontSize: 10 }}>{parentName}</span>
+                      )}
                     </span>
                   </SelectItem>
                 ))}
@@ -192,6 +198,7 @@ export function CategoryTransactionsPage({ catName, color, month, initialTxs, ca
   const [deletingTx, setDeletingTx] = useState<Transaction | null>(null)
   const [menuId, setMenuId]         = useState<string | null>(null)
   const [menuPos, setMenuPos]       = useState<{ top: number; right: number } | null>(null)
+  const [menuTx, setMenuTx]         = useState<Transaction | null>(null)
   const [classifying, setClassifying]   = useState(false)
   const [classifyResult, setClassifyResult] = useState<{ classified: number; total: number } | null>(null)
 
@@ -216,7 +223,11 @@ export function CategoryTransactionsPage({ catName, color, month, initialTxs, ca
   })
 
   const allTxs = txRes?.data ?? initialTxs
-  const transactions = allTxs.filter((tx) => (tx.categories?.name ?? 'その他') === catName)
+  const transactions = allTxs.filter((tx) => {
+    const name       = tx.categories?.name ?? 'その他'
+    const parentName = tx.categories?.parent?.name
+    return name === catName || parentName === catName
+  })
 
   const expenses = transactions.filter((tx) => tx.amount < 0)
   const incomes  = transactions.filter((tx) => tx.amount >= 0)
@@ -274,7 +285,11 @@ export function CategoryTransactionsPage({ catName, color, month, initialTxs, ca
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 2 }}>
                         <span style={{ fontSize: 11, color: KAI.text4 }}>
-                          {tx.categories?.name ?? (tx.amount >= 0 ? '収入' : '支出')}
+                          {tx.categories
+                            ? tx.categories.parent
+                              ? `${tx.categories.parent.name} › ${tx.categories.name}`
+                              : tx.categories.name
+                            : tx.amount >= 0 ? '収入' : '支出'}
                         </span>
                         {tx.source === 'csv' && (
                           <span style={{ fontSize: 10, background: 'rgba(167,139,250,.10)', color: '#a78bfa', borderRadius: 4, padding: '1px 5px' }}>CSV</span>
@@ -293,6 +308,7 @@ export function CategoryTransactionsPage({ catName, color, month, initialTxs, ca
                           if (isOpen) { setMenuId(null); return }
                           const rect = e.currentTarget.getBoundingClientRect()
                           setMenuPos({ top: rect.bottom + 6, right: window.innerWidth - rect.right })
+                          setMenuTx(tx)
                           setMenuId(tx.id)
                         }}
                         style={{
@@ -442,7 +458,7 @@ export function CategoryTransactionsPage({ catName, color, month, initialTxs, ca
       </div>
 
       {/* ⋯ メニュー（overflow:hidden の外に固定配置） */}
-      {menuId && menuPos && (
+      {menuId && menuPos && menuTx && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setMenuId(null)}/>
           <div style={{
@@ -452,23 +468,15 @@ export function CategoryTransactionsPage({ catName, color, month, initialTxs, ca
             border: '1px solid rgba(255,255,255,.12)',
             boxShadow: '0 8px 32px rgba(0,0,0,.6)',
           }}>
-            {(() => {
-              const tx = (txRes?.data ?? initialTxs).find((t) => t.id === menuId)
-              if (!tx) return null
-              return (
-                <>
-                  <button
-                    onClick={() => { setMenuId(null); setEditingTx(tx) }}
-                    style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '12px 16px', fontSize: 14, color: '#c4c4d0', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
-                  ><Pencil size={14}/> 編集</button>
-                  <div style={{ height: 1, background: 'rgba(255,255,255,.06)' }}/>
-                  <button
-                    onClick={() => { setMenuId(null); setDeletingTx(tx) }}
-                    style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '12px 16px', fontSize: 14, color: '#fb7185', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
-                  ><Trash2 size={14}/> 削除</button>
-                </>
-              )
-            })()}
+            <button
+              onClick={() => { setMenuId(null); setEditingTx(menuTx) }}
+              style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '12px 16px', fontSize: 14, color: '#c4c4d0', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+            ><Pencil size={14}/> 編集</button>
+            <div style={{ height: 1, background: 'rgba(255,255,255,.06)' }}/>
+            <button
+              onClick={() => { setMenuId(null); setDeletingTx(menuTx) }}
+              style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '12px 16px', fontSize: 14, color: '#fb7185', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+            ><Trash2 size={14}/> 削除</button>
           </div>
         </>
       )}

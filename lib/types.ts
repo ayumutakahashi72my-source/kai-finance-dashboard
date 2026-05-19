@@ -7,7 +7,9 @@ export interface Category {
   color: string | null
   icon: string | null
   is_fixed: boolean
+  parent_id: string | null
   created_at: string
+  children?: Category[]
 }
 
 export interface Transaction {
@@ -21,7 +23,13 @@ export interface Transaction {
   source: TransactionSource | null
   source_hash: string | null
   created_at: string
-  categories?: Pick<Category, 'name' | 'color' | 'icon'> | null
+  categories?: {
+    name: string
+    color: string | null
+    icon: string | null
+    parent_id: string | null
+    parent?: { name: string; color: string | null } | null
+  } | null
 }
 
 export type TransactionType = 'expense' | 'income'

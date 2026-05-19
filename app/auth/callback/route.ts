@@ -29,7 +29,10 @@ export async function GET(request: NextRequest) {
     if (!error) {
       return NextResponse.redirect(`${origin}${next}`)
     }
+    console.error('[auth/callback] exchangeCodeForSession error:', error)
+    return NextResponse.redirect(`${origin}/login?error=auth_failed&reason=${encodeURIComponent(error.message)}`)
   }
 
-  return NextResponse.redirect(`${origin}/login?error=auth_failed`)
+  console.error('[auth/callback] no code in query params')
+  return NextResponse.redirect(`${origin}/login?error=auth_failed&reason=no_code`)
 }

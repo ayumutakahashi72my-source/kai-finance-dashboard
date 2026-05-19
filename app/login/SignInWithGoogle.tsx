@@ -21,10 +21,10 @@ export default function SignInWithGoogle() {
     <button
       onClick={handleSignIn}
       disabled={loading}
-      className="flex min-h-[44px] w-full items-center justify-center gap-3 rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-medium text-[#f0f0f5] transition-all hover:border-[#5eead4]/40 hover:bg-[#5eead4]/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5eead4] disabled:cursor-not-allowed disabled:opacity-50"
+      className="flex min-h-[44px] w-full items-center justify-center gap-3 rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-medium text-[#f0f0f5] transition-all hover:border-[#fb9477]/40 hover:bg-[#fb9477]/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#fb9477] disabled:cursor-not-allowed disabled:opacity-50"
     >
       {loading ? (
-        <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#5eead4] border-t-transparent" />
+        <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#fb9477] border-t-transparent" />
       ) : (
         <GoogleIcon />
       )}

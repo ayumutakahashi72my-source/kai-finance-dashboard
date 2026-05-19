@@ -8,8 +8,13 @@ export function CategoryBreakdown({ transactions }: { transactions: Transaction[
 
   const byCategory = Object.entries(
     expenses.reduce<Record<string, { amount: number; color: string; icon?: string }>>((acc, t) => {
-      const name = t.categories?.name ?? 'その他'
-      const color = t.categories?.color ?? DEFAULT_CATEGORY_COLORS[name] ?? '#8b8ba0'
+      // 親カテゴリがあれば親でロールアップ
+      const name = t.categories?.parent?.name ?? t.categories?.name ?? 'その他'
+      const color =
+        t.categories?.parent?.color ??
+        t.categories?.color ??
+        DEFAULT_CATEGORY_COLORS[name] ??
+        '#8b8ba0'
       const icon = t.categories?.icon ?? undefined
       acc[name] = { amount: (acc[name]?.amount ?? 0) + Math.abs(t.amount), color, icon }
       return acc

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { RefreshCw, Pin } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { KAI } from '@/lib/kai-tokens'
@@ -22,18 +23,18 @@ function FixedRow({
   item,
   onDismiss,
   onRestore,
-  isPending,
+  pendingId,
 }: {
   item: FixedExpense
   onDismiss: (id: string) => void
   onRestore: (id: string) => void
-  isPending: boolean
+  pendingId: string | null
 }) {
   return (
     <div style={{
       display: 'flex', alignItems: 'center', gap: 10,
       padding: '10px 14px',
-      opacity: item.dismissed ? 0.45 : 1,
+      opacity: item.dismissed ? 0.45 : pendingId === item.id ? 0.6 : 1,
       transition: 'opacity .2s',
     }}>
       {/* アイコン */}
@@ -41,8 +42,9 @@ function FixedRow({
         width: 32, height: 32, borderRadius: 10, flexShrink: 0,
         background: item.dismissed ? 'rgba(255,255,255,.04)' : `${KAI.violet}18`,
         border: `1px solid ${item.dismissed ? 'rgba(255,255,255,.08)' : KAI.violet + '30'}`,
-        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15,
-      }}>🔄</div>
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        color: item.dismissed ? KAI.text4 : KAI.violet,
+      }}><RefreshCw size={14} strokeWidth={2}/></div>
 
       {/* 名前・期間 */}
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -69,29 +71,27 @@ function FixedRow({
       {item.dismissed ? (
         <button
           type="button"
-          disabled={isPending}
+          disabled={pendingId === item.id}
           onClick={() => onRestore(item.id)}
           style={{
             fontSize: 10, fontWeight: 600, padding: '4px 9px', borderRadius: 7,
             background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.12)',
-            color: KAI.text3, cursor: isPending ? 'not-allowed' : 'pointer',
+            color: KAI.text3, cursor: pendingId === item.id ? 'not-allowed' : 'pointer',
             fontFamily: 'inherit', whiteSpace: 'nowrap', flexShrink: 0,
-            opacity: isPending ? 0.5 : 1,
           }}
-        >元に戻す</button>
+        >{pendingId === item.id ? '…' : '元に戻す'}</button>
       ) : (
         <button
           type="button"
-          disabled={isPending}
+          disabled={pendingId === item.id}
           onClick={() => onDismiss(item.id)}
           style={{
             fontSize: 10, fontWeight: 600, padding: '4px 9px', borderRadius: 7,
             background: `${KAI.danger}12`, border: `1px solid ${KAI.danger}30`,
-            color: KAI.danger, cursor: isPending ? 'not-allowed' : 'pointer',
+            color: KAI.danger, cursor: pendingId === item.id ? 'not-allowed' : 'pointer',
             fontFamily: 'inherit', whiteSpace: 'nowrap', flexShrink: 0,
-            opacity: isPending ? 0.5 : 1,
           }}
-        >却下</button>
+        >{pendingId === item.id ? '…' : '却下'}</button>
       )}
     </div>
   )
@@ -100,15 +100,17 @@ function FixedRow({
 export function FixedExpenseCard() {
   const qc = useQueryClient()
   const [showDismissed, setShowDismissed] = useState(false)
+  const [pendingId, setPendingId] = useState<string | null>(null)
 
-  const { data, isLoading } = useQuery<{ data: FixedExpense[] }>({
+  const { data, isLoading, isError } = useQuery<{ data: FixedExpense[] }>({
     queryKey: ['fixed_expenses'],
     queryFn:  () => fetch('/api/fixed-expenses').then((r) => r.json()),
   })
 
-  const { mutate, isPending } = useMutation({
-    mutationFn: ({ id, dismissed }: { id: string; dismissed: boolean }) =>
-      fetch('/api/fixed-expenses', {
+  const { mutate } = useMutation({
+    mutationFn: ({ id, dismissed }: { id: string; dismissed: boolean }) => {
+      setPendingId(id)
+      return fetch('/api/fixed-expenses', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, dismissed }),
@@ -116,7 +118,9 @@ export function FixedExpenseCard() {
         const j = await r.json()
         if (!r.ok) throw new Error(j.error ?? '更新失敗')
         return j
-      }),
+      })
+    },
+    onSettled: () => setPendingId(null),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['fixed_expenses'] }),
   })
 
@@ -127,6 +131,10 @@ export function FixedExpenseCard() {
       </div>
     )
   }
+
+  if (isError) return (
+    <p style={{ fontSize: 11, color: KAI.danger, padding: '8px 0' }}>固定費候補の取得に失敗しました</p>
+  )
 
   const all       = data?.data ?? []
   const active    = all.filter((x) => !x.dismissed)
@@ -161,7 +169,7 @@ export function FixedExpenseCard() {
           borderBottom: '1px solid rgba(255,255,255,.05)',
           display: 'flex', alignItems: 'center', gap: 8,
         }}>
-          <span style={{ fontSize: 13 }}>📌</span>
+          <Pin size={13} strokeWidth={2} style={{ color: KAI.violet, flexShrink: 0 }}/>
           <p style={{ fontSize: 11, color: KAI.text3, lineHeight: 1.5 }}>
             3ヶ月以上連続で検出された支払いです。固定費として管理するか確認してください。
           </p>
@@ -178,7 +186,7 @@ export function FixedExpenseCard() {
                 item={item}
                 onDismiss={(id) => mutate({ id, dismissed: true })}
                 onRestore={(id) => mutate({ id, dismissed: false })}
-                isPending={isPending}
+                pendingId={pendingId}
               />
             </div>
           ))
@@ -215,7 +223,7 @@ export function FixedExpenseCard() {
                   item={item}
                   onDismiss={(id) => mutate({ id, dismissed: true })}
                   onRestore={(id) => mutate({ id, dismissed: false })}
-                  isPending={isPending}
+                  pendingId={pendingId}
                 />
               </div>
             ))}

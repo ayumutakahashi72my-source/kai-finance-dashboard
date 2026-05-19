@@ -1,5 +1,6 @@
 'use client'
 
+import { Sparkles } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Skeleton } from '@/components/ui/Skeleton'
@@ -373,8 +374,8 @@ export function BudgetDashboard({ month: monthProp }: { month?: string } = {}) {
         <div style={{
           width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
           background: `linear-gradient(135deg, ${KAI.coral}, ${KAI.peach})`,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14,
-        }}>✨</div>
+          display: 'flex', alignItems: 'center', justifyContent: 'center', color: KAI.peach,
+        }}><Sparkles size={14} strokeWidth={1.8}/></div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 10, color: KAI.violet, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase' }}>
             提案

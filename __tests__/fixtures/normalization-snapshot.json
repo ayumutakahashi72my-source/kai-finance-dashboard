@@ -1,0 +1,422 @@
+{
+  "generatedAt": "2026-05-19",
+  "description": "Stored normalizeKeyword outputs for all golden entries. Regenerate with: npm run test:baseline:update",
+  "snapshots": [
+    {
+      "text": "セブンイレブン",
+      "normalized": "セブンイレブン"
+    },
+    {
+      "text": "ファミリーマート",
+      "normalized": "ファミリーマート"
+    },
+    {
+      "text": "ローソン",
+      "normalized": "ローソン"
+    },
+    {
+      "text": "イオン",
+      "normalized": "イオン"
+    },
+    {
+      "text": "イトーヨーカドー",
+      "normalized": "イトーヨーカドー"
+    },
+    {
+      "text": "西友",
+      "normalized": "西友"
+    },
+    {
+      "text": "ライフ",
+      "normalized": "ライフ"
+    },
+    {
+      "text": "マルエツ",
+      "normalized": "マルエツ"
+    },
+    {
+      "text": "ベルク",
+      "normalized": "ベルク"
+    },
+    {
+      "text": "サミット",
+      "normalized": "サミット"
+    },
+    {
+      "text": "業務スーパー",
+      "normalized": "業務スーパー"
+    },
+    {
+      "text": "コストコ",
+      "normalized": "コストコ"
+    },
+    {
+      "text": "吉野家",
+      "normalized": "吉野家"
+    },
+    {
+      "text": "松屋",
+      "normalized": "松屋"
+    },
+    {
+      "text": "すき家",
+      "normalized": "すき家"
+    },
+    {
+      "text": "マクドナルド",
+      "normalized": "マクドナルド"
+    },
+    {
+      "text": "モスバーガー",
+      "normalized": "モスバーガー"
+    },
+    {
+      "text": "スターバックス",
+      "normalized": "スターバックス"
+    },
+    {
+      "text": "ドトール",
+      "normalized": "ドトール"
+    },
+    {
+      "text": "サイゼリヤ",
+      "normalized": "サイゼリヤ"
+    },
+    {
+      "text": "ガスト",
+      "normalized": "ガスト"
+    },
+    {
+      "text": "デニーズ",
+      "normalized": "デニーズ"
+    },
+    {
+      "text": "くら寿司",
+      "normalized": "くら寿司"
+    },
+    {
+      "text": "はま寿司",
+      "normalized": "はま寿司"
+    },
+    {
+      "text": "ENEOS",
+      "normalized": "eneos"
+    },
+    {
+      "text": "出光",
+      "normalized": "出光"
+    },
+    {
+      "text": "コスモ石油",
+      "normalized": "コスモ石油"
+    },
+    {
+      "text": "Suica チャージ",
+      "normalized": "suicaチャージ"
+    },
+    {
+      "text": "PASMOチャージ",
+      "normalized": "pasmoチャージ"
+    },
+    {
+      "text": "ICOCAチャージ",
+      "normalized": "icocaチャージ"
+    },
+    {
+      "text": "東京メトロ",
+      "normalized": "東京メトロ"
+    },
+    {
+      "text": "JR東日本",
+      "normalized": "jr東日本"
+    },
+    {
+      "text": "小田急電鉄",
+      "normalized": "小田急電鉄"
+    },
+    {
+      "text": "東急電鉄",
+      "normalized": "東急電鉄"
+    },
+    {
+      "text": "西武鉄道",
+      "normalized": "西武鉄道"
+    },
+    {
+      "text": "タクシー料金",
+      "normalized": "タクシー料金"
+    },
+    {
+      "text": "日本交通タクシー",
+      "normalized": "日本交通タクシー"
+    },
+    {
+      "text": "Times駐車場",
+      "normalized": "times駐車場"
+    },
+    {
+      "text": "カーシェアリング Times",
+      "normalized": "カーシェアリングtimes"
+    },
+    {
+      "text": "トヨタレンタカー",
+      "normalized": "トヨタレンタカー"
+    },
+    {
+      "text": "ドラッグストアマツキヨ",
+      "normalized": "ドラッグストアマツキヨ"
+    },
+    {
+      "text": "ウエルシア",
+      "normalized": "ウエルシア"
+    },
+    {
+      "text": "ツルハドラッグ",
+      "normalized": "ツルハドラッグ"
+    },
+    {
+      "text": "カワチ薬品",
+      "normalized": "カワチ薬品"
+    },
+    {
+      "text": "コーナン",
+      "normalized": "コーナン"
+    },
+    {
+      "text": "カインズホーム",
+      "normalized": "カインズホーム"
+    },
+    {
+      "text": "ニトリ",
+      "normalized": "ニトリ"
+    },
+    {
+      "text": "無印良品",
+      "normalized": "無印良品"
+    },
+    {
+      "text": "ダイソー",
+      "normalized": "ダイソー"
+    },
+    {
+      "text": "セリア",
+      "normalized": "セリア"
+    },
+    {
+      "text": "キャンドゥ",
+      "normalized": "キャンドゥ"
+    },
+    {
+      "text": "東京電力",
+      "normalized": "東京電力"
+    },
+    {
+      "text": "関西電力",
+      "normalized": "関西電力"
+    },
+    {
+      "text": "東京ガス",
+      "normalized": "東京ガス"
+    },
+    {
+      "text": "大阪ガス",
+      "normalized": "大阪ガス"
+    },
+    {
+      "text": "東京都水道局",
+      "normalized": "東京都水道局"
+    },
+    {
+      "text": "東京都下水道局",
+      "normalized": "東京都下水道局"
+    },
+    {
+      "text": "ソフトバンク通話料",
+      "normalized": "ソフトバンク通話料"
+    },
+    {
+      "text": "ドコモ利用料",
+      "normalized": "ドコモ利用料"
+    },
+    {
+      "text": "au 利用料",
+      "normalized": "au利用料"
+    },
+    {
+      "text": "楽天モバイル",
+      "normalized": "楽天モバイル"
+    },
+    {
+      "text": "NTTフレッツ",
+      "normalized": "nttフレッツ"
+    },
+    {
+      "text": "OCN",
+      "normalized": "ocn"
+    },
+    {
+      "text": "Netflix",
+      "normalized": "netflix"
+    },
+    {
+      "text": "Spotify",
+      "normalized": "spotify"
+    },
+    {
+      "text": "Amazon Prime",
+      "normalized": "amazonprime"
+    },
+    {
+      "text": "Apple TV+",
+      "normalized": "appletv"
+    },
+    {
+      "text": "Disney+",
+      "normalized": "disney"
+    },
+    {
+      "text": "U-NEXT",
+      "normalized": "unext"
+    },
+    {
+      "text": "Steam",
+      "normalized": "steam"
+    },
+    {
+      "text": "ニンテンドーeショップ",
+      "normalized": "ニンテンドーe"
+    },
+    {
+      "text": "映画館",
+      "normalized": "映画館"
+    },
+    {
+      "text": "TOHOシネマズ",
+      "normalized": "tohoシネマズ"
+    },
+    {
+      "text": "AEON Cinema",
+      "normalized": "aeoncinema"
+    },
+    {
+      "text": "BookOff",
+      "normalized": "bookoff"
+    },
+    {
+      "text": "ゲオ",
+      "normalized": "ゲオ"
+    },
+    {
+      "text": "カラオケ まねきねこ",
+      "normalized": "カラオケまねきねこ"
+    },
+    {
+      "text": "ユニクロ",
+      "normalized": "ユニクロ"
+    },
+    {
+      "text": "GU",
+      "normalized": "gu"
+    },
+    {
+      "text": "ZARA",
+      "normalized": "zara"
+    },
+    {
+      "text": "H&M",
+      "normalized": "hm"
+    },
+    {
+      "text": "しまむら",
+      "normalized": "しまむら"
+    },
+    {
+      "text": "青山商事",
+      "normalized": "青山商事"
+    },
+    {
+      "text": "ABCマート",
+      "normalized": "abcマート"
+    },
+    {
+      "text": "AOYAMA",
+      "normalized": "aoyama"
+    },
+    {
+      "text": "クリニック",
+      "normalized": "クリニック"
+    },
+    {
+      "text": "内科",
+      "normalized": "内科"
+    },
+    {
+      "text": "歯科",
+      "normalized": "歯科"
+    },
+    {
+      "text": "調剤薬局",
+      "normalized": "調剤薬局"
+    },
+    {
+      "text": "眼科",
+      "normalized": "眼科"
+    },
+    {
+      "text": "整形外科",
+      "normalized": "整形外科"
+    },
+    {
+      "text": "病院",
+      "normalized": "病院"
+    },
+    {
+      "text": "スポーツジム",
+      "normalized": "スポーツジム"
+    },
+    {
+      "text": "コナミスポーツ",
+      "normalized": "コナミスポーツ"
+    },
+    {
+      "text": "公文",
+      "normalized": "公文"
+    },
+    {
+      "text": "学研",
+      "normalized": "学研"
+    },
+    {
+      "text": "進研ゼミ",
+      "normalized": "進研ゼミ"
+    },
+    {
+      "text": "英会話スクール",
+      "normalized": "英会話スクール"
+    },
+    {
+      "text": "Amazon",
+      "normalized": "amazon"
+    },
+    {
+      "text": "楽天市場",
+      "normalized": "楽天市場"
+    },
+    {
+      "text": "Yahoo!ショッピング",
+      "normalized": "yahooショッピング"
+    },
+    {
+      "text": "給与",
+      "normalized": "給与"
+    },
+    {
+      "text": "賞与",
+      "normalized": "賞与"
+    },
+    {
+      "text": "給与振込",
+      "normalized": "給与振込"
+    }
+  ]
+}

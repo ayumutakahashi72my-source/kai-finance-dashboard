@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import {
   AreaChart, Area, BarChart, Bar,
   XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
@@ -8,9 +9,13 @@ import {
 import { AiSummaryCard } from '@/components/dashboard/AiSummaryCard'
 import { AiChatPanel } from '@/components/dashboard/AiChatPanel'
 import { ScoreCard } from '@/components/dashboard/ScoreCard'
+import { GoalBanner } from '@/components/dashboard/GoalBanner'
+import { GoalProgressCard } from '@/components/dashboard/GoalProgressCard'
+import type { FinancialGoal } from '@/components/dashboard/GoalProgressCard'
 import { Ring, Icon } from '@/components/kai/shared'
 import { useCountUp } from '@/components/kai/hooks'
 import { KAI, yen } from '@/lib/kai-tokens'
+import { forecastMonthEnd } from '@/lib/forecast'
 import type { Transaction } from '@/lib/types'
 
 /* ─── design tokens ─── */
@@ -121,6 +126,9 @@ function RingHero({ transactions }: { transactions: Transaction[] }) {
   const now2      = new Date()
   const daysLeft  = new Date(now2.getFullYear(), now2.getMonth() + 1, 0).getDate() - now2.getDate()
   const total     = useCountUp(totalExpense, { duration: 1500 })
+  const forecast  = forecastMonthEnd(totalExpense, now2)
+  const overBudget = forecast.forecast > DEFAULT_BUDGET
+  const forecastColor = overBudget ? DOWN : forecast.forecast > DEFAULT_BUDGET * 0.9 ? AMBER : KAI.text2
 
   return (
     <section
@@ -141,6 +149,16 @@ function RingHero({ transactions }: { transactions: Transaction[] }) {
         <div style={{ fontSize: 9, color: TEXT3, fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase' }}>今月の支出</div>
         <div style={{ fontFamily: 'var(--font-jetbrains),JetBrains Mono,monospace', fontWeight: 700, fontSize: 27, color: TEXT, letterSpacing: '-.02em', marginTop: 2 }}>{yen(total)}</div>
         <div style={{ fontSize: 10, color: CORAL, fontWeight: 600, marginTop: 3 }}>残り {yen(remaining)}</div>
+        {forecast.forecast > 0 && (
+          <div
+            style={{
+              fontSize: 9, marginTop: 4, color: forecastColor,
+              fontFamily: 'var(--font-jetbrains),JetBrains Mono,monospace', fontWeight: 600,
+            }}
+          >
+            {overBudget ? '⚠' : '~'} 月末予測 {yen(forecast.forecast)}
+          </div>
+        )}
         <div style={{ fontSize: 9, color: KAI.text4, marginTop: 1, fontFamily: 'var(--font-jetbrains),JetBrains Mono,monospace' }}>{daysLeft} days left</div>
       </div>
     </section>
@@ -496,11 +514,83 @@ function DesktopNow({ transactions, allTransactions, month, streak }: { transact
         <div style={{ display: 'grid', gridTemplateColumns: '7fr 5fr', gap: 12 }}>
           <DesktopRecentTx transactions={transactions}/>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <GoalSection transactions={transactions} />
             <AiSummaryCard/>
             <StreakCard streak={streak}/>
           </div>
         </div>
       </div>
+  )
+}
+
+/* ─── Goal section (shared between mobile/desktop) ─── */
+function GoalSection({ transactions }: { transactions: Transaction[] }) {
+  const { data, isLoading, error } = useQuery<{ goals: FinancialGoal[] }>({
+    queryKey: ['goals'],
+    queryFn: async () => {
+      const r = await fetch('/api/goals')
+      if (!r.ok) throw new Error('目標の読み込みに失敗しました')
+      return r.json()
+    },
+    staleTime: 1000 * 60 * 5,
+    retry: 1,
+  })
+
+  if (isLoading) {
+    return (
+      <div style={{
+        background: KAI.bgPanel, border: `1px solid ${KAI.border2}`,
+        borderRadius: 14, padding: '20px', minHeight: 80,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        color: KAI.text4, fontSize: 12,
+      }}>
+        読み込み中…
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div style={{
+        background: 'rgba(251,113,133,0.06)', border: '1px solid rgba(251,113,133,0.22)',
+        borderRadius: 14, padding: '12px 14px',
+        color: KAI.danger, fontSize: 12,
+      }}>
+        目標の読み込みに失敗しました
+      </div>
+    )
+  }
+
+  const goals = data?.goals ?? []
+  const currentMonthExpense = transactions
+    .filter((t) => t.amount < 0)
+    .reduce((s, t) => s + Math.abs(t.amount), 0)
+  const currentMonthIncome = transactions
+    .filter((t) => t.amount >= 0)
+    .reduce((s, t) => s + t.amount, 0)
+
+  if (goals.length === 0) {
+    return <GoalBanner />
+  }
+
+  // 複数目標の集計（全アクティブ目標の月次貯蓄合計）
+  const aggregate = goals.length > 1
+    ? {
+        totalCount: goals.length,
+        totalMonthlySavings: goals.reduce((s, g) => s + (g.monthly_savings_target ?? 0), 0),
+        totalSpendingLimit: goals.every((g) => g.monthly_spending_limit !== null)
+          ? Math.max(0, currentMonthIncome - goals.reduce((s, g) => s + (g.monthly_savings_target ?? 0), 0))
+          : null,
+      }
+    : undefined
+
+  return (
+    <GoalProgressCard
+      goal={goals[0]}
+      currentMonthExpense={currentMonthExpense}
+      currentMonthIncome={currentMonthIncome}
+      aggregate={aggregate}
+    />
   )
 }
 
@@ -514,6 +604,7 @@ function NowTab({ transactions, allTransactions, month, streak }: { transactions
       <div className="lg:hidden space-y-3">
         <RingHero transactions={transactions} />
         <TodayCard transactions={transactions} />
+        <GoalSection transactions={transactions} />
         <CategoryChips transactions={transactions} />
         <DashKpiRow transactions={transactions} month={month} />
         <AiTeaser onClick={() => setShowChat(true)} />

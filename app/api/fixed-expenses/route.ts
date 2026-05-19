@@ -37,8 +37,14 @@ export async function PATCH(req: NextRequest) {
   const hid = await getHouseholdId(supabase, user.id)
   if (!hid) return NextResponse.json({ error: '世帯が見つかりません' }, { status: 400 })
 
-  const body = await req.json() as { id: string; dismissed: boolean }
+  let body: { id?: string; dismissed?: boolean }
+  try {
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ error: 'リクエスト形式が不正です' }, { status: 400 })
+  }
   if (!body.id) return NextResponse.json({ error: 'id が必要です' }, { status: 400 })
+  if (typeof body.dismissed !== 'boolean') return NextResponse.json({ error: 'dismissed は boolean が必要です' }, { status: 400 })
 
   const { error } = await supabase
     .from('fixed_expense_suggestions')

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { FALLBACK } from '@/lib/fallback-messages'
+import { trackCost } from '@/lib/cost-tracker'
 
 const SYSTEM_PROMPT =
   'あなたは日本語で応答する家計簿アシスタントです。ユーザーが提供する家計データをもとに、節約アドバイスや支出分析を行ってください。回答は簡潔に200字以内を目安にしてください。'
@@ -164,6 +165,14 @@ export async function POST(req: NextRequest) {
 
   const assistantContent = response.content[0].type === 'text' ? response.content[0].text : ''
   const callCost = estimateCostYen(response.usage.input_tokens, response.usage.output_tokens)
+
+  void trackCost({
+    household_id: householdId,
+    model: 'claude-sonnet-4-6',
+    feature: 'chat',
+    input_tokens: response.usage.input_tokens,
+    output_tokens: response.usage.output_tokens,
+  }, supabase)
 
   // メッセージ保存（userは元のメッセージ、contextはインジェクションのみで保存しない）
   await supabase.from('chat_messages').insert([

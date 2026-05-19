@@ -12,9 +12,10 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog'
-import { createCategory, updateCategory, deleteCategory } from '@/app/actions/categories'
+import { createCategory, createSubCategory, updateCategory, deleteCategory } from '@/app/actions/categories'
 import type { Category } from '@/lib/types'
-import { PencilIcon, Trash2Icon, PlusIcon } from 'lucide-react'
+import { buildCategoryTree } from '@/lib/utils'
+import { PencilIcon, Trash2Icon, PlusIcon, ChevronDownIcon, ChevronRightIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const PRESET_COLORS = [
@@ -140,19 +141,82 @@ function CategoryDialog({
   )
 }
 
+interface DeleteConfirmProps {
+  cat: Category
+  isPending: boolean
+  onConfirm: () => void
+  onCancel: () => void
+}
+
+function DeleteConfirm({ cat, isPending, onConfirm, onCancel }: DeleteConfirmProps) {
+  const hasChildren = (cat.children?.length ?? 0) > 0
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-xs text-[#8b8ba0]">
+        {hasChildren
+          ? `${cat.children!.length}件のサブカテゴリが親なしになりますが削除しますか？`
+          : '削除しますか？'}
+      </span>
+      <Button
+        size="xs"
+        variant="destructive"
+        disabled={isPending}
+        onClick={onConfirm}
+      >
+        削除
+      </Button>
+      <Button
+        size="xs"
+        variant="ghost"
+        onClick={onCancel}
+        className="text-[#8b8ba0]"
+      >
+        キャンセル
+      </Button>
+    </div>
+  )
+}
+
 export function CategoryList({ initial, showTitle = true }: { initial: Category[]; showTitle?: boolean }) {
   const router = useRouter()
   const [addOpen, setAddOpen] = useState(false)
+  const [addSubParentId, setAddSubParentId] = useState<string | null>(null)
   const [editTarget, setEditTarget] = useState<Category | null>(null)
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
+  const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [isPending, startTransition] = useTransition()
   const [formError, setFormError] = useState<string | null>(null)
+
+  const roots = buildCategoryTree(initial)
+
+  function toggleExpand(id: string) {
+    setExpanded((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) { next.delete(id) } else { next.add(id) }
+      return next
+    })
+  }
 
   function handleAdd(name: string, color: string) {
     startTransition(async () => {
       const result = await createCategory({ name, color })
       if (result.success) {
         setAddOpen(false)
+        setFormError(null)
+        router.refresh()
+      } else {
+        setFormError(result.message ?? 'エラーが発生しました')
+      }
+    })
+  }
+
+  function handleAddSub(name: string, color: string) {
+    if (!addSubParentId) return
+    const parentId = addSubParentId
+    startTransition(async () => {
+      const result = await createSubCategory(parentId, { name, color })
+      if (result.success) {
+        setAddSubParentId(null)
         setFormError(null)
         router.refresh()
       } else {
@@ -201,71 +265,150 @@ export function CategoryList({ initial, showTitle = true }: { initial: Category[
         </Button>
       </div>
 
-      {initial.length === 0 ? (
+      {roots.length === 0 ? (
         <p className="text-center text-sm text-[#8b8ba0] py-8">カテゴリがありません</p>
       ) : (
         <ul className="space-y-2">
-          {initial.map((cat) => (
-            <li
-              key={cat.id}
-              className="flex items-center gap-3 rounded-xl border border-white/10 bg-[#0a0a10]/40 px-4 py-3"
-            >
-              <span
-                className="h-3 w-3 shrink-0 rounded-full"
-                style={{ backgroundColor: cat.color ?? '#8b8ba0' }}
-              />
-              <span className="flex-1 text-sm text-[#f0f0f5]">{cat.name}</span>
+          {roots.map((cat) => {
+            const isExpanded = expanded.has(cat.id)
+            const hasChildren = (cat.children?.length ?? 0) > 0
+            return (
+              <li key={cat.id}>
+                {/* 親カテゴリ行 */}
+                <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-[#0a0a10]/40 px-4 py-3">
+                  <button
+                    type="button"
+                    onClick={() => hasChildren && toggleExpand(cat.id)}
+                    className="flex items-center gap-2 flex-1 min-w-0"
+                    aria-expanded={isExpanded}
+                  >
+                    <span
+                      className="h-3 w-3 shrink-0 rounded-full"
+                      style={{ backgroundColor: cat.color ?? '#8b8ba0' }}
+                    />
+                    <span className="flex-1 text-sm text-[#f0f0f5] text-left">{cat.name}</span>
+                    {hasChildren && (
+                      isExpanded
+                        ? <ChevronDownIcon className="h-3.5 w-3.5 text-[#8b8ba0] shrink-0" />
+                        : <ChevronRightIcon className="h-3.5 w-3.5 text-[#8b8ba0] shrink-0" />
+                    )}
+                  </button>
 
-              {deleteTargetId === cat.id ? (
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-[#8b8ba0]">削除しますか？</span>
-                  <Button
-                    size="xs"
-                    variant="destructive"
-                    disabled={isPending}
-                    onClick={() => handleDelete(cat.id)}
-                  >
-                    削除
-                  </Button>
-                  <Button
-                    size="xs"
-                    variant="ghost"
-                    onClick={() => setDeleteTargetId(null)}
-                    className="text-[#8b8ba0]"
-                  >
-                    キャンセル
-                  </Button>
+                  {deleteTargetId === cat.id ? (
+                    <DeleteConfirm
+                      cat={cat}
+                      isPending={isPending}
+                      onConfirm={() => handleDelete(cat.id)}
+                      onCancel={() => setDeleteTargetId(null)}
+                    />
+                  ) : (
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Button
+                        size="xs"
+                        variant="ghost"
+                        onClick={() => {
+                          setFormError(null)
+                          setAddSubParentId(cat.id)
+                        }}
+                        className="text-[#8b8ba0] hover:text-[#f0f0f5] text-[10px] px-1.5"
+                      >
+                        +サブ
+                      </Button>
+                      <Button
+                        size="icon-sm"
+                        variant="ghost"
+                        onClick={() => {
+                          setFormError(null)
+                          setEditTarget(cat)
+                        }}
+                        className="text-[#8b8ba0] hover:text-[#f0f0f5]"
+                      >
+                        <PencilIcon />
+                        <span className="sr-only">編集</span>
+                      </Button>
+                      <Button
+                        size="icon-sm"
+                        variant="ghost"
+                        onClick={() => setDeleteTargetId(cat.id)}
+                        className="text-[#8b8ba0] hover:text-[#fb7185]"
+                      >
+                        <Trash2Icon />
+                        <span className="sr-only">削除</span>
+                      </Button>
+                    </div>
+                  )}
                 </div>
-              ) : (
-                <div className="flex items-center gap-1">
-                  <Button
-                    size="icon-sm"
-                    variant="ghost"
-                    onClick={() => {
-                      setFormError(null)
-                      setEditTarget(cat)
-                    }}
-                    className="text-[#8b8ba0] hover:text-[#f0f0f5]"
-                  >
-                    <PencilIcon />
-                    <span className="sr-only">編集</span>
-                  </Button>
-                  <Button
-                    size="icon-sm"
-                    variant="ghost"
-                    onClick={() => setDeleteTargetId(cat.id)}
-                    className="text-[#8b8ba0] hover:text-[#fb7185]"
-                  >
-                    <Trash2Icon />
-                    <span className="sr-only">削除</span>
-                  </Button>
-                </div>
-              )}
-            </li>
-          ))}
+
+                {/* サブカテゴリ行（展開時のみ） */}
+                {isExpanded && hasChildren && (
+                  <ul className="mt-1 space-y-1 pl-6">
+                    {cat.children!.map((child) => (
+                      <li
+                        key={child.id}
+                        className="flex items-center gap-3 rounded-xl border border-white/5 bg-[#0a0a10]/20 px-4 py-2.5"
+                      >
+                        <span
+                          className="h-2.5 w-2.5 shrink-0 rounded-full"
+                          style={{ backgroundColor: child.color ?? '#8b8ba0' }}
+                        />
+                        <span className="flex-1 text-sm text-[#c4c4d0]">{child.name}</span>
+
+                        {deleteTargetId === child.id ? (
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-[#8b8ba0]">削除しますか？</span>
+                            <Button
+                              size="xs"
+                              variant="destructive"
+                              disabled={isPending}
+                              onClick={() => handleDelete(child.id)}
+                            >
+                              削除
+                            </Button>
+                            <Button
+                              size="xs"
+                              variant="ghost"
+                              onClick={() => setDeleteTargetId(null)}
+                              className="text-[#8b8ba0]"
+                            >
+                              キャンセル
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1 shrink-0">
+                            <Button
+                              size="icon-sm"
+                              variant="ghost"
+                              onClick={() => {
+                                setFormError(null)
+                                setEditTarget(child)
+                              }}
+                              className="text-[#8b8ba0] hover:text-[#f0f0f5]"
+                            >
+                              <PencilIcon />
+                              <span className="sr-only">編集</span>
+                            </Button>
+                            <Button
+                              size="icon-sm"
+                              variant="ghost"
+                              onClick={() => setDeleteTargetId(child.id)}
+                              className="text-[#8b8ba0] hover:text-[#fb7185]"
+                            >
+                              <Trash2Icon />
+                              <span className="sr-only">削除</span>
+                            </Button>
+                          </div>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </li>
+            )
+          })}
         </ul>
       )}
 
+      {/* 親カテゴリ追加ダイアログ */}
       <CategoryDialog
         open={addOpen}
         onOpenChange={(o) => {
@@ -278,6 +421,22 @@ export function CategoryList({ initial, showTitle = true }: { initial: Category[
         error={formError}
       />
 
+      {/* サブカテゴリ追加ダイアログ */}
+      <CategoryDialog
+        open={addSubParentId !== null}
+        onOpenChange={(o) => {
+          if (!o) {
+            setAddSubParentId(null)
+            setFormError(null)
+          }
+        }}
+        title="サブカテゴリを追加"
+        onSave={handleAddSub}
+        isPending={isPending}
+        error={formError}
+      />
+
+      {/* 編集ダイアログ */}
       <CategoryDialog
         open={editTarget !== null}
         onOpenChange={(o) => {

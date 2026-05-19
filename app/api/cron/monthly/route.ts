@@ -6,7 +6,7 @@
  * ① 前月スコアを is_finalized = true に更新
  * ② 前月の月次サマリー生成 → monthly_summaries に保存（Sonnet）
  * ③ 当月の予算提案生成 → budget_suggestions に保存（Haiku）
- * ④ category_rules の confidence 自然減衰（×0.95）
+ * ④ category_rag の confidence 自然減衰（×0.95）
  * ⑤ 固定費候補を SQL 集計で検出 → fixed_expense_suggestions UPSERT
  * ⑥ 90日超過の api_error_logs を削除
  */
@@ -16,6 +16,8 @@ import { createClient } from '@/lib/supabase/server'
 import { generateMonthlySummary } from '@/lib/monthly-summary'
 import { generateBudgetAdvice } from '@/lib/budget-advisor'
 import { sendPushToHousehold } from '@/lib/push-sender'
+import { normalizeKeyword } from '@/lib/ai-classifier'
+import { canonicalizeMerchant } from '@/lib/merchant-canonical'
 
 function prevMonth(year: number, month: number): { year: number; month: number } {
   return month === 1 ? { year: year - 1, month: 12 } : { year, month: month - 1 }
@@ -135,17 +137,14 @@ export async function GET(req: NextRequest) {
       steps['ai_skipped'] = 'ANTHROPIC_API_KEY未設定'
     }
 
-    // ④ category_rules confidence 自然減衰（×0.95）
+    // ④ category_rag confidence 自然減衰（×0.95）
     try {
-      await supabase.rpc('decay_category_confidence', { p_household_id: hid })
+      const { error } = await supabase.rpc('decay_category_rag_confidence', { p_household_id: hid })
+      if (error) throw error
       steps['confidence_decay'] = 'ok'
-    } catch {
-      // RPC未定義の場合はSQL直接実行にフォールバック
-      await supabase
-        .from('category_rules')
-        .update({ confidence: supabase.rpc as unknown as number })
-        .eq('household_id', hid)
-      steps['confidence_decay'] = 'rpc_not_found_skipped'
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : '不明なエラー'
+      steps['confidence_decay'] = `error: ${msg}`
     }
 
     // ⑤ 固定費候補を SQL 集計で検出（直近3ヶ月で3回以上同一payee）
@@ -162,24 +161,36 @@ export async function GET(req: NextRequest) {
         .gte('occurred_on', since)
 
       if (candidates?.length) {
-        const payeeStats = new Map<string, { amounts: number[]; months: Set<string> }>()
+        // 表記揺れを吸収するため canonicalizeMerchant(normalizeKeyword(payee)) で集約。
+        // 代表 payee は最頻出の元 payee を保持。
+        const payeeStats = new Map<string, {
+          amounts: number[]
+          months: Set<string>
+          originalPayees: Map<string, number>
+        }>()
         for (const tx of candidates) {
-          const key = tx.payee
-          if (!payeeStats.has(key)) payeeStats.set(key, { amounts: [], months: new Set() })
+          const key = canonicalizeMerchant(normalizeKeyword(tx.payee)) || tx.payee
+          if (!payeeStats.has(key)) {
+            payeeStats.set(key, { amounts: [], months: new Set(), originalPayees: new Map() })
+          }
           const stat = payeeStats.get(key)!
           stat.amounts.push(Math.abs(tx.amount))
           stat.months.add(tx.occurred_on.slice(0, 7))
+          stat.originalPayees.set(tx.payee, (stat.originalPayees.get(tx.payee) ?? 0) + 1)
         }
 
         const fixedCandidates = [...payeeStats.entries()]
           .filter(([, stat]) => stat.months.size >= 3)
-          .map(([payee, stat]) => ({
-            household_id: hid,
-            payee,
-            avg_amount: Math.round(stat.amounts.reduce((a, b) => a + b, 0) / stat.amounts.length),
-            months_seen: stat.months.size,
-            updated_at: new Date().toISOString(),
-          }))
+          .map(([, stat]) => {
+            const topPayee = [...stat.originalPayees.entries()].sort((a, b) => b[1] - a[1])[0][0]
+            return {
+              household_id: hid,
+              payee: topPayee,
+              avg_amount: Math.round(stat.amounts.reduce((a, b) => a + b, 0) / stat.amounts.length),
+              months_seen: stat.months.size,
+              updated_at: new Date().toISOString(),
+            }
+          })
 
         if (fixedCandidates.length) {
           await supabase
@@ -204,6 +215,45 @@ export async function GET(req: NextRequest) {
       steps['cleanup'] = 'ok'
     } catch {
       steps['cleanup'] = 'skip'
+    }
+
+    // ⑦ 頻出修正履歴を RAG キャッシュへ昇格（同 payee→category が 3 回以上）
+    try {
+      const { data: corrRows } = await supabase
+        .from('category_corrections')
+        .select('payee_key, new_category_id')
+        .eq('household_id', hid)
+
+      if (corrRows?.length) {
+        const counts = new Map<string, { new_category_id: string; count: number }>()
+        for (const row of corrRows) {
+          const key = `${row.payee_key}::${row.new_category_id}`
+          const entry = counts.get(key)
+          if (entry) { entry.count++ } else {
+            counts.set(key, { new_category_id: row.new_category_id, count: 1 })
+          }
+        }
+
+        const toPromote = [...counts.entries()]
+          .filter(([, v]) => v.count >= 3)
+          .map(([k, v]) => ({
+            household_id: hid,
+            payee_key: k.split('::')[0],
+            category_id: v.new_category_id,
+            confidence: 0.95,
+            hit_count: v.count,
+            last_seen: new Date().toISOString().slice(0, 10),
+          }))
+
+        if (toPromote.length) {
+          await supabase
+            .from('category_rag')
+            .upsert(toPromote, { onConflict: 'household_id,payee_key' })
+        }
+      }
+      steps['promote_corrections'] = 'ok'
+    } catch (err) {
+      steps['promote_corrections'] = `error: ${err instanceof Error ? err.message : '不明'}`
     }
 
     // ⑩ プッシュ通知送信 + notifications レコード作成

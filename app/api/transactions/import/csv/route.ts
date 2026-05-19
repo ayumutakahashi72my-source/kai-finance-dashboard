@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { parseMfCsv, buildSourceHash, decodeCsvBuffer } from '@/lib/csv-parser'
-import { classifyTransactions, classifyFreeForm } from '@/lib/ai-classifier'
+import { classifyTransactions, classifyFreeForm, normalizeKeyword } from '@/lib/ai-classifier'
+import { writeClassificationLogs, type ClassificationLogEntry } from '@/lib/classification-logger'
 
 /** category_hint "食費 / 外食" → "食費"。空・「その他」系は空文字を返す */
 function extractMajorCategory(hint: string): string {
@@ -76,12 +77,23 @@ export async function POST(req: NextRequest) {
   // Step 2: 大項目があれば直接マッピング、ない行はAI待ち
   const categoryIdMap = new Map<number, string>()
   const needsAI: Array<{ index: number; payee: string; category_hint: string }> = []
+  const mfHintLogs: ClassificationLogEntry[] = []
 
   for (let i = 0; i < rows.length; i++) {
     const major = extractMajorCategory(rows[i].category_hint)
     const catId = catNameToId.get(major)
     if (catId) {
       categoryIdMap.set(i, catId)
+      mfHintLogs.push({
+        household_id: membership.household_id,
+        payee: rows[i].payee,
+        payee_key: normalizeKeyword(rows[i].payee),
+        category_hint: rows[i].category_hint,
+        category_id: catId,
+        method: 'mf_hint',
+        confidence: 0.95,
+        is_cache_hit: false,
+      })
     } else {
       needsAI.push({ index: i, payee: rows[i].payee, category_hint: rows[i].category_hint })
     }
@@ -91,6 +103,53 @@ export async function POST(req: NextRequest) {
   if (needsAI.length) {
     const aiMap = await classifyFreeForm(needsAI, membership.household_id, supabase)
     for (const [idx, catId] of aiMap) categoryIdMap.set(idx, catId)
+  }
+
+  // Step 4: MFヒント由来の分類を category_rag に書き込む
+  if (mfHintLogs.length > 0) {
+    const uniqueByKey = new Map<string, ClassificationLogEntry>()
+    for (const e of mfHintLogs) {
+      if (!uniqueByKey.has(e.payee_key)) uniqueByKey.set(e.payee_key, e)
+    }
+    const uniqueEntries = [...uniqueByKey.values()]
+    const payeeKeys = uniqueEntries.map((e) => e.payee_key)
+    const today = new Date().toISOString().slice(0, 10)
+
+    const { data: existingRag } = await supabase
+      .from('category_rag')
+      .select('payee_key')
+      .eq('household_id', membership.household_id)
+      .in('payee_key', payeeKeys)
+
+    const existingKeySet = new Set((existingRag ?? []).map((r) => r.payee_key))
+
+    const toInsert = uniqueEntries.filter((e) => !existingKeySet.has(e.payee_key))
+    if (toInsert.length > 0) {
+      const { error: ragErr } = await supabase
+        .from('category_rag')
+        .insert(toInsert.map((e) => ({
+          household_id: membership.household_id,
+          payee_key: e.payee_key,
+          category_id: e.category_id!,
+          confidence: 0.95,
+          hit_count: 1,
+          last_seen: today,
+        })))
+      if (ragErr) console.error('[csv-import] category_rag insert failed:', ragErr.message)
+    }
+
+    const toUpdateKeys = uniqueEntries
+      .filter((e) => existingKeySet.has(e.payee_key))
+      .map((e) => e.payee_key)
+    if (toUpdateKeys.length > 0) {
+      await supabase
+        .from('category_rag')
+        .update({ last_seen: today })
+        .eq('household_id', membership.household_id)
+        .in('payee_key', toUpdateKeys)
+    }
+
+    void writeClassificationLogs(mfHintLogs, supabase)
   }
 
   const records = rows.map((r, i) => ({

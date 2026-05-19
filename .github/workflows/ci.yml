@@ -1,0 +1,87 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  quality-gate:
+    name: Quality Gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # ── 1. 型チェック ──────────────────────────────────────────────
+      - name: Typecheck
+        run: npm run typecheck
+
+      # ── 2. Lint ────────────────────────────────────────────────────
+      - name: Lint
+        run: npm run lint
+
+      # ── 3. Unit tests + RAG drift detection ───────────────────────
+      - name: Unit tests
+        run: npm test
+
+      # ── 3b. RAG regression report (always prints, fails on regression) ─
+      - name: RAG drift report
+        run: npx vitest run __tests__/rag-drift.test.ts --reporter=verbose 2>&1 | tee rag-drift-report.txt
+        continue-on-error: false
+
+      - name: Upload drift report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rag-drift-report
+          path: rag-drift-report.txt
+          retention-days: 30
+
+      # ── 4. ビルド確認 ─────────────────────────────────────────────
+      - name: Build
+        run: npm run build
+        env:
+          # ビルド時に必要な環境変数（実際の値はリポジトリ Secrets に登録）
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          # ビルド検証のみのダミー値（未設定の場合はスキップ）
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY || 'dummy-for-build' }}
+
+  # ── coverage レポート（main ブランチのみ） ─────────────────────────
+  coverage:
+    name: Coverage Report
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    needs: quality-gate
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate coverage
+        run: npm run test:coverage
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        continue-on-error: true
+        with:
+          files: ./coverage/lcov.info
+          fail_ci_if_error: false

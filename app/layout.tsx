@@ -28,6 +28,8 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: 'KAI — 家計簿管理システム',
   description: 'AI × 家計管理。支出の削減・節約をサポートするダッシュボード。',
+  manifest: '/manifest.json',
+  themeColor: '#0d0d0d',
   icons: {
     icon: '/icon.svg',
     shortcut: '/icon.svg',

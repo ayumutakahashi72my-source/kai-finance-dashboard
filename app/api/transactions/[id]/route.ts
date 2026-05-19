@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { recalculateScore } from '@/lib/score-calculator'
+import { normalizeKeyword, logCorrection } from '@/lib/ai-classifier'
 import { z } from 'zod'
 
 const UpdateSchema = z.object({
@@ -43,6 +44,16 @@ export async function PATCH(
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 })
   }
 
+  // カテゴリ変更時は修正前の値を取得
+  const { data: existing } = parsed.data.category_id !== undefined
+    ? await supabase
+        .from('transactions')
+        .select('category_id, payee')
+        .eq('id', id)
+        .eq('household_id', householdId)
+        .single()
+    : { data: null }
+
   // 取引が自分の世帯に属するか確認してから更新
   const { data: updated, error } = await supabase
     .from('transactions')
@@ -56,14 +67,28 @@ export async function PATCH(
     return NextResponse.json({ error: error?.message ?? '取引が見つかりません' }, { status: 404 })
   }
 
-  // カテゴリが手動変更された場合、RAGキャッシュを更新（次回同じ支払先は正しく分類される）
+  // カテゴリが手動変更された場合
   if (parsed.data.category_id !== undefined && parsed.data.category_id !== null && updated.payee) {
+    const payeeKey = normalizeKeyword(updated.payee)
+    // 修正履歴を記録（直前に確定したカテゴリが存在し、それが変更された場合のみ）
+    // 初回設定（既存カテゴリ null）は「修正」ではないのでスキップ
+    if (existing?.category_id && parsed.data.category_id !== existing.category_id) {
+      await logCorrection(
+        householdId,
+        payeeKey,
+        existing.category_id,
+        parsed.data.category_id,
+        user.id,
+        supabase
+      )
+    }
+    // RAGキャッシュを即時更新
     await supabase
       .from('category_rag')
       .upsert(
         {
           household_id: householdId,
-          payee_key: updated.payee,
+          payee_key: payeeKey,
           category_id: parsed.data.category_id,
           confidence: 1.0,
           hit_count: 1,

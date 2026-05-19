@@ -1,5 +1,6 @@
 'use client';
 
+import { Utensils, Coffee, Lightbulb, Target, Sparkles } from 'lucide-react';
 import { KAI } from '@/lib/kai-tokens';
 import {
   useTypewriter, Icon, KaiSystemBrand, CAvatar,
@@ -12,7 +13,7 @@ const C_PEACH = KAI.peach;
 const C_CORAL_SOFT = KAI.coralSoft;
 
 function InsightPill({ icon, tone, label, value, sub }: {
-  icon: string; tone: string; label: string; value: string; sub: string;
+  icon: React.ReactNode; tone: string; label: string; value: string; sub: string;
 }) {
   return (
     <div style={{
@@ -21,9 +22,9 @@ function InsightPill({ icon, tone, label, value, sub }: {
       borderRadius: 14, display: 'flex', alignItems: 'center', gap: 10, minWidth: 130,
     }}>
       <div style={{
-        width: 30, height: 30, borderRadius: 9, fontSize: 14,
+        width: 30, height: 30, borderRadius: 9,
         background: `${tone}18`, border: `1px solid ${tone}33`,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', color: tone,
       }}>{icon}</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
@@ -62,7 +63,7 @@ function AIBubble({ children, bg, border, delay = '0s' }: {
 }
 
 function InsightCardLg({ icon, tone, title, body, delay = 0 }: {
-  icon: string; tone: string; title: string; body: string; delay?: number;
+  icon: React.ReactNode; tone: string; title: string; body: string; delay?: number;
 }) {
   return (
     <div style={{
@@ -72,9 +73,9 @@ function InsightCardLg({ icon, tone, title, body, delay = 0 }: {
       animation: `kai-rise .5s ${delay}s ease-out both`,
     }}>
       <div style={{
-        width: 32, height: 32, borderRadius: 10, fontSize: 15, flexShrink: 0,
+        width: 32, height: 32, borderRadius: 10, flexShrink: 0,
         background: `${tone}18`, border: `1px solid ${tone}33`,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', color: tone,
       }}>{icon}</div>
       <div>
         <div style={{ fontSize: 12, fontWeight: 600, color: KAI.text1 }}>{title}</div>
@@ -91,7 +92,7 @@ interface AIScreenProps {
 
 export function AIScreenMobile({ onNavClick, onAddClick }: AIScreenProps) {
   const m1 = useTypewriter('今月は順調！ 予算の 71% 消化、ペースは想定どおりだよ。', { speed: 22, delay: 800 });
-  const m2 = useTypewriter('ただ外食費が先月比 +32% でちょっと伸びてる 🍝', { speed: 22, delay: m1.done ? 250 : 99999 });
+  const m2 = useTypewriter('ただ外食費が先月比 +32% でちょっと伸びてる', { speed: 22, delay: m1.done ? 250 : 99999 });
   const m3 = useTypewriter('週末のカフェ代を ¥1,500 抑えれば、月末の予算内で着地できそう！', { speed: 20, delay: m2.done ? 300 : 99999 });
 
   return (
@@ -112,10 +113,10 @@ export function AIScreenMobile({ onNavClick, onAddClick }: AIScreenProps) {
         </div>
 
         <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4, animation: 'kai-rise .5s ease-out both' }}>
-          <InsightPill icon="🍝" tone={C_CORAL} label="外食" value="+32%" sub="vs 4月"/>
-          <InsightPill icon="☕" tone={C_PEACH} label="カフェ" value="¥6,400" sub="今月計"/>
-          <InsightPill icon="💡" tone={C_BLUE}  label="固定費" value="安定" sub="先月並み"/>
-          <InsightPill icon="🎯" tone="#a78bfa" label="スコア" value="82pt" sub="B+ ↑"/>
+          <InsightPill icon={<Utensils size={14} strokeWidth={2}/>} tone={C_CORAL} label="外食" value="+32%" sub="vs 4月"/>
+          <InsightPill icon={<Coffee size={14} strokeWidth={2}/>} tone={C_PEACH} label="カフェ" value="¥6,400" sub="今月計"/>
+          <InsightPill icon={<Lightbulb size={14} strokeWidth={2}/>} tone={C_BLUE}  label="固定費" value="安定" sub="先月並み"/>
+          <InsightPill icon={<Target size={14} strokeWidth={2}/>} tone="#a78bfa" label="スコア" value="82pt" sub="B+ ↑"/>
         </div>
 
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8, overflowY: 'auto' }}>
@@ -169,7 +170,7 @@ export function AIScreenMobile({ onNavClick, onAddClick }: AIScreenProps) {
 
 export function AIScreenDesktop({ onNavClick }: AIScreenProps) {
   const m1 = useTypewriter('今月は順調！ 予算の 71% 消化、ペースは想定どおりだよ。', { speed: 22, delay: 800 });
-  const m2 = useTypewriter('ただ外食費が先月比 +32% でちょっと伸びてる 🍝 週末のカフェ利用が増加傾向。', { speed: 22, delay: m1.done ? 250 : 99999 });
+  const m2 = useTypewriter('ただ外食費が先月比 +32% でちょっと伸びてる。週末のカフェ利用が増加傾向。', { speed: 22, delay: m1.done ? 250 : 99999 });
   const m3 = useTypewriter('週末のカフェ代を ¥1,500 抑えれば、月末の予算 ¥200,000 以内で着地できそう。外食を除けば実は先月より -¥3,000 という好成績だよ。', { speed: 20, delay: m2.done ? 300 : 99999 });
 
   return (
@@ -200,7 +201,7 @@ export function AIScreenDesktop({ onNavClick }: AIScreenProps) {
                   width: 36, height: 36, borderRadius: 11,
                   background: `linear-gradient(135deg, ${C_CORAL}, ${C_PEACH})`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17,
-                }}>✨</div>
+                }}><Sparkles size={17} strokeWidth={1.8}/></div>
                 <div>
                   <div style={{ fontSize: 13, fontWeight: 700, color: KAI.text1 }}>kai</div>
                   <div style={{ fontSize: 10, color: KAI.text3 }}>家計のお話相手 · オンライン</div>
@@ -252,9 +253,9 @@ export function AIScreenDesktop({ onNavClick }: AIScreenProps) {
           {/* Insights column */}
           <div style={{ padding: '22px 24px', overflow: 'auto', display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div style={{ fontSize: 10, color: KAI.text4, letterSpacing: '.18em', textTransform: 'uppercase', fontWeight: 700 }}>今週のハイライト</div>
-            <InsightCardLg icon="🍝" tone={C_CORAL} title="外食費が増加中" body="先月比 +32%（¥9,800増）。土日のディナー回数が増えています。" delay={0}/>
-            <InsightCardLg icon="☕" tone={C_PEACH} title="カフェ習慣" body="週 3 回 → 平均 ¥640。月計 ¥6,400 を消費。" delay={0.1}/>
-            <InsightCardLg icon="💡" tone={C_BLUE}  title="固定費は安定" body="家賃・光熱・サブスクは先月並み。¥44,150。" delay={0.2}/>
+            <InsightCardLg icon={<Utensils size={15} strokeWidth={2}/>} tone={C_CORAL} title="外食費が増加中" body="先月比 +32%（¥9,800増）。土日のディナー回数が増えています。" delay={0}/>
+            <InsightCardLg icon={<Coffee size={15} strokeWidth={2}/>} tone={C_PEACH} title="カフェ習慣" body="週 3 回 → 平均 ¥640。月計 ¥6,400 を消費。" delay={0.1}/>
+            <InsightCardLg icon={<Lightbulb size={15} strokeWidth={2}/>} tone={C_BLUE}  title="固定費は安定" body="家賃・光熱・サブスクは先月並み。¥44,150。" delay={0.2}/>
             <div style={{
               marginTop: 'auto', padding: '14px 16px',
               background: 'rgba(167,139,250,.06)', border: '1px solid rgba(167,139,250,.18)',

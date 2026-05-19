@@ -5,7 +5,7 @@ import SignInWithGoogle from './SignInWithGoogle'
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>
+  searchParams: Promise<{ error?: string; reason?: string }>
 }) {
   const supabase = await createClient()
   const {
@@ -14,20 +14,20 @@ export default async function LoginPage({
 
   if (user) redirect('/')
 
-  const { error } = await searchParams
+  const { error, reason } = await searchParams
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#0a0a10] px-4">
       {/* 背景装飾 */}
       <div aria-hidden className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute -top-40 left-1/2 h-[600px] w-[600px] -translate-x-1/2 rounded-full bg-[#5eead4]/5 blur-[120px]" />
+        <div className="absolute -top-40 left-1/2 h-[600px] w-[600px] -translate-x-1/2 rounded-full bg-[#fb9477]/5 blur-[120px]" />
         <div className="absolute bottom-0 right-0 h-[400px] w-[400px] rounded-full bg-[#a78bfa]/5 blur-[100px]" />
       </div>
 
       <div className="relative w-full max-w-sm">
         {/* ロゴ */}
         <div className="mb-10 text-center">
-          <span className="bg-gradient-to-r from-[#5eead4] to-[#22d3ee] bg-clip-text font-mono text-4xl font-bold tracking-tight text-transparent">
+          <span className="bg-gradient-to-r from-[#fb9477] to-[#22d3ee] bg-clip-text font-mono text-4xl font-bold tracking-tight text-transparent">
             KAI
           </span>
           <p className="mt-2 text-sm text-[#8b8ba0]">家計簿管理システム</p>
@@ -43,6 +43,7 @@ export default async function LoginPage({
           {error === 'auth_failed' && (
             <div className="mb-6 rounded-lg border border-[#fb7185]/30 bg-[#fb7185]/10 px-4 py-3 text-sm text-[#fb7185]">
               認証に失敗しました。もう一度お試しください。
+              {reason && <div className="mt-1 font-mono text-xs opacity-70">{reason}</div>}
             </div>
           )}
 

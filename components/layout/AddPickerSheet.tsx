@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useRef, useEffect, useCallback } from 'react'
+import { Mail, Globe } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { getCategories } from '@/app/actions/categories'
 import { createTransaction } from '@/app/actions/transactions'
@@ -599,12 +600,25 @@ const MF_FEATURES = [
   },
 ] as const
 
+interface OtpPending {
+  otp_url: string
+  otp_storage_state: string  // Playwright storageState JSON
+}
+
 function MfStep({ onBack, onDone }: { onBack: () => void; onDone: () => void }) {
-  const [enabled,    setEnabled]    = useState(false)
-  const [loading,    setLoading]    = useState(true)
-  const [syncing,    setSyncing]    = useState(false)
-  const [syncResult, setSyncResult] = useState<SyncResult | null>(null)
-  const [syncError,  setSyncError]  = useState<string | null>(null)
+  const [enabled,      setEnabled]      = useState(false)
+  const [loading,      setLoading]      = useState(true)
+  const [syncing,      setSyncing]      = useState(false)
+  const [syncResult,   setSyncResult]   = useState<SyncResult | null>(null)
+  const [syncError,    setSyncError]    = useState<string | null>(null)
+  const [syncYear,     setSyncYear]     = useState(() => new Date().getFullYear())
+  const [syncMonth,    setSyncMonth]    = useState(() => new Date().getMonth() + 1)
+  const [showNoCredsAlert, setShowNoCredsAlert] = useState(false)
+  const [otpPending,   setOtpPending]   = useState<OtpPending | null>(null)
+  const [otpCode,      setOtpCode]      = useState('')
+  const [otpError,     setOtpError]     = useState<string | null>(null)
+  const [browserMode,  setBrowserMode]  = useState(false)
+  const [sessionCookie, setSessionCookie] = useState('')
 
   useEffect(() => {
     fetch('/api/settings/mf')
@@ -617,12 +631,68 @@ function MfStep({ onBack, onDone }: { onBack: () => void; onDone: () => void }) 
   }, [])
 
   async function handleSync() {
+    if (!enabled) { setShowNoCredsAlert(true); return }
     setSyncing(true); setSyncError(null); setSyncResult(null)
-    const res  = await fetch('/api/settings/mf/sync', { method: 'POST' })
+    const res = await fetch('/api/settings/mf/sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ year: syncYear, month: syncMonth }),
+    })
+    const data = await res.json() as SyncResult & { error?: string; needs_otp?: boolean; otp_url?: string; otp_storage_state?: string; trace?: { step: string; note: string }[] }
+    setSyncing(false)
+    if (data.needs_otp && data.otp_url && data.otp_storage_state) {
+      setOtpPending({ otp_url: data.otp_url, otp_storage_state: data.otp_storage_state })
+    } else if (data.error) {
+      const loginSteps = data.trace?.filter(t => /^[2-7]_/.test(t.step)) ?? []
+      const traceInfo = loginSteps.map(t => `[${t.step}] ${t.note}`).join('\n')
+      setSyncError(data.error + (traceInfo ? `\n\n${traceInfo}` : ''))
+    } else {
+      setSyncResult(data)
+    }
+  }
+
+  async function handleBrowserSessionSubmit() {
+    if (!sessionCookie.trim()) return
+    setSyncing(true); setOtpError(null)
+    const res = await fetch('/api/settings/mf/sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ year: syncYear, month: syncMonth, session_cookie: sessionCookie.trim() }),
+    })
     const data = await res.json() as SyncResult & { error?: string }
     setSyncing(false)
-    if (data.error) setSyncError(data.error)
-    else { setSyncResult(data); onDone() }
+    if (data.error) {
+      setOtpError(data.error)
+    } else {
+      setOtpPending(null); setOtpCode(''); setOtpError(null); setBrowserMode(false); setSessionCookie('')
+      setSyncResult(data)
+    }
+  }
+
+  async function handleOtpSubmit() {
+    if (!otpPending || otpCode.length < 6) return
+    setSyncing(true); setOtpError(null)
+    const res = await fetch('/api/settings/mf/sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        year: syncYear, month: syncMonth,
+        otp_code: otpCode,
+        otp_url: otpPending.otp_url,
+        otp_storage_state: otpPending.otp_storage_state,
+      }),
+    })
+    const data = await res.json() as SyncResult & { error?: string; needs_otp?: boolean; trace?: { step: string; note: string }[] }
+    setSyncing(false)
+    if (data.error) {
+      const otpTrace = data.trace?.filter(t => t.step.startsWith('otp_')).map(t => `[${t.step}] ${t.note}`).join('\n') ?? ''
+      setOtpError(data.error + (otpTrace ? `\n\n${otpTrace}` : ''))
+    } else if (data.needs_otp) {
+      setOtpError('認証コードが正しくありません。再度お試しください。')
+    } else {
+      setOtpPending(null); setOtpCode(''); setOtpError(null)
+      setSyncResult(data)
+    }
   }
 
   return (
@@ -727,37 +797,70 @@ function MfStep({ onBack, onDone }: { onBack: () => void; onDone: () => void }) 
             <div style={{
               background: 'rgba(74,222,128,.05)',
               border: '1px solid rgba(74,222,128,.22)',
-              borderRadius: 14, padding: '12px 14px',
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+              borderRadius: 14, padding: '14px',
+              display: 'flex', flexDirection: 'column', gap: 12,
               animation: 'kai-rise .5s .28s ease-out both',
             }}>
-              <div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                   <span style={{ fontSize: 13, fontWeight: 700, color: GREEN }}>連携済み</span>
                   <span style={{ width: 6, height: 6, borderRadius: '50%', background: GREEN, boxShadow: '0 0 6px rgba(74,222,128,.7)' }}/>
                 </div>
-                <div style={{ fontSize: 11, color: TEXT3, marginTop: 3 }}>
-                  {syncResult
-                    ? `${syncResult.year}年${syncResult.month}月 — 新規 ${syncResult.inserted}件`
-                    : '今すぐ当月を手動取込することもできます'}
-                </div>
-                {syncError && <div style={{ fontSize: 11, color: RED, marginTop: 4 }}>⚠ {syncError}</div>}
+                <span style={{ fontSize: 11, color: TEXT3 }}>取込む月を選択</span>
               </div>
-              <button
-                type="button" onClick={handleSync} disabled={syncing}
-                style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 6,
-                  background: 'rgba(74,222,128,.10)', border: '1px solid rgba(74,222,128,.28)',
-                  borderRadius: 99, padding: '7px 14px',
-                  fontSize: 12, color: GREEN, fontWeight: 700,
-                  cursor: syncing ? 'not-allowed' : 'pointer',
-                  fontFamily: 'inherit', flexShrink: 0,
-                  opacity: syncing ? 0.5 : 1,
-                }}
-              >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg>
-                {syncing ? '取込中…' : '今すぐ取込'}
-              </button>
+
+              {/* Year / Month stepper */}
+              <div style={{ display: 'flex', gap: 8 }}>
+                {/* Year */}
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.10)', borderRadius: 10, padding: '7px 10px' }}>
+                  <button type="button" disabled={syncing || syncYear <= new Date().getFullYear() - 2} onClick={() => setSyncYear(y => y - 1)}
+                    style={{ background: 'none', border: 'none', color: TEXT2, cursor: 'pointer', fontSize: 16, lineHeight: 1, padding: '0 4px', opacity: syncYear <= new Date().getFullYear() - 2 ? 0.3 : 1 }}>‹</button>
+                  <span style={{ fontSize: 13, color: TEXT1, fontWeight: 600, minWidth: 44, textAlign: 'center' }}>{syncYear}年</span>
+                  <button type="button" disabled={syncing || syncYear >= new Date().getFullYear()} onClick={() => setSyncYear(y => y + 1)}
+                    style={{ background: 'none', border: 'none', color: TEXT2, cursor: 'pointer', fontSize: 16, lineHeight: 1, padding: '0 4px', opacity: syncYear >= new Date().getFullYear() ? 0.3 : 1 }}>›</button>
+                </div>
+                {/* Month */}
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.10)', borderRadius: 10, padding: '7px 10px' }}>
+                  <button type="button" disabled={syncing || syncMonth <= 1} onClick={() => setSyncMonth(m => m - 1)}
+                    style={{ background: 'none', border: 'none', color: TEXT2, cursor: 'pointer', fontSize: 16, lineHeight: 1, padding: '0 4px', opacity: syncMonth <= 1 ? 0.3 : 1 }}>‹</button>
+                  <span style={{ fontSize: 13, color: TEXT1, fontWeight: 600, minWidth: 32, textAlign: 'center' }}>{syncMonth}月</span>
+                  <button type="button" disabled={syncing || syncMonth >= 12} onClick={() => setSyncMonth(m => m + 1)}
+                    style={{ background: 'none', border: 'none', color: TEXT2, cursor: 'pointer', fontSize: 16, lineHeight: 1, padding: '0 4px', opacity: syncMonth >= 12 ? 0.3 : 1 }}>›</button>
+                </div>
+              </div>
+
+              {syncResult && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <div style={{ fontSize: 12, color: GREEN, fontWeight: 600 }}>
+                    ✓ {syncResult.year}年{syncResult.month}月 取込完了
+                  </div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <div style={{ flex: 1, background: 'rgba(74,222,128,.08)', border: '1px solid rgba(74,222,128,.2)', borderRadius: 10, padding: '8px 10px', textAlign: 'center' }}>
+                      <div style={{ fontSize: 10, color: TEXT3, letterSpacing: '.06em', fontWeight: 600 }}>新規取込</div>
+                      <div style={{ fontSize: 20, fontWeight: 800, color: GREEN, fontFamily: 'var(--font-mono),monospace', marginTop: 2 }}>{syncResult.inserted}</div>
+                    </div>
+                    <div style={{ flex: 1, background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.08)', borderRadius: 10, padding: '8px 10px', textAlign: 'center' }}>
+                      <div style={{ fontSize: 10, color: TEXT3, letterSpacing: '.06em', fontWeight: 600 }}>スキップ</div>
+                      <div style={{ fontSize: 20, fontWeight: 800, color: TEXT3, fontFamily: 'var(--font-mono),monospace', marginTop: 2 }}>{syncResult.skipped}</div>
+                    </div>
+                  </div>
+                  {syncResult.inserted === 0 && syncResult.skipped > 0 && (
+                    <div style={{ fontSize: 11, color: TEXT4 }}>すでに取込済みのデータです</div>
+                  )}
+                  {syncResult.inserted === 0 && syncResult.skipped === 0 && (
+                    <div style={{ fontSize: 11, color: TEXT4 }}>この月のデータが見つかりませんでした</div>
+                  )}
+                  <button type="button" onClick={onDone}
+                    style={{ width: '100%', fontSize: 13, fontWeight: 700, color: GREEN, background: 'rgba(74,222,128,.12)', border: '1px solid rgba(74,222,128,.3)', borderRadius: 10, padding: '10px', cursor: 'pointer', fontFamily: 'inherit' }}>
+                    完了
+                  </button>
+                </div>
+              )}
+              {syncError && (
+                <div style={{ fontSize: 11, color: RED, whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
+                  ⚠ {syncError}
+                </div>
+              )}
             </div>
           )}
 
@@ -784,33 +887,195 @@ function MfStep({ onBack, onDone }: { onBack: () => void; onDone: () => void }) 
               cursor: 'pointer', fontFamily: 'inherit',
             }}>戻る</button>
 
-            {enabled ? (
-              <button type="button" onClick={handleSync} disabled={syncing} style={{
-                flex: 2, padding: '15px',
-                background: `linear-gradient(135deg, ${CORAL} 0%, ${BLUE} 100%)`,
-                border: 'none', borderRadius: 99,
-                color: '#0c0a14', fontSize: 15, fontWeight: 800,
-                cursor: syncing ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
-                display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                boxShadow: `0 8px 24px ${CORAL}44`,
-                opacity: syncing ? 0.7 : 1, transition: 'opacity .2s',
-              }}>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg>
-                {syncing ? '取込中…' : '今すぐ取込'}
-              </button>
-            ) : (
-              <a href="/settings/integrations/mf" style={{
-                flex: 2, padding: '15px', textAlign: 'center',
-                background: `linear-gradient(135deg, ${CORAL} 0%, ${BLUE} 100%)`,
-                borderRadius: 99, color: '#0c0a14', fontSize: 15, fontWeight: 800,
-                textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                boxShadow: `0 8px 24px ${CORAL}44`,
-              }}>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                設定画面へ
-              </a>
-            )}
+            <button type="button" onClick={handleSync} disabled={syncing} style={{
+              flex: 2, padding: '15px',
+              background: enabled
+                ? `linear-gradient(135deg, ${CORAL} 0%, ${BLUE} 100%)`
+                : 'rgba(255,255,255,.06)',
+              border: enabled ? 'none' : '1px solid rgba(255,255,255,.14)',
+              borderRadius: 99,
+              color: enabled ? '#0c0a14' : TEXT3,
+              fontSize: 15, fontWeight: 800,
+              cursor: syncing ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              boxShadow: enabled ? `0 8px 24px ${CORAL}44` : 'none',
+              opacity: syncing ? 0.7 : 1, transition: 'opacity .2s',
+            }}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg>
+              {syncing ? '取込中…' : `${syncYear}年${syncMonth}月を取込`}
+            </button>
           </div>
+
+          {/* ── OTP入力モーダル ── */}
+          {otpPending && (
+            <>
+              <div
+                onClick={() => { setOtpPending(null); setOtpCode(''); setOtpError(null); setBrowserMode(false); setSessionCookie('') }}
+                style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
+              />
+              <div style={{
+                position: 'fixed', left: '50%', top: '50%', zIndex: 61,
+                transform: 'translate(-50%, -50%)',
+                width: 'min(360px, calc(100vw - 40px))',
+                background: 'rgba(18,16,28,0.98)',
+                border: '1px solid rgba(255,255,255,.14)',
+                borderRadius: 20,
+                padding: '24px 22px 20px',
+                display: 'flex', flexDirection: 'column', gap: 14,
+                boxShadow: '0 24px 64px rgba(0,0,0,0.7)',
+              }}>
+                {/* タブ切り替え */}
+                <div style={{ display: 'flex', gap: 6, background: 'rgba(255,255,255,.05)', borderRadius: 10, padding: 4 }}>
+                  {(['code', 'browser'] as const).map(mode => (
+                    <button key={mode} onClick={() => { setBrowserMode(mode === 'browser'); setOtpError(null) }} style={{
+                      flex: 1, padding: '7px 4px', borderRadius: 7, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                      background: (mode === 'browser') === browserMode ? 'rgba(255,255,255,.12)' : 'transparent',
+                      color: (mode === 'browser') === browserMode ? TEXT1 : TEXT3,
+                    }}>
+                      {mode === 'code' ? <><Mail size={12} strokeWidth={2}/> コード入力</> : <><Globe size={12} strokeWidth={2}/> ブラウザ認証</>}
+                    </button>
+                  ))}
+                </div>
+
+                {!browserMode ? (
+                  /* ── コード入力モード ── */
+                  <>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: TEXT1, marginBottom: 5 }}>メール認証コードを入力</div>
+                      <div style={{ fontSize: 11, color: TEXT3, lineHeight: 1.6 }}>MoneyForwardから届いたメールの6桁コード</div>
+                    </div>
+                    <input
+                      type="text" inputMode="numeric" maxLength={6}
+                      value={otpCode} onChange={e => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                      placeholder="123456" autoFocus
+                      style={{
+                        width: '100%', boxSizing: 'border-box', padding: '14px 16px', borderRadius: 12,
+                        background: 'rgba(255,255,255,.05)', border: `1px solid ${otpError ? RED + '66' : 'rgba(255,255,255,.14)'}`,
+                        color: TEXT1, fontSize: 24, fontWeight: 800, letterSpacing: '0.3em',
+                        textAlign: 'center', fontFamily: 'var(--font-mono),monospace', outline: 'none',
+                      }}
+                    />
+                    {otpError && (
+                      <div style={{ fontSize: 11, color: RED, whiteSpace: 'pre-wrap', lineHeight: 1.5, maxHeight: 100, overflowY: 'auto', background: `${RED}0a`, border: `1px solid ${RED}33`, borderRadius: 8, padding: '8px 10px' }}>⚠ {otpError}</div>
+                    )}
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button onClick={() => { setOtpPending(null); setOtpCode(''); setOtpError(null); setBrowserMode(false); setSessionCookie('') }}
+                        style={{ flex: 1, padding: '11px', borderRadius: 12, fontSize: 13, fontWeight: 600, background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.10)', color: TEXT2, cursor: 'pointer', fontFamily: 'inherit' }}>
+                        キャンセル</button>
+                      <button onClick={handleOtpSubmit} disabled={otpCode.length < 6 || syncing} style={{
+                        flex: 2, padding: '11px', borderRadius: 12, fontSize: 13, fontWeight: 700,
+                        background: otpCode.length >= 6 && !syncing ? `linear-gradient(135deg,${CORAL} 0%,${BLUE} 100%)` : 'rgba(255,255,255,.06)',
+                        border: 'none', color: otpCode.length >= 6 && !syncing ? '#0c0a14' : TEXT3,
+                        cursor: otpCode.length >= 6 && !syncing ? 'pointer' : 'not-allowed', fontFamily: 'inherit', opacity: syncing ? 0.7 : 1,
+                      }}>{syncing ? '認証中…' : '認証する'}</button>
+                    </div>
+                  </>
+                ) : (
+                  /* ── ブラウザ認証モード ── */
+                  <>
+                    <div style={{ fontSize: 11, color: TEXT3, lineHeight: 1.8, background: 'rgba(255,255,255,.04)', borderRadius: 10, padding: '12px 14px' }}>
+                      <div style={{ color: TEXT2, fontWeight: 700, marginBottom: 6, fontSize: 12 }}>手順</div>
+                      <div>① 下のボタンでMoneyForwardを開く</div>
+                      <div>② OTPを入力してログイン完了</div>
+                      <div>③ DevTools (F12) → Application</div>
+                      <div style={{ paddingLeft: 12 }}>→ Cookies → moneyforward.com</div>
+                      <div style={{ paddingLeft: 12 }}>→ <code style={{ background: 'rgba(255,255,255,.08)', borderRadius: 4, padding: '1px 5px', fontFamily: 'monospace', fontSize: 10 }}>_moneyforward_session</code> をコピー</div>
+                      <div>④ 下に貼り付けて「取込む」</div>
+                    </div>
+                    <a
+                      href="https://moneyforward.com/sign_in" target="_blank" rel="noopener noreferrer"
+                      style={{
+                        display: 'block', textAlign: 'center', padding: '11px', borderRadius: 12, fontSize: 13, fontWeight: 700,
+                        background: `linear-gradient(135deg, rgba(122,167,255,.2) 0%, rgba(122,167,255,.1) 100%)`,
+                        border: `1px solid rgba(122,167,255,.4)`, color: BLUE, textDecoration: 'none', fontFamily: 'inherit',
+                      }}>
+                      <Globe size={13} strokeWidth={2}/> MoneyForwardを開く ↗
+                    </a>
+                    <input
+                      type="password"
+                      value={sessionCookie}
+                      onChange={e => setSessionCookie(e.target.value)}
+                      placeholder="_moneyforward_session=... または値のみ"
+                      style={{
+                        width: '100%', boxSizing: 'border-box', padding: '11px 14px', borderRadius: 12,
+                        background: 'rgba(255,255,255,.05)', border: `1px solid ${otpError ? RED + '66' : 'rgba(255,255,255,.14)'}`,
+                        color: TEXT1, fontSize: 11, fontFamily: 'var(--font-mono),monospace', outline: 'none',
+                      }}
+                    />
+                    {otpError && (
+                      <div style={{ fontSize: 11, color: RED, lineHeight: 1.5, background: `${RED}0a`, border: `1px solid ${RED}33`, borderRadius: 8, padding: '8px 10px' }}>⚠ {otpError}</div>
+                    )}
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button onClick={() => { setOtpPending(null); setOtpCode(''); setOtpError(null); setBrowserMode(false); setSessionCookie('') }}
+                        style={{ flex: 1, padding: '11px', borderRadius: 12, fontSize: 13, fontWeight: 600, background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.10)', color: TEXT2, cursor: 'pointer', fontFamily: 'inherit' }}>
+                        キャンセル</button>
+                      <button onClick={handleBrowserSessionSubmit} disabled={!sessionCookie.trim() || syncing} style={{
+                        flex: 2, padding: '11px', borderRadius: 12, fontSize: 13, fontWeight: 700,
+                        background: sessionCookie.trim() && !syncing ? `linear-gradient(135deg,${CORAL} 0%,${BLUE} 100%)` : 'rgba(255,255,255,.06)',
+                        border: 'none', color: sessionCookie.trim() && !syncing ? '#0c0a14' : TEXT3,
+                        cursor: sessionCookie.trim() && !syncing ? 'pointer' : 'not-allowed', fontFamily: 'inherit', opacity: syncing ? 0.7 : 1,
+                      }}>{syncing ? '取込中…' : '取込む'}</button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* ── 未登録アラート ── */}
+          {showNoCredsAlert && (
+            <>
+              {/* backdrop */}
+              <div
+                onClick={() => setShowNoCredsAlert(false)}
+                style={{
+                  position: 'fixed', inset: 0, zIndex: 60,
+                  background: 'rgba(0,0,0,0.6)',
+                  backdropFilter: 'blur(4px)',
+                }}
+              />
+              {/* card */}
+              <div style={{
+                position: 'fixed', left: '50%', top: '50%', zIndex: 61,
+                transform: 'translate(-50%, -50%)',
+                width: 'min(320px, calc(100vw - 40px))',
+                background: 'rgba(18,16,28,0.98)',
+                border: '1px solid rgba(255,255,255,.14)',
+                borderRadius: 20,
+                padding: '28px 24px 20px',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
+                boxShadow: '0 24px 64px rgba(0,0,0,0.7)',
+              }}>
+                <div style={{
+                  width: 48, height: 48, borderRadius: '50%',
+                  background: `rgba(251,191,36,.12)`, border: `1px solid rgba(251,191,36,.3)`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 22,
+                }}>⚠</div>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: TEXT1, marginBottom: 8 }}>
+                    MF連携が未設定です
+                  </div>
+                  <div style={{ fontSize: 12, color: TEXT3, lineHeight: 1.65 }}>
+                    設定画面でMoneyForward Meの<br/>IDとパスワードを登録してください。
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 8, width: '100%', marginTop: 4 }}>
+                  <button onClick={() => setShowNoCredsAlert(false)} style={{
+                    flex: 1, padding: '11px', borderRadius: 12, fontSize: 13, fontWeight: 600,
+                    background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.10)',
+                    color: TEXT2, cursor: 'pointer', fontFamily: 'inherit',
+                  }}>閉じる</button>
+                  <a href="/settings/mf" style={{
+                    flex: 2, padding: '11px', borderRadius: 12, fontSize: 13, fontWeight: 700,
+                    background: `linear-gradient(135deg, ${CORAL} 0%, ${BLUE} 100%)`,
+                    color: '#0c0a14', textDecoration: 'none',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>設定画面へ</a>
+                </div>
+              </div>
+            </>
+          )}
         </>
       )}
     </div>
@@ -840,6 +1105,13 @@ export function AddPickerSheet({ open, onClose, onDone }: Props) {
     else router.refresh()
   }, [onClose, onDone, router])
 
+  // CSV・MF完了後は収支画面へ
+  const handleImportDone = useCallback(() => {
+    setStep('picker')
+    onClose()
+    router.push('/transactions')
+  }, [onClose, router])
+
 
   if (!open) return null
 
@@ -847,8 +1119,8 @@ export function AddPickerSheet({ open, onClose, onDone }: Props) {
     <SheetChrome onBackdropClick={handleClose}>
       {step === 'picker' && <PickerStep onPick={setStep} onClose={handleClose}/>}
       {step === 'manual' && <ManualStep onBack={() => setStep('picker')} onDone={handleDone}/>}
-      {step === 'csv'    && <CsvStep    onBack={() => setStep('picker')} onDone={handleDone}/>}
-      {step === 'mf'     && <MfStep     onBack={() => setStep('picker')} onDone={handleDone}/>}
+      {step === 'csv'    && <CsvStep    onBack={() => setStep('picker')} onDone={handleImportDone}/>}
+      {step === 'mf'     && <MfStep     onBack={() => setStep('picker')} onDone={handleImportDone}/>}
     </SheetChrome>
   )
 }

@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { retryWithBackoff } from './retry'
+import { trackCost } from './cost-tracker'
 
 interface CategoryTotal {
   name: string
@@ -90,5 +91,14 @@ export async function generateMonthlySummary(
 
   const text = response.content[0].type === 'text' ? response.content[0].text : ''
   if (!text) throw new Error('サマリー生成に失敗しました')
+
+  void trackCost({
+    household_id: householdId,
+    model: 'claude-sonnet-4-6',
+    feature: 'monthly_summary',
+    input_tokens: response.usage.input_tokens,
+    output_tokens: response.usage.output_tokens,
+  }, supabase)
+
   return text
 }

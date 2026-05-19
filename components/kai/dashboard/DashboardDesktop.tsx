@@ -1,5 +1,6 @@
 'use client';
 
+import { Flame, Sparkles } from 'lucide-react';
 import { KAI } from '@/lib/kai-tokens';
 import {
   useCountUp, useTypewriter, Icon, KaiSystemBrand, CAvatar,
@@ -32,13 +33,13 @@ const C_UPCOMING = [
 ];
 
 const C_DAYS = [
-  { d: '月', v: 22, mood: '🙂' },
-  { d: '火', v: 14, mood: '🙂' },
-  { d: '水', v: 36, mood: '😐' },
-  { d: '木', v: 11, mood: '😊' },
-  { d: '金', v: 52, mood: '😬' },
-  { d: '土', v: 41, mood: '😐' },
-  { d: '日', v: 28, mood: '🙂' },
+  { d: '月', v: 22 },
+  { d: '火', v: 14 },
+  { d: '水', v: 36 },
+  { d: '木', v: 11 },
+  { d: '金', v: 52 },
+  { d: '土', v: 41 },
+  { d: '日', v: 28 },
 ];
 
 const C_GOAL = { name: '京都旅行', target: 150000, current: 80000 };
@@ -132,7 +133,7 @@ export function DashboardDesktop({
           <div>
             <div style={{ fontSize: 12, color: KAI.text3 }}>{greeting}、</div>
             <div style={{ fontSize: 18, fontWeight: 700, color: KAI.text1, marginTop: 1 }}>
-              {firstName}さん 👋  <span style={{ fontSize: 13, color: KAI.text3, fontWeight: 400 }}>今日は{now.getMonth() + 1}月{now.getDate()}日</span>
+              {firstName}さん  <span style={{ fontSize: 13, color: KAI.text3, fontWeight: 400 }}>今日は{now.getMonth() + 1}月{now.getDate()}日</span>
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -142,7 +143,7 @@ export function DashboardDesktop({
                 background: 'rgba(251,148,119,.12)', border: '1px solid rgba(251,148,119,.28)',
                 borderRadius: 99, padding: '5px 12px', fontSize: 12, color: C_CORAL, fontWeight: 700,
               }}>
-                🔥 <span style={{ ...MONO_STYLE }}>{streak}日連続記録</span>
+                <Flame size={13} strokeWidth={2}/> <span style={{ ...MONO_STYLE }}>{streak}日連続記録</span>
               </span>
             )}
             <button onClick={onAddClick} style={{
@@ -204,7 +205,8 @@ export function DashboardDesktop({
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: 6 }}>
                 {C_DAYS.map((d, i) => (
                   <div key={d.d} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                    <div style={{ fontSize: 16, marginBottom: 2 }}>{d.mood}</div>
+                    <div style={{ width: 6, height: 6, borderRadius: '50%', marginBottom: 2, background: d.v > 45 ? '#fb7185' : d.v > 30 ? '#fbbf24' : '#4ade80' }}/>
+
                     <div style={{
                       width: '100%', height: 60, borderRadius: 8,
                       background: 'rgba(255,255,255,.04)',
@@ -322,8 +324,8 @@ export function DashboardDesktop({
               <div style={{
                 width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
                 background: `linear-gradient(135deg, ${C_CORAL}, ${C_PEACH})`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16,
-              }}>✨</div>
+                display: 'flex', alignItems: 'center', justifyContent: 'center', color: C_PEACH,
+              }}><Sparkles size={16} strokeWidth={1.8}/></div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 10, color: '#a78bfa', fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase' }}>AI サマリー</div>
                 <div style={{ fontSize: 12.5, color: KAI.textBody, marginTop: 2, lineHeight: 1.5 }}>

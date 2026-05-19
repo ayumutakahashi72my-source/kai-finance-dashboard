@@ -14,7 +14,7 @@ interface ScoreDetail {
   three_month_streak: boolean
 }
 
-function calcGrade(score: number): 'S' | 'A' | 'B' | 'C' | 'D' {
+export function calcGrade(score: number): 'S' | 'A' | 'B' | 'C' | 'D' {
   if (score >= 90) return 'S'
   if (score >= 70) return 'A'
   if (score >= 60) return 'B'
