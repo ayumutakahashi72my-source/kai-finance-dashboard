@@ -44,27 +44,26 @@ export async function recalculateScore(
     ? `${y + 1}-01-01`
     : `${y}-${String(m + 1).padStart(2, '0')}-01`
 
-  // 当月取引（支出のみ）をカテゴリ別集計
+  // 当月取引（支出のみ）をカテゴリ別集計（親カテゴリ名でロールアップ）
   const { data: transactions } = await supabase
     .from('transactions')
-    .select('amount, category_id, categories(name)')
+    .select('amount, categories(name, parent:categories(name))')
     .eq('household_id', householdId)
     .lt('amount', 0)
     .gte('occurred_on', monthDate)
     .lt('occurred_on', nextMonthDate)
 
-  const actualByCategory: Record<string, { name: string; total: number }> = {}
+  const actualByCategory: Record<string, number> = {}
   for (const tx of transactions ?? []) {
-    const name = (tx.categories as unknown as { name: string } | null)?.name ?? '未分類'
-    const key = tx.category_id ?? 'uncategorized'
-    if (!actualByCategory[key]) actualByCategory[key] = { name, total: 0 }
-    actualByCategory[key].total += Math.abs(tx.amount)
+    const cat = tx.categories as unknown as { name: string; parent: { name: string } | null } | null
+    const name = cat?.parent?.name ?? cat?.name ?? '未分類'
+    actualByCategory[name] = (actualByCategory[name] ?? 0) + Math.abs(tx.amount)
   }
 
-  // budgets テーブルから当月予算を取得
+  // budgets テーブルから当月予算を取得（category_name ベース）
   const { data: budgets } = await supabase
     .from('budgets')
-    .select('category_id, amount, categories(name)')
+    .select('category_name, amount')
     .eq('household_id', householdId)
     .eq('month', monthDate)
 
@@ -85,21 +84,19 @@ export async function recalculateScore(
   let allWithinBudget = true
 
   for (const b of budgets ?? []) {
-    const actual = actualByCategory[b.category_id]?.total ?? 0
+    const actual = actualByCategory[b.category_name] ?? 0
     const budget = b.amount
     const ratio = budget > 0 ? actual / budget : 0
-    const catName = (b.categories as unknown as { name: string } | null)?.name ?? '未分類'
 
     let points = 0
     if (ratio <= 1.0) points = 1
     else if (ratio <= 1.1) points = 0.5
-    // ratio > 1.1 → 0点
 
     budgetScore += points
     if (ratio > 1.0) allWithinBudget = false
 
     budgetItems.push({
-      category_name: catName,
+      category_name: b.category_name,
       budget,
       actual,
       ratio: Math.round(ratio * 100) / 100,
@@ -118,7 +115,7 @@ export async function recalculateScore(
 
   const { data: prevTransactions } = await supabase
     .from('transactions')
-    .select('amount, category_id')
+    .select('amount, categories(name, parent:categories(name))')
     .eq('household_id', householdId)
     .lt('amount', 0)
     .gte('occurred_on', prevMonthDate)
@@ -126,13 +123,14 @@ export async function recalculateScore(
 
   const prevByCategory: Record<string, number> = {}
   for (const tx of prevTransactions ?? []) {
-    const key = tx.category_id ?? 'uncategorized'
+    const cat = tx.categories as unknown as { name: string; parent: { name: string } | null } | null
+    const key = cat?.parent?.name ?? cat?.name ?? '未分類'
     prevByCategory[key] = (prevByCategory[key] ?? 0) + Math.abs(tx.amount)
   }
 
-  for (const [catId, curr] of Object.entries(actualByCategory)) {
-    const prev = prevByCategory[catId] ?? 0
-    if (prev > 0 && curr.total < prev) {
+  for (const [catName, curr] of Object.entries(actualByCategory)) {
+    const prev = prevByCategory[catName] ?? 0
+    if (prev > 0 && curr < prev) {
       savingCategories++
       savingScore = Math.min(savingScore + 3, 30)
     }

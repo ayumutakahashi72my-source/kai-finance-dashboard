@@ -1,8 +1,8 @@
 'use client'
 
-import { useOptimistic, useState, useEffect } from 'react'
+import { useOptimistic, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { TrendingUp, Pencil, Trash2 } from 'lucide-react'
+import { TrendingUp, Pencil, Trash2, CheckSquare, Square, Pin, PinOff } from 'lucide-react'
 import { getCategoryIcon } from '@/lib/category-icons'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -322,6 +322,42 @@ export function TransactionList({ initial, categories, uncategorizedCount = 0 }:
   const [menuPos, setMenuPos]   = useState<{ top: number; right: number } | null>(null)
   const [menuTx, setMenuTx]     = useState<Transaction | null>(null)
 
+  // 一括削除
+  const [selectMode, setSelectMode] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [bulkDeleting, setBulkDeleting] = useState(false)
+  const [bulkConfirm, setBulkConfirm] = useState(false)
+
+  function toggleSelect(id: string) {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id); else next.add(id)
+      return next
+    })
+  }
+
+  function exitSelectMode() {
+    setSelectMode(false)
+    setSelectedIds(new Set())
+    setBulkConfirm(false)
+  }
+
+  async function handleBulkDelete() {
+    if (!selectedIds.size) return
+    setBulkDeleting(true)
+    try {
+      await fetch('/api/transactions/bulk-delete', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: [...selectedIds] }),
+      })
+      exitSelectMode()
+      router.refresh()
+    } finally {
+      setBulkDeleting(false)
+    }
+  }
+
   const [optimisticItems] = useOptimistic(
     initial,
     (state: Transaction[], newItem: Transaction) => [newItem, ...state]
@@ -370,6 +406,24 @@ export function TransactionList({ initial, categories, uncategorizedCount = 0 }:
             </button>
             <div className="h-px bg-white/5" />
             <button
+              onClick={async () => {
+                setActionMenuId(null)
+                await fetch(`/api/transactions/${menuTx.id}`, {
+                  method: 'PATCH',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ is_fixed: !menuTx.is_fixed }),
+                })
+                router.refresh()
+              }}
+              className="flex w-full items-center gap-2 px-4 py-3 text-[14px] text-[#a78bfa] transition-colors hover:bg-[#a78bfa]/10"
+            >
+              {menuTx.is_fixed
+                ? <><PinOff className="size-3.5" /> 固定費を解除</>
+                : <><Pin className="size-3.5" /> 固定費にする</>
+              }
+            </button>
+            <div className="h-px bg-white/5" />
+            <button
               onClick={() => { setActionMenuId(null); setDeletingTx(menuTx) }}
               className="flex w-full items-center gap-2 px-4 py-3 text-[14px] text-[#fb7185] transition-colors hover:bg-[#fb7185]/10"
             >
@@ -398,11 +452,46 @@ export function TransactionList({ initial, categories, uncategorizedCount = 0 }:
         />
       )}
 
+      {/* 一括削除確認バー */}
+      {selectMode && (
+        <div
+          className="mb-3 flex items-center justify-between rounded-[12px] px-3 py-2.5"
+          style={{ background: 'rgba(251,113,133,0.08)', border: '1px solid rgba(251,113,133,0.2)' }}
+        >
+          <span className="text-[13px] text-[#fb7185]">{selectedIds.size}件選択中</span>
+          <div className="flex gap-2">
+            <button
+              onClick={exitSelectMode}
+              className="rounded-[8px] px-3 py-1.5 text-[12px] text-[#8b8ba0] hover:bg-white/5"
+            >
+              キャンセル
+            </button>
+            {!bulkConfirm ? (
+              <button
+                onClick={() => setBulkConfirm(true)}
+                disabled={!selectedIds.size}
+                className="rounded-[8px] bg-[#fb7185]/20 px-3 py-1.5 text-[12px] font-medium text-[#fb7185] hover:bg-[#fb7185]/30 disabled:opacity-40"
+              >
+                削除
+              </button>
+            ) : (
+              <button
+                onClick={handleBulkDelete}
+                disabled={bulkDeleting}
+                className="rounded-[8px] bg-[#fb7185] px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-[#fb7185]/90 disabled:opacity-50"
+              >
+                {bulkDeleting ? '削除中…' : '本当に削除する'}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="mb-3 flex items-center justify-between">
         <p className="lbl">取引履歴</p>
         <div className="flex items-center gap-2">
-          {hasUncategorized && (
+          {!selectMode && hasUncategorized && (
             <button
               onClick={handleReclassify}
               disabled={classifying}
@@ -415,6 +504,13 @@ export function TransactionList({ initial, categories, uncategorizedCount = 0 }:
                   : `未分類 ${uncategorizedCount}件を一括再分類`}
             </button>
           )}
+          <button
+            onClick={() => selectMode ? exitSelectMode() : setSelectMode(true)}
+            className="flex items-center gap-1.5 rounded-[10px] border border-white/10 px-3 py-2 text-[12px] text-[#8b8ba0] transition-colors hover:bg-white/5 hover:text-[#f0f0f5]"
+          >
+            <CheckSquare className="size-3.5" />
+            {selectMode ? 'キャンセル' : '選択'}
+          </button>
         </div>
       </div>
 
@@ -450,12 +546,23 @@ export function TransactionList({ initial, categories, uncategorizedCount = 0 }:
                 {txs.map((tx, i) => {
                   const color = categoryColor(tx)
                   const isMenuOpen = actionMenuId === tx.id
+                  const isSelected = selectedIds.has(tx.id)
                   return (
                     <div
                       key={tx.id}
                       className="relative flex min-h-[48px] items-center gap-3 py-3.5"
                       style={{ borderBottom: i < txs.length - 1 ? '1px solid rgba(255,255,255,0.07)' : 'none' }}
+                      onClick={selectMode ? () => toggleSelect(tx.id) : undefined}
                     >
+                      {/* チェックボックス（選択モード時） */}
+                      {selectMode && (
+                        <div className="shrink-0 text-[#fb7185]">
+                          {isSelected
+                            ? <CheckSquare className="size-5" />
+                            : <Square className="size-5 text-[#5e5e72]" />
+                          }
+                        </div>
+                      )}
                       <div
                         className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px] text-[15px]"
                         style={{
@@ -479,6 +586,9 @@ export function TransactionList({ initial, categories, uncategorizedCount = 0 }:
                           {tx.source === 'auto' && (
                             <span className="ml-1.5 rounded bg-[#22d3ee]/10 px-1 py-px text-[10px] text-[#22d3ee]">自動</span>
                           )}
+                          {tx.is_fixed && (
+                            <span className="ml-1.5 rounded bg-[#a78bfa]/10 px-1 py-px text-[10px] text-[#a78bfa]">固定費</span>
+                          )}
                         </p>
                       </div>
                       <span
@@ -488,22 +598,24 @@ export function TransactionList({ initial, categories, uncategorizedCount = 0 }:
                         {tx.amount >= 0 ? '+' : ''}¥{Math.abs(tx.amount).toLocaleString()}
                       </span>
 
-                      {/* アクションメニュー */}
-                      <div className="ml-1">
-                        <button
-                          onClick={(e) => {
-                            if (isMenuOpen) { setActionMenuId(null); return }
-                            const rect = e.currentTarget.getBoundingClientRect()
-                            setMenuPos({ top: rect.bottom + 6, right: window.innerWidth - rect.right })
-                            setMenuTx(tx)
-                            setActionMenuId(tx.id)
-                          }}
-                          className="flex h-9 w-9 items-center justify-center rounded-full text-[#5e5e72] transition-colors hover:bg-white/5 hover:text-[#8b8ba0]"
-                          aria-label="アクション"
-                        >
-                          ⋯
-                        </button>
-                      </div>
+                      {/* アクションメニュー（選択モード時は非表示） */}
+                      {!selectMode && (
+                        <div className="ml-1">
+                          <button
+                            onClick={(e) => {
+                              if (isMenuOpen) { setActionMenuId(null); return }
+                              const rect = e.currentTarget.getBoundingClientRect()
+                              setMenuPos({ top: rect.bottom + 6, right: window.innerWidth - rect.right })
+                              setMenuTx(tx)
+                              setActionMenuId(tx.id)
+                            }}
+                            className="flex h-9 w-9 items-center justify-center rounded-full text-[#5e5e72] transition-colors hover:bg-white/5 hover:text-[#8b8ba0]"
+                            aria-label="アクション"
+                          >
+                            ⋯
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )
                 })}

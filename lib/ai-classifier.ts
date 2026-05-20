@@ -329,6 +329,59 @@ ${JSON.stringify(inputJson)}
   } catch { return [] }
 }
 
+// ===== Forced Category Selection =====
+// 既存カテゴリリストから必ず1つ選ばせる（最終フォールバック）
+
+async function callHaikuForceSelect(
+  items: ClassifyItem[],
+  validCategoryNames: string[],
+  client: Anthropic,
+  accum: TokenUsageAccum
+): Promise<Array<{ index: number; categoryName: string }>> {
+  if (!items.length || !validCategoryNames.length) return []
+
+  const categoryList = validCategoryNames.join('、')
+  const inputJson = items.map((it, localIndex) => ({ index: localIndex, payee: it.payee }))
+
+  const msg = await client.messages.create({
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 512,
+    temperature: 0,
+    messages: [{
+      role: 'user',
+      content: `以下の日本の家計取引を、必ず下記カテゴリリストの中から最も近いものを1つ選んでください。
+リスト外のカテゴリ名・「その他」・「未分類」は使用禁止です。
+
+カテゴリリスト: ${categoryList}
+
+取引リスト（JSON）:
+${JSON.stringify(inputJson)}
+
+応答は必ず以下のJSON配列のみ出力してください（他のテキスト不要）:
+[{"index": 0, "category_name": "カテゴリ名"}, ...]`,
+    }],
+  })
+
+  accum.inputTokens += msg.usage.input_tokens
+  accum.outputTokens += msg.usage.output_tokens
+
+  const raw = msg.content[0].type === 'text' ? msg.content[0].text : ''
+  const jsonMatch = raw.match(/\[[\s\S]*\]/)
+  if (!jsonMatch) return []
+
+  try {
+    const parsed = JSON.parse(jsonMatch[0]) as Array<{ index: number; category_name: string }>
+    const validSet = new Set(validCategoryNames)
+    return parsed.flatMap((item) => {
+      const originalIndex = items[item.index]?.index
+      if (originalIndex === undefined || !item.category_name) return []
+      const name = item.category_name.trim()
+      if (!validSet.has(name)) return []
+      return [{ index: originalIndex, categoryName: name }]
+    })
+  } catch { return [] }
+}
+
 // ===== Upsert Categories =====
 
 async function upsertCategoriesByName(
@@ -422,17 +475,23 @@ export async function classifyTransactions(
   }
 
   // ① Exact cache（LLM が学習した結果 — regex より優先して上書きできる learned override layer）
+  // hit_count >= 3 の場合は他の月でも繰り返し見られた実績があるため閾値を 0.75 に緩和
+  const RAG_REPEAT_THRESHOLD = 0.75
+  const RAG_REPEAT_MIN_HITS = 3
   const payeeKeysForCache = itemsAfterCorrections.map((it) => normalizeKeyword(it.payee))
   const { data: ragRows } = await supabase
     .from('category_rag')
-    .select('payee_key, category_id, confidence')
+    .select('payee_key, category_id, confidence, hit_count')
     .eq('household_id', householdId)
     .in('payee_key', payeeKeysForCache)
 
   const exactCacheMap = new Map<string, { category_id: string; confidence: number }>()
   for (const row of ragRows ?? []) {
-    if ((row.confidence ?? 0) >= RAG_EXACT_THRESHOLD) {
-      exactCacheMap.set(row.payee_key, { category_id: row.category_id, confidence: row.confidence })
+    const conf = row.confidence ?? 0
+    const hits = row.hit_count ?? 0
+    const threshold = hits >= RAG_REPEAT_MIN_HITS ? RAG_REPEAT_THRESHOLD : RAG_EXACT_THRESHOLD
+    if (conf >= threshold) {
+      exactCacheMap.set(row.payee_key, { category_id: row.category_id, confidence: conf })
     }
   }
 
@@ -689,6 +748,44 @@ export async function classifyTransactions(
     }
   }
 
+  // ⑤ Forced selection — still-unresolved items get forced into an existing category
+  const unresolvedInClassify = remaining.filter((it) => !categoryIdMap.has(it.index))
+  if (unresolvedInClassify.length) {
+    try {
+      const validNames = [...categoryMap.keys()]
+      const forceResults = await callHaikuForceSelect(unresolvedInClassify, validNames, client, tokenAccum)
+      for (const { index, categoryName } of forceResults) {
+        const catId = categoryMap.get(categoryName)
+        if (!catId) continue
+        categoryIdMap.set(index, catId)
+        const item = remaining.find((it) => it.index === index)
+        if (item) {
+          const idx = remaining.indexOf(item)
+          ragUpserts.push({
+            household_id: householdId,
+            payee_key: normalizeKeyword(item.payee),
+            category_id: catId,
+            confidence: 0.7,
+            embedding: remainingEmbeddings[idx] ?? null,
+          })
+          logs.push({
+            household_id: householdId,
+            payee: item.payee,
+            payee_key: normalizeKeyword(item.payee),
+            category_hint: item.category_hint,
+            category_id: catId,
+            category_name: categoryName,
+            method: 'llm_force',
+            confidence: 0.7,
+            is_cache_hit: false,
+            api_calls: 1,
+            latency_ms: Date.now() - startTime,
+          })
+        }
+      }
+    } catch { /* force select 失敗はスキップ */ }
+  }
+
   if (ragUpserts.length) {
     const { error: ragErr } = await supabase
       .from('category_rag')
@@ -747,17 +844,22 @@ export async function classifyFreeForm(
   const { nameToId: existingNameToId, idToName: existingIdToName } = await fetchCategoryMaps(supabase, householdId)
 
   // ① Exact cache（LLM が学習した結果 — learned override layer）
+  const RAG_REPEAT_THRESHOLD_FREE = 0.75
+  const RAG_REPEAT_MIN_HITS_FREE = 3
   const payeeKeysForCache = itemsAfterCorrections.map((it) => normalizeKeyword(it.payee))
   const { data: ragRowsFree } = await supabase
     .from('category_rag')
-    .select('payee_key, category_id, confidence')
+    .select('payee_key, category_id, confidence, hit_count')
     .eq('household_id', householdId)
     .in('payee_key', payeeKeysForCache)
 
   const exactCacheMapFree = new Map<string, { category_id: string; confidence: number }>()
   for (const row of ragRowsFree ?? []) {
-    if ((row.confidence ?? 0) >= RAG_EXACT_THRESHOLD) {
-      exactCacheMapFree.set(row.payee_key, { category_id: row.category_id, confidence: row.confidence })
+    const conf = row.confidence ?? 0
+    const hits = row.hit_count ?? 0
+    const threshold = hits >= RAG_REPEAT_MIN_HITS_FREE ? RAG_REPEAT_THRESHOLD_FREE : RAG_EXACT_THRESHOLD
+    if (conf >= threshold) {
+      exactCacheMapFree.set(row.payee_key, { category_id: row.category_id, confidence: conf })
     }
   }
 
@@ -885,6 +987,40 @@ export async function classifyFreeForm(
   }
 
   if (!allNamed.length) {
+    // freeform が全滅した場合も force select を試みる
+    try {
+      const validNames = [...existingNameToId.keys()]
+      const forceResults = await callHaikuForceSelect(needsLLM, validNames, client, tokenAccum)
+      for (const { index, categoryName } of forceResults) {
+        const catId = existingNameToId.get(categoryName)
+        if (!catId) continue
+        categoryIdMap.set(index, catId)
+        const item = needsLLM.find((it) => it.index === index)
+        if (item) {
+          const idx = remaining.indexOf(item)
+          ragUpserts.push({
+            household_id: householdId,
+            payee_key: normalizeKeyword(item.payee),
+            category_id: catId,
+            confidence: 0.7,
+            embedding: remainingEmbeddings[idx] ?? null,
+          })
+          logs.push({
+            household_id: householdId,
+            payee: item.payee,
+            payee_key: normalizeKeyword(item.payee),
+            category_hint: item.category_hint,
+            category_id: catId,
+            category_name: categoryName,
+            method: 'llm_force',
+            confidence: 0.7,
+            is_cache_hit: false,
+            api_calls: 1,
+            latency_ms: Date.now() - startTime,
+          })
+        }
+      }
+    } catch { /* force select 失敗はスキップ */ }
     if (ragUpserts.length) {
       const { error: ragErr } = await supabase.from('category_rag').upsert(ragUpserts, { onConflict: 'household_id,payee_key' })
       if (ragErr) console.error('[classifier] category_rag upsert failed:', ragErr.message)
@@ -928,19 +1064,71 @@ export async function classifyFreeForm(
     }
   }
 
-  // LLM が解決できなかった分は failed ログ
-  for (const item of needsLLM) {
-    if (!resolvedLLM.has(item.index)) {
-      logs.push({
-        household_id: householdId,
-        payee: item.payee,
-        payee_key: normalizeKeyword(item.payee),
-        category_hint: item.category_hint,
-        method: 'failed',
-        is_cache_hit: false,
-        api_calls: 1,
-        latency_ms: Date.now() - startTime,
-      })
+  // ⑤ Forced selection — LLM が解決できなかった分を既存カテゴリから強制選択
+  const unresolvedFreeForm = needsLLM.filter((it) => !resolvedLLM.has(it.index))
+  if (unresolvedFreeForm.length) {
+    try {
+      const validNames = [...existingNameToId.keys()]
+      const forceResults = await callHaikuForceSelect(unresolvedFreeForm, validNames, client, tokenAccum)
+      const resolvedByForce = new Set<number>()
+      for (const { index, categoryName } of forceResults) {
+        const catId = existingNameToId.get(categoryName)
+        if (!catId) continue
+        categoryIdMap.set(index, catId)
+        resolvedByForce.add(index)
+        const item = needsLLM.find((it) => it.index === index)
+        if (item) {
+          const idx = remaining.indexOf(item)
+          ragUpserts.push({
+            household_id: householdId,
+            payee_key: normalizeKeyword(item.payee),
+            category_id: catId,
+            confidence: 0.7,
+            embedding: remainingEmbeddings[idx] ?? null,
+          })
+          logs.push({
+            household_id: householdId,
+            payee: item.payee,
+            payee_key: normalizeKeyword(item.payee),
+            category_hint: item.category_hint,
+            category_id: catId,
+            category_name: categoryName,
+            method: 'llm_force',
+            confidence: 0.7,
+            is_cache_hit: false,
+            api_calls: 1,
+            latency_ms: Date.now() - startTime,
+          })
+        }
+      }
+      // それでも解決できなかった分のみ failed ログ
+      for (const item of unresolvedFreeForm) {
+        if (!resolvedByForce.has(item.index)) {
+          logs.push({
+            household_id: householdId,
+            payee: item.payee,
+            payee_key: normalizeKeyword(item.payee),
+            category_hint: item.category_hint,
+            method: 'failed',
+            is_cache_hit: false,
+            api_calls: 2,
+            latency_ms: Date.now() - startTime,
+          })
+        }
+      }
+    } catch {
+      for (const item of unresolvedFreeForm) {
+        logs.push({
+          household_id: householdId,
+          payee: item.payee,
+          payee_key: normalizeKeyword(item.payee),
+          category_hint: item.category_hint,
+          method: 'failed',
+          is_cache_hit: false,
+          api_calls: 1,
+          latency_ms: Date.now() - startTime,
+        })
+      }
     }
   }
 

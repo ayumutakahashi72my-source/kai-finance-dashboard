@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { RefreshCwIcon, ChevronDownIcon, ChevronRightIcon } from 'lucide-react'
+import { Skeleton } from '@/components/ui/Skeleton'
 
 interface MfLoginStep {
   step: string
@@ -81,7 +82,13 @@ export function MfSyncLogs() {
   }
 
   if (loading) {
-    return <p className="py-4 text-center text-xs text-[#5e5e72]">読み込み中…</p>
+    return (
+      <div className="space-y-2 py-2">
+        <Skeleton variant="block" className="h-12" />
+        <Skeleton variant="block" className="h-12" />
+        <Skeleton variant="block" className="h-12" />
+      </div>
+    )
   }
 
   if (!logs.length) {

@@ -1,7 +1,8 @@
 'use client'
 
-import { Sparkles } from 'lucide-react'
+import { Sparkles, Pencil, Check, X } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { useCountUp } from '@/components/kai/hooks'
@@ -23,6 +24,10 @@ interface BudgetData {
   suggestions:      Suggestion[]
   spending_pattern: { summary: string; habits: string[] }
   created_at:       string
+}
+interface UserBudget {
+  category_name: string
+  amount:        number
 }
 
 /* ─── helpers ───────────────────────────────────────────────────── */
@@ -181,10 +186,18 @@ export function BudgetDashboard({ month: monthProp }: { month?: string } = {}) {
   const month  = monthProp ?? currentMonthStr()
   const prev   = prevMonthStr(month)
 
+  // 予算編集モード
+  const [editMode, setEditMode] = useState(false)
+  const [editValues, setEditValues] = useState<Record<string, string>>({})
+
   /* ─── queries ─── */
   const { data: budgetRes, isLoading: budgetLoading } = useQuery<{ data: BudgetData | null }>({
     queryKey: ['budget_suggest'],
     queryFn:  () => fetch('/api/budget/suggest').then((r) => r.json()),
+  })
+  const { data: userBudgetsRes, isLoading: userBudgetsLoading } = useQuery<{ budgets: UserBudget[] }>({
+    queryKey: ['user_budgets', month],
+    queryFn:  () => fetch(`/api/budgets?month=${month}`).then((r) => r.json()),
   })
   const { data: txRes, isLoading: txLoading } = useQuery<{ data: Transaction[] }>({
     queryKey: ['transactions', month],
@@ -210,12 +223,32 @@ export function BudgetDashboard({ month: monthProp }: { month?: string } = {}) {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['budget_suggest'] }),
   })
 
+  /* ─── save user budgets ─── */
+  const { mutate: saveBudgets, isPending: isSaving } = useMutation({
+    mutationFn: (budgets: UserBudget[]) =>
+      fetch('/api/budgets', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ month, budgets }),
+      }).then(async (r) => {
+        const j = await r.json()
+        if (!r.ok) throw new Error(j.error ?? '保存失敗')
+        return j
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['user_budgets', month] })
+      setEditMode(false)
+    },
+  })
+
   /* ─── derived ─── */
   const budget       = budgetRes?.data
+  const userBudgets  = userBudgetsRes?.budgets ?? []
+  const userBudgetMap = new Map(userBudgets.map((b) => [b.category_name, b.amount]))
   const transactions = txRes?.data ?? []
   const prevTxs      = prevTxRes?.data ?? []
   const allCats      = catRes?.data ?? []
-  const isLoading    = budgetLoading || txLoading
+  const isLoading    = budgetLoading || txLoading || userBudgetsLoading
 
   /* 今月の収入・支出 */
   const totalIncome  = transactions.filter((tx) => tx.amount > 0).reduce((s, tx) => s + tx.amount, 0)
@@ -233,21 +266,26 @@ export function BudgetDashboard({ month: monthProp }: { month?: string } = {}) {
     actualByCategory[name] = (actualByCategory[name] ?? 0) + Math.abs(tx.amount)
   }
 
-  /* カテゴリリスト: AI提案 ∪ 実績 */
+  /* カテゴリリスト: ユーザー設定 > AI提案 ∪ 実績 */
   const suggestionMap = new Map(
     (budget?.suggestions ?? []).map((s, i) => [s.category_name, { budget: s.suggested_amount, idx: i }])
   )
-  const catNames   = new Set([...Array.from(suggestionMap.keys()), ...Object.keys(actualByCategory)])
+  const catNames   = new Set([
+    ...Array.from(userBudgetMap.keys()),
+    ...Array.from(suggestionMap.keys()),
+    ...Object.keys(actualByCategory),
+  ])
   const categories = Array.from(catNames).map((name, i) => {
     const sug     = suggestionMap.get(name)
     const catMeta = allCats.find((c) => c.name === name)
+    const userBudgetAmt = userBudgetMap.get(name)
     return {
       name,
       color:  sug
         ? CAT_COLORS[sug.idx % CAT_COLORS.length]
         : (catMeta?.color ?? CAT_COLORS[i % CAT_COLORS.length]),
       used:   actualByCategory[name] ?? 0,
-      budget: sug?.budget ?? 0,
+      budget: userBudgetAmt ?? sug?.budget ?? 0,
     }
   }).sort((a, b) => b.used - a.used)
 
@@ -329,6 +367,54 @@ export function BudgetDashboard({ month: monthProp }: { month?: string } = {}) {
           <span style={{ fontSize: 10, color: KAI.text4, letterSpacing: '.14em', fontWeight: 700, textTransform: 'uppercase' }}>
             カテゴリ別
           </span>
+          {!editMode ? (
+            <button
+              type="button"
+              onClick={() => {
+                const init: Record<string, string> = {}
+                for (const c of categories) init[c.name] = c.budget > 0 ? String(c.budget) : ''
+                setEditValues(init)
+                setEditMode(true)
+              }}
+              style={{
+                fontSize: 10, fontWeight: 600, color: KAI.text4,
+                background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.10)',
+                borderRadius: 6, padding: '3px 10px', cursor: 'pointer', fontFamily: 'inherit',
+                display: 'flex', alignItems: 'center', gap: 4,
+              }}
+            ><Pencil size={10}/> 予算を設定</button>
+          ) : (
+            <div style={{ display: 'flex', gap: 6 }}>
+              <button
+                type="button"
+                onClick={() => setEditMode(false)}
+                style={{
+                  fontSize: 10, fontWeight: 600, color: KAI.text4,
+                  background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.10)',
+                  borderRadius: 6, padding: '3px 10px', cursor: 'pointer', fontFamily: 'inherit',
+                  display: 'flex', alignItems: 'center', gap: 4,
+                }}
+              ><X size={10}/> キャンセル</button>
+              <button
+                type="button"
+                disabled={isSaving}
+                onClick={() => {
+                  const budgets = Object.entries(editValues)
+                    .filter(([, v]) => v && parseInt(v, 10) > 0)
+                    .map(([category_name, v]) => ({ category_name, amount: parseInt(v, 10) }))
+                  if (budgets.length > 0) saveBudgets(budgets)
+                  else setEditMode(false)
+                }}
+                style={{
+                  fontSize: 10, fontWeight: 700, color: KAI.bg,
+                  background: `linear-gradient(135deg, ${KAI.coral}, ${KAI.blue})`,
+                  border: 'none', borderRadius: 6, padding: '3px 10px',
+                  cursor: isSaving ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
+                  display: 'flex', alignItems: 'center', gap: 4, opacity: isSaving ? 0.6 : 1,
+                }}
+              ><Check size={10}/> {isSaving ? '保存中…' : '保存'}</button>
+            </div>
+          )}
         </div>
 
         {categories.length > 0 ? (
@@ -338,11 +424,32 @@ export function BudgetDashboard({ month: monthProp }: { month?: string } = {}) {
           }}>
             {categories.map((c, i) => (
               <div key={c.name} style={{ borderBottom: i < categories.length - 1 ? '1px solid rgba(255,255,255,.04)' : 'none' }}>
-                <CategoryBar
-                  cat={c} idx={i}
-                  totalBudget={totalBudget}
-                  onManage={() => router.push(`/budget/category/${encodeURIComponent(c.name)}?month=${month}`)}
-                />
+                {editMode ? (
+                  <div style={{ padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ fontSize: 12.5, fontWeight: 600, color: KAI.text1, flex: 1 }}>{c.name}</span>
+                    <span style={{ fontSize: 12, color: KAI.text4, ...MONO }}>¥</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="1000"
+                      value={editValues[c.name] ?? ''}
+                      onChange={(e) => setEditValues((prev) => ({ ...prev, [c.name]: e.target.value }))}
+                      placeholder="未設定"
+                      style={{
+                        width: 100, fontSize: 13, fontWeight: 600, textAlign: 'right',
+                        background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.12)',
+                        borderRadius: 8, padding: '4px 8px', color: KAI.text1, fontFamily: 'var(--font-jetbrains), monospace',
+                        outline: 'none',
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <CategoryBar
+                    cat={c} idx={i}
+                    totalBudget={totalBudget}
+                    onManage={() => router.push(`/budget/category/${encodeURIComponent(c.name)}?month=${month}`)}
+                  />
+                )}
               </div>
             ))}
           </div>
@@ -402,14 +509,22 @@ export function BudgetDashboard({ month: monthProp }: { month?: string } = {}) {
               <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
                 <button
                   type="button"
-                  onClick={() => generateBudget(true)}
-                  disabled={isPending}
+                  onClick={() => {
+                    generateBudget(true)
+                    if (budget?.suggestions.length) {
+                      saveBudgets(budget.suggestions.map((s) => ({
+                        category_name: s.category_name,
+                        amount: s.suggested_amount,
+                      })))
+                    }
+                  }}
+                  disabled={isPending || isSaving}
                   style={{
                     fontSize: 11, padding: '5px 10px', borderRadius: 8,
                     background: `linear-gradient(135deg, ${KAI.coral}, ${KAI.blue})`,
                     color: KAI.bg, fontWeight: 700, border: 'none',
-                    cursor: isPending ? 'not-allowed' : 'pointer',
-                    fontFamily: 'inherit', opacity: isPending ? 0.6 : 1,
+                    cursor: isPending || isSaving ? 'not-allowed' : 'pointer',
+                    fontFamily: 'inherit', opacity: isPending || isSaving ? 0.6 : 1,
                   }}
                 >{isPending ? '適用中…' : '適用する'}</button>
                 <button

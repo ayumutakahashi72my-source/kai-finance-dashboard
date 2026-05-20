@@ -8,6 +8,7 @@ export type ClassificationMethod =
   | 'vector_rerank'
   | 'llm_full'
   | 'llm_freeform'
+  | 'llm_force'
   | 'mf_hint'
   | 'failed'
 

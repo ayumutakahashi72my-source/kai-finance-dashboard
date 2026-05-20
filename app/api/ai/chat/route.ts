@@ -155,12 +155,13 @@ export async function POST(req: NextRequest) {
     })
   } catch (err) {
     const error_msg = err instanceof Error ? err.message : '不明なエラー'
-    await supabase.from('api_error_logs').insert({
+    console.error('[ai/chat] Anthropic error:', error_msg)
+    void supabase.from('api_error_logs').insert({
       household_id: householdId,
       feature: 'ai_chat',
       error_msg,
     })
-    return NextResponse.json({ error: FALLBACK.budget }, { status: 500 })
+    return NextResponse.json({ error: FALLBACK.chat }, { status: 500 })
   }
 
   const assistantContent = response.content[0].type === 'text' ? response.content[0].text : ''

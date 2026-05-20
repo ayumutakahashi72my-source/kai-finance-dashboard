@@ -12,6 +12,7 @@ import { ScoreCard } from '@/components/dashboard/ScoreCard'
 import { GoalBanner } from '@/components/dashboard/GoalBanner'
 import { GoalProgressCard } from '@/components/dashboard/GoalProgressCard'
 import type { FinancialGoal } from '@/components/dashboard/GoalProgressCard'
+import { Skeleton } from '@/components/ui/Skeleton'
 import { Ring, Icon } from '@/components/kai/shared'
 import { useCountUp } from '@/components/kai/hooks'
 import { KAI, yen } from '@/lib/kai-tokens'
@@ -515,6 +516,7 @@ function DesktopNow({ transactions, allTransactions, month, streak }: { transact
           <DesktopRecentTx transactions={transactions}/>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <GoalSection transactions={transactions} />
+            <ScoreCard month={month} />
             <AiSummaryCard/>
             <StreakCard streak={streak}/>
           </div>
@@ -537,16 +539,7 @@ function GoalSection({ transactions }: { transactions: Transaction[] }) {
   })
 
   if (isLoading) {
-    return (
-      <div style={{
-        background: KAI.bgPanel, border: `1px solid ${KAI.border2}`,
-        borderRadius: 14, padding: '20px', minHeight: 80,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        color: KAI.text4, fontSize: 12,
-      }}>
-        読み込み中…
-      </div>
-    )
+    return <Skeleton variant="panel" className="h-20" />
   }
 
   if (error) {
@@ -609,6 +602,7 @@ function NowTab({ transactions, allTransactions, month, streak }: { transactions
         <DashKpiRow transactions={transactions} month={month} />
         <AiTeaser onClick={() => setShowChat(true)} />
         {showChat && <AiChatPanel />}
+        <ScoreCard month={month} />
         <AiSummaryCard />
         <StreakCard streak={streak} />
       </div>
