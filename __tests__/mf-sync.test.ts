@@ -74,39 +74,45 @@ describe('手動取り込み: fetchMfTransactions モック', () => {
 
   beforeEach(() => mockFetch.mockReset())
 
-  // fetchMfTransactions は内部で2回 fetch する:
-  //   1) GET /cf → CSRF トークン取得（meta タグ）
-  //   2) GET /cf/detail_transactions → 取引データ取得
-  const CF_HTML = `<html><head><meta name="csrf-token" content="tok"></head></html>`
+  // fetchMfTransactions は GET /cf/csv に直接アクセス（CSRF 不要）
+  // CSV 形式: 日付,内容,金額（円）,保有金融機関,大項目,中項目,メモ,振替,ID
 
-  function makeHtmlRes(html: string, status = 200) {
+  function makeCsvRes(csv: string, status = 200): Response {
+    const body = csv
     return {
       ok: status >= 200 && status < 300,
       status,
-      headers: { get: () => null },
-      text: async () => html,
+      url: '',
+      headers: {
+        get: (key: string) => key === 'content-type' ? 'text/csv' : null,
+        getSetCookie: () => [],
+      },
+      text: async () => body,
       json: async () => { throw new Error('not json') },
+      arrayBuffer: async () => new TextEncoder().encode(body).buffer,
     } as unknown as Response
   }
 
-  function makeJsonRes(body: unknown, status = 200) {
+  function makeErrorRes(status: number): Response {
     return {
-      ok: status >= 200 && status < 300,
+      ok: false,
       status,
-      headers: { get: () => null },
-      text: async () => JSON.stringify(body),
-      json: async () => body,
+      url: '',
+      headers: {
+        get: () => null,
+        getSetCookie: () => [],
+      },
+      text: async () => '',
+      json: async () => { throw new Error('not json') },
+      arrayBuffer: async () => new ArrayBuffer(0),
     } as unknown as Response
   }
+
+  const MONTH_CSV = `日付,内容,金額（円）,保有金融機関,大項目,中項目,メモ,振替,ID
+2026/05/10,スーパー,-3000,銀行,食費,,,FALSE,tx001`
 
   it('当月の取引を取得してレコードに変換できる', async () => {
-    mockFetch.mockResolvedValueOnce(makeHtmlRes(CF_HTML)) // Step1: CSRF
-    mockFetch.mockResolvedValueOnce(makeJsonRes({         // Step2: 取引
-      transaction_list: [
-        { id: 'tx001', date: '2026/05/10', content: 'スーパー', amount: -3000,
-          large_category_name: '食費', transfer: false },
-      ],
-    }))
+    mockFetch.mockResolvedValueOnce(makeCsvRes(MONTH_CSV))
 
     const txList = await fetchMfTransactions('session=xxx', 2026, 5)
     const records = buildRecords(txList, 'hid-abc')
@@ -118,8 +124,8 @@ describe('手動取り込み: fetchMfTransactions モック', () => {
   })
 
   it('0件のとき空配列を返し DB upsert をスキップできる', async () => {
-    mockFetch.mockResolvedValueOnce(makeHtmlRes(CF_HTML))
-    mockFetch.mockResolvedValueOnce(makeJsonRes({ transaction_list: [] }))
+    const emptyCsv = '日付,内容,金額（円）,保有金融機関,大項目,中項目,メモ,振替,ID'
+    mockFetch.mockResolvedValueOnce(makeCsvRes(emptyCsv))
 
     const txList = await fetchMfTransactions('session=xxx', 2026, 5)
     expect(txList).toHaveLength(0)
@@ -128,18 +134,58 @@ describe('手動取り込み: fetchMfTransactions モック', () => {
     expect(records).toHaveLength(0)
   })
 
-  it('CSRF 取得ページが 401 のとき MFページ取得失敗エラーをスローする', async () => {
-    mockFetch.mockResolvedValueOnce(makeHtmlRes('', 401)) // CSRF 取得失敗
+  it('セッション切れのとき CSRF エラーをスローする', async () => {
+    // 1st attempt (direct GET) → 401
+    mockFetch.mockResolvedValueOnce(makeErrorRes(401))
+    // CSRF 取得も全候補失敗 (4 URL × 401)
+    mockFetch.mockResolvedValueOnce(makeErrorRes(401))
+    mockFetch.mockResolvedValueOnce(makeErrorRes(401))
+    mockFetch.mockResolvedValueOnce(makeErrorRes(401))
+    mockFetch.mockResolvedValueOnce(makeErrorRes(401))
 
     await expect(fetchMfTransactions('bad-session', 2026, 5))
-      .rejects.toThrow('MFページ取得失敗: 401')
+      .rejects.toThrow('CSRFトークンが見つかりませんでした')
   })
 
-  it('取引取得が 401 のとき MFデータ取得失敗エラーをスローする', async () => {
-    mockFetch.mockResolvedValueOnce(makeHtmlRes(CF_HTML))       // CSRF 成功
-    mockFetch.mockResolvedValueOnce(makeJsonRes('Unauthorized', 401)) // 取引取得失敗
+  it('全試行失敗のとき MFデータ取得失敗エラーをスローする', async () => {
+    // 1st attempt: returns HTML (not CSV) → triggers CSRF path
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      url: '',
+      headers: { get: (key: string) => key === 'content-type' ? 'text/html' : null, getSetCookie: () => [] },
+      text: async () => '<html><meta name="csrf-token" content="tok"></html>',
+      arrayBuffer: async () => new TextEncoder().encode('').buffer,
+    } as unknown as Response)
+    // CSRF fetch succeeds → returns token
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      url: 'https://moneyforward.com/cf',
+      headers: { get: (key: string) => key === 'content-type' ? 'text/html' : null, getSetCookie: () => [] },
+      text: async () => '<html><meta name="csrf-token" content="tok"></html>',
+      arrayBuffer: async () => new TextEncoder().encode('').buffer,
+    } as unknown as Response)
+    // GET/csrf attempt → HTML again (not CSV)
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      url: '',
+      headers: { get: (key: string) => key === 'content-type' ? 'text/html' : null, getSetCookie: () => [] },
+      text: async () => '<html>login</html>',
+      arrayBuffer: async () => new TextEncoder().encode('').buffer,
+    } as unknown as Response)
+    // POST/csrf attempt → HTML again
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      url: '',
+      headers: { get: (key: string) => key === 'content-type' ? 'text/html' : null, getSetCookie: () => [] },
+      text: async () => '<html>login</html>',
+      arrayBuffer: async () => new TextEncoder().encode('').buffer,
+    } as unknown as Response)
 
     await expect(fetchMfTransactions('session=xxx', 2026, 5))
-      .rejects.toThrow('MFデータ取得失敗: 401')
+      .rejects.toThrow('MFデータ取得失敗（全試行失敗）')
   })
 })
