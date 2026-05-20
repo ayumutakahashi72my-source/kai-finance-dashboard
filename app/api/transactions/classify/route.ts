@@ -31,6 +31,12 @@ export async function POST() {
       .update({ category_id: null })
       .eq('household_id', membership.household_id)
       .in('category_id', ids)
+    // RAGキャッシュも同時にクリア（そうしないと再分類してもすぐ戻る）
+    await supabase
+      .from('category_rag')
+      .delete()
+      .eq('household_id', membership.household_id)
+      .in('category_id', ids)
   }
 
   // 全件取得（ページネーションで上限なし）

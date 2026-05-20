@@ -130,7 +130,11 @@ export async function POST(req: NextRequest) {
     .order('created_at', { ascending: false })
     .limit(12)
 
+  // 最古から並べ直し、先頭が user になるよう調整（assistant始まりはAnthropicがエラー）
   const pastMessages = (history ?? []).reverse()
+  while (pastMessages.length > 0 && pastMessages[0].role !== 'user') {
+    pastMessages.shift()
+  }
 
   // 現在のuserメッセージにコンテキストをインジェクション
   const context = await buildChatContext(supabase, householdId)

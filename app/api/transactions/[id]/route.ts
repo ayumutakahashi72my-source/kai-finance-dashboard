@@ -58,7 +58,7 @@ export async function PATCH(
   // 取引が自分の世帯に属するか確認してから更新
   const { data: updated, error } = await supabase
     .from('transactions')
-    .update({ ...parsed.data, updated_at: new Date().toISOString() })
+    .update({ ...parsed.data })
     .eq('id', id)
     .eq('household_id', householdId)
     .select('occurred_on, payee, category_id')
