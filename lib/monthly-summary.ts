@@ -1,3 +1,4 @@
+import { getEnvKey } from '@/lib/api-keys'
 import Anthropic from '@anthropic-ai/sdk'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { retryWithBackoff } from './retry'
@@ -72,7 +73,7 @@ export async function generateMonthlySummary(
   year: number,
   month: number
 ): Promise<string> {
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+  const client = new Anthropic({ apiKey: getEnvKey('ANTHROPIC_API_KEY') })
   const context = await buildMonthContext(supabase, householdId, year, month)
 
   const response = await retryWithBackoff(

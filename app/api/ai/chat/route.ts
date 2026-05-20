@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { FALLBACK } from '@/lib/fallback-messages'
 import { trackCost } from '@/lib/cost-tracker'
+import { getEnvKey } from '@/lib/api-keys'
 
 const SYSTEM_PROMPT =
   'あなたは日本語で応答する家計簿アシスタントです。ユーザーが提供する家計データをもとに、節約アドバイスや支出分析を行ってください。回答は簡潔に200字以内を目安にしてください。'
@@ -150,7 +151,7 @@ export async function POST(req: NextRequest) {
 
   let response
   try {
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+    const client = new Anthropic({ apiKey: getEnvKey('ANTHROPIC_API_KEY') })
     response = await client.messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 512,
@@ -159,10 +160,7 @@ export async function POST(req: NextRequest) {
     })
   } catch (err) {
     const error_msg = err instanceof Error ? err.message : String(err)
-    const error_stack = err instanceof Error ? (err.stack ?? '').split('\n').slice(0, 3).join(' | ') : ''
     console.error('[ai/chat] Anthropic error:', error_msg)
-    console.error('[ai/chat] stack:', error_stack)
-    console.error('[ai/chat] messages count:', messages.length, 'roles:', messages.map(m => m.role).join(','))
     void supabase.from('api_error_logs').insert({
       household_id: householdId,
       feature: 'ai_chat',

@@ -1,3 +1,4 @@
+import { getEnvKey } from '@/lib/api-keys'
 import Anthropic from '@anthropic-ai/sdk'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { BudgetAdviceResponseSchema, type BudgetAdviceResponse } from './ai-schemas'
@@ -103,7 +104,7 @@ export async function generateBudgetAdvice(
   year: number,
   month: number
 ): Promise<BudgetAdviceResponse> {
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+  const client = new Anthropic({ apiKey: getEnvKey('ANTHROPIC_API_KEY') })
   const ctx = await buildContext(supabase, householdId, year, month)
 
   const raw = await retryWithBackoff(

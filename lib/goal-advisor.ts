@@ -1,3 +1,4 @@
+import { getEnvKey } from '@/lib/api-keys'
 import Anthropic from '@anthropic-ai/sdk'
 import { z } from 'zod'
 import { retryWithBackoff } from './retry'
@@ -111,7 +112,7 @@ ${catLines || '  （データなし）'}
   現状の貯蓄ペースでの達成見込み: ${realisticMonths != null ? `約 ${realisticMonths} ヶ月後` : '収入が支出を超えていないため算出不可'}
 `.trim()
 
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+  const client = new Anthropic({ apiKey: getEnvKey('ANTHROPIC_API_KEY') })
 
   const response = await retryWithBackoff(
     () =>

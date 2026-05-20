@@ -1,3 +1,4 @@
+import { getEnvKey } from '@/lib/api-keys'
 import Anthropic from '@anthropic-ai/sdk'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { ClassificationResponseSchema } from './ai-schemas'
@@ -620,7 +621,7 @@ export async function classifyTransactions(
     }
   }
 
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+  const client = new Anthropic({ apiKey: getEnvKey('ANTHROPIC_API_KEY') })
 
   // 階層カテゴリ表示リスト（"親 > 子" 形式）を事前構築
   const hierarchyCategoryList = [...categoryMap.entries()].map(([name, id]) => {
@@ -976,7 +977,7 @@ export async function classifyFreeForm(
   }
 
   // ④ AI freeform
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+  const client = new Anthropic({ apiKey: getEnvKey('ANTHROPIC_API_KEY') })
   const allNamed: Array<{ index: number; categoryName: string }> = []
 
   for (let i = 0; i < needsLLM.length; i += MAX_BATCH) {
