@@ -158,8 +158,11 @@ export async function POST(req: NextRequest) {
       messages,
     })
   } catch (err) {
-    const error_msg = err instanceof Error ? err.message : '不明なエラー'
+    const error_msg = err instanceof Error ? err.message : String(err)
+    const error_stack = err instanceof Error ? (err.stack ?? '').split('\n').slice(0, 3).join(' | ') : ''
     console.error('[ai/chat] Anthropic error:', error_msg)
+    console.error('[ai/chat] stack:', error_stack)
+    console.error('[ai/chat] messages count:', messages.length, 'roles:', messages.map(m => m.role).join(','))
     void supabase.from('api_error_logs').insert({
       household_id: householdId,
       feature: 'ai_chat',
