@@ -3,8 +3,8 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
-  AreaChart, Area, BarChart, Bar,
-  XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
+  AreaChart, Area,
+  XAxis, YAxis, Tooltip, ResponsiveContainer,
 } from 'recharts'
 import { AiSummaryCard } from '@/components/dashboard/AiSummaryCard'
 import { AiChatPanel } from '@/components/dashboard/AiChatPanel'
@@ -163,7 +163,10 @@ function donutArcPath(cx: number, cy: number, outerR: number, innerR: number, st
 
 /* ─── Category Donut Hero ─── */
 function CategoryRingHero({ transactions }: { transactions: Transaction[] }) {
-  const [active, setActive] = useState<string | null>(null)
+  // hover と selected を分離してモバイルのタッチバグを解消
+  const [hovered, setHovered] = useState<string | null>(null)
+  const [selected, setSelected] = useState<string | null>(null)
+  const active = hovered ?? selected
 
   const cats = buildCategoryData(transactions)
   const totalExpense = cats.reduce((s, [, { amount }]) => s + amount, 0)
@@ -172,7 +175,6 @@ function CategoryRingHero({ transactions }: { transactions: Transaction[] }) {
   const now2     = new Date()
   const daysLeft = new Date(now2.getFullYear(), now2.getMonth() + 1, 0).getDate() - now2.getDate()
 
-  // Top 5 + まとめ
   const top5 = cats.slice(0, 5)
   const restAmount = cats.slice(5).reduce((s, [, { amount }]) => s + amount, 0)
   const segments: [string, { amount: number; color: string }][] = [
@@ -180,9 +182,9 @@ function CategoryRingHero({ transactions }: { transactions: Transaction[] }) {
     ...(restAmount > 0 ? [['その他', { amount: restAmount, color: '#5e5e72' }] as [string, { amount: number; color: string }]] : []),
   ]
 
-  const SIZE = 180
-  const OUTER_R = 80
-  const INNER_R = 55
+  const SIZE = 176
+  const OUTER_R = 78
+  const INNER_R = 53
   const CX = SIZE / 2
   const CY = SIZE / 2
   const GAP_DEG = segments.length > 1 ? 2.5 : 0
@@ -197,100 +199,90 @@ function CategoryRingHero({ transactions }: { transactions: Transaction[] }) {
     return { name, amount, color, startDeg, endDeg, pct: Math.round(frac * 100) }
   })
 
-  const activeArc = active ? arcs.find((a) => a.name === active) : null
-  const displayAmount  = activeArc?.amount ?? totalExpense
-  const displayLabel   = activeArc?.name ?? '今月の支出'
-  const displayColor   = activeArc?.color ?? CORAL
-  const displayPct     = activeArc?.pct ?? null
-
-  const handleSegment = (name: string) =>
-    setActive((prev) => (prev === name ? null : name))
+  const activeArc  = active ? arcs.find((a) => a.name === active) : null
+  const displayAmt = activeArc?.amount ?? totalExpense
+  const displayLbl = activeArc?.name ?? '今月の支出'
+  const displayClr = activeArc?.color ?? CORAL
+  const displayPct = activeArc?.pct ?? null
 
   if (totalExpense === 0) {
     return (
-      <section style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, marginTop: 2, animation: 'kai-rise .8s ease-out both' }}>
-        <div style={{ width: SIZE, height: SIZE, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <svg width={SIZE} height={SIZE}>
-            <circle cx={CX} cy={CY} r={OUTER_R} fill="none" stroke="rgba(255,255,255,.06)" strokeWidth={OUTER_R - INNER_R}/>
-          </svg>
-          <div style={{ position: 'absolute', fontSize: 12, color: TEXT3 }}>データなし</div>
-        </div>
-      </section>
+      <div className="rounded-[18px] p-4" style={{ ...panel, animation: 'kai-rise .8s ease-out both', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+        <svg width={SIZE} height={SIZE}>
+          <circle cx={CX} cy={CY} r={(OUTER_R + INNER_R) / 2} fill="none" stroke="rgba(255,255,255,.06)" strokeWidth={OUTER_R - INNER_R}/>
+        </svg>
+        <p style={{ fontSize: 12, color: TEXT3 }}>今月の支出データなし</p>
+      </div>
     )
   }
 
   return (
-    <section style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, marginTop: 2, animation: 'kai-rise .8s ease-out both' }}>
-      <div style={{ position: 'relative', width: SIZE, height: SIZE }}>
-        <svg width={SIZE} height={SIZE} style={{ display: 'block' }}>
-          {/* Track */}
-          <circle cx={CX} cy={CY} r={(OUTER_R + INNER_R) / 2} fill="none" stroke="rgba(255,255,255,.04)" strokeWidth={OUTER_R - INNER_R}/>
-          {/* Segments */}
-          {arcs.map(({ name, color, startDeg, endDeg }) => (
-            <path
-              key={name}
-              d={donutArcPath(CX, CY, OUTER_R, INNER_R, startDeg, endDeg)}
-              fill={color}
-              opacity={active && active !== name ? 0.25 : 1}
-              style={{ cursor: 'pointer', transition: 'opacity .18s' }}
-              onMouseEnter={() => setActive(name)}
-              onMouseLeave={() => setActive(null)}
-              onClick={() => handleSegment(name)}
-            />
-          ))}
-        </svg>
+    <div className="rounded-[18px]" style={{ ...panel, animation: 'kai-rise .8s ease-out both' }}>
+      {/* header */}
+      <div style={{ padding: '14px 16px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+        <p style={{ fontSize: 11, color: TEXT3, fontWeight: 700, letterSpacing: '.08em' }}>カテゴリ別支出</p>
+        <p style={{ fontSize: 9, color: KAI.text4, fontFamily: 'var(--font-jetbrains),JetBrains Mono,monospace' }}>{daysLeft} days left</p>
+      </div>
 
-        {/* Center label */}
-        <div style={{
-          position: 'absolute', inset: 0,
-          display: 'flex', flexDirection: 'column',
-          alignItems: 'center', justifyContent: 'center',
-          pointerEvents: 'none',
-        }}>
-          <div style={{ fontSize: 9, color: displayColor, fontWeight: 700, letterSpacing: '.08em', transition: 'color .18s' }}>
-            {displayLabel}
-          </div>
+      {/* donut + center */}
+      <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 8px', position: 'relative' }}>
+        <div style={{ position: 'relative', width: SIZE, height: SIZE }}>
+          <svg width={SIZE} height={SIZE} style={{ display: 'block' }}>
+            <circle cx={CX} cy={CY} r={(OUTER_R + INNER_R) / 2} fill="none" stroke="rgba(255,255,255,.04)" strokeWidth={OUTER_R - INNER_R}/>
+            {arcs.map(({ name, color, startDeg, endDeg }) => (
+              <path
+                key={name}
+                d={donutArcPath(CX, CY, OUTER_R, INNER_R, startDeg, endDeg)}
+                fill={color}
+                opacity={active && active !== name ? 0.22 : 1}
+                style={{ cursor: 'pointer', transition: 'opacity .18s' }}
+                onMouseEnter={() => setHovered(name)}
+                onMouseLeave={() => setHovered(null)}
+                onClick={() => setSelected((p) => (p === name ? null : name))}
+              />
+            ))}
+          </svg>
           <div style={{
-            fontFamily: 'var(--font-jetbrains),JetBrains Mono,monospace',
-            fontWeight: 700, fontSize: activeArc ? 20 : 25,
-            color: TEXT, letterSpacing: '-.02em', marginTop: 2, transition: 'font-size .15s',
+            position: 'absolute', inset: 0,
+            display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center',
+            pointerEvents: 'none',
           }}>
-            {activeArc ? yen(displayAmount) : yen(totalAnimated)}
+            <div style={{ fontSize: 9, color: displayClr, fontWeight: 700, letterSpacing: '.06em', transition: 'color .18s', maxWidth: INNER_R * 1.8, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {displayLbl}
+            </div>
+            <div style={{ fontFamily: 'var(--font-jetbrains),JetBrains Mono,monospace', fontWeight: 700, fontSize: activeArc ? 18 : 23, color: TEXT, letterSpacing: '-.02em', marginTop: 2, transition: 'font-size .15s' }}>
+              {activeArc ? yen(displayAmt) : yen(totalAnimated)}
+            </div>
+            {displayPct !== null && (
+              <div style={{ fontSize: 11, color: displayClr, fontWeight: 700, marginTop: 1 }}>{displayPct}%</div>
+            )}
           </div>
-          {displayPct !== null ? (
-            <div style={{ fontSize: 11, color: displayColor, fontWeight: 700, marginTop: 2 }}>
-              {displayPct}%
-            </div>
-          ) : (
-            <div style={{ fontSize: 9, color: KAI.text4, marginTop: 2, fontFamily: 'var(--font-jetbrains),JetBrains Mono,monospace' }}>
-              {daysLeft} days left
-            </div>
-          )}
         </div>
       </div>
 
-      {/* Legend */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 12px', justifyContent: 'center', maxWidth: 280 }}>
+      {/* legend */}
+      <div style={{ padding: '0 14px 14px', display: 'flex', flexWrap: 'wrap', gap: '5px 10px', justifyContent: 'center' }}>
         {arcs.map(({ name, color }) => (
           <button
             key={name}
             type="button"
-            onClick={() => handleSegment(name)}
+            onClick={() => setSelected((p) => (p === name ? null : name))}
             style={{
               display: 'flex', alignItems: 'center', gap: 5,
               fontSize: 10.5, color: active === name ? color : TEXT3,
-              fontWeight: active === name ? 700 : 500,
+              fontWeight: active === name ? 700 : 400,
               background: 'none', border: 'none', cursor: 'pointer',
-              padding: '2px 0', fontFamily: 'inherit',
-              transition: 'color .18s, font-weight .18s',
+              padding: '1px 0', fontFamily: 'inherit',
+              transition: 'color .18s',
             }}
           >
-            <span style={{ width: 7, height: 7, borderRadius: 2, background: color, display: 'inline-block', flexShrink: 0 }} />
+            <span style={{ width: 7, height: 7, borderRadius: 2, background: color, flexShrink: 0, display: 'inline-block' }} />
             {name}
           </button>
         ))}
       </div>
-    </section>
+    </div>
   )
 }
 
@@ -781,26 +773,30 @@ function AnalyticsTab({ allTransactions, month }: { allTransactions: Transaction
         </ResponsiveContainer>
       </div>
 
-      <div className="kai-rise grid grid-cols-2 gap-2.5" style={{ animationDelay: '80ms' }}>
-        {/* category ranking */}
+      <div className="kai-rise grid grid-cols-1 gap-2.5 sm:grid-cols-2" style={{ animationDelay: '80ms' }}>
+        {/* category ranking — リスト形式（モバイルで名前が見切れないよう） */}
         <div className="rounded-[18px] p-4" style={panel}>
           <p style={{ fontSize: 11, color: TEXT3, letterSpacing: '.08em', fontWeight: 700, marginBottom: 12 }}>支出ランキング</p>
           {rankData.length === 0 ? (
             <p style={{ padding: '16px 0', textAlign: 'center', fontSize: 13, color: TEXT3 }}>データなし</p>
-          ) : (
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={rankData} layout="vertical" margin={{ left: 0, right: 4 }}>
-                <XAxis type="number" hide />
-                <YAxis type="category" dataKey="name" tick={{ fontSize: 10, fill: TEXT2 }} axisLine={false} tickLine={false} width={52} />
-                <Tooltip content={<TooltipDark />} cursor={{ fill: 'rgba(255,255,255,.03)' }} />
-                <Bar dataKey="amount" name="支出" radius={[0, 4, 4, 0]}>
-                  {rankData.map((entry, i) => (
-                    <Cell key={i} fill={entry.color} opacity={i === 0 ? 1 : 0.65} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          )}
+          ) : (() => {
+            const rankTotal = rankData.reduce((s, r) => s + r.amount, 0)
+            return rankData.map(({ name, amount, color }, i) => {
+              const pct = rankTotal > 0 ? (amount / rankTotal) * 100 : 0
+              return (
+                <div key={name} style={{ marginBottom: i < rankData.length - 1 ? 10 : 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                    <span style={{ fontFamily: 'var(--font-jetbrains),JetBrains Mono,monospace', fontSize: 9.5, fontWeight: 700, color: i === 0 ? color : TEXT3, minWidth: 14, textAlign: 'right' }}>{i + 1}</span>
+                    <span style={{ flex: 1, fontSize: 12, color: TEXT2, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>
+                    <span style={{ fontFamily: 'var(--font-jetbrains),JetBrains Mono,monospace', fontSize: 11, color: TEXT, fontWeight: 600, flexShrink: 0 }}>¥{amount.toLocaleString('ja-JP')}</span>
+                  </div>
+                  <div style={{ height: 3, background: 'rgba(255,255,255,.06)', borderRadius: 99, overflow: 'hidden', marginLeft: 20 }}>
+                    <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: 99, opacity: i === 0 ? 1 : 0.7 }}/>
+                  </div>
+                </div>
+              )
+            })
+          })()}
         </div>
 
         {/* MoM */}
