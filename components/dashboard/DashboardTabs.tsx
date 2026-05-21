@@ -13,10 +13,10 @@ import { GoalBanner } from '@/components/dashboard/GoalBanner'
 import { GoalProgressCard } from '@/components/dashboard/GoalProgressCard'
 import type { FinancialGoal } from '@/components/dashboard/GoalProgressCard'
 import { Skeleton } from '@/components/ui/Skeleton'
-import { Ring, Icon } from '@/components/kai/shared'
+import { CategoryIcon } from '@/components/ui/CategoryIcon'
+import { Icon } from '@/components/kai/shared'
 import { useCountUp } from '@/components/kai/hooks'
 import { KAI, yen } from '@/lib/kai-tokens'
-import { forecastMonthEnd } from '@/lib/forecast'
 import type { Transaction } from '@/lib/types'
 
 /* ─── design tokens ─── */
@@ -62,10 +62,11 @@ function buildMonthlyData(transactions: Transaction[]) {
 function buildCategoryData(transactions: Transaction[]) {
   const expenses = transactions.filter((t) => t.amount < 0)
   const byCategory = Object.entries(
-    expenses.reduce<Record<string, { amount: number; color: string }>>((acc, t) => {
+    expenses.reduce<Record<string, { amount: number; color: string; icon: string | null }>>((acc, t) => {
       const name = t.categories?.name ?? 'その他'
       const color = t.categories?.color ?? '#8b8ba0'
-      acc[name] = { amount: (acc[name]?.amount ?? 0) + Math.abs(t.amount), color }
+      const icon = t.categories?.icon ?? null
+      acc[name] = { amount: (acc[name]?.amount ?? 0) + Math.abs(t.amount), color, icon }
       return acc
     }, {})
   ).sort((a, b) => b[1].amount - a[1].amount)
@@ -117,50 +118,164 @@ function TooltipDark({ active, payload, label }: { active?: boolean; payload?: {
   )
 }
 
-/* ─── Ring Hero ─── */
-const DEFAULT_BUDGET = 200000
+/* ─── Donut arc helpers ─── */
+function polarToCartesian(cx: number, cy: number, r: number, angleDeg: number) {
+  const rad = (angleDeg - 90) * (Math.PI / 180)
+  return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) }
+}
 
-function RingHero({ transactions }: { transactions: Transaction[] }) {
-  const totalExpense = transactions.filter((t) => t.amount < 0).reduce((s, t) => s + Math.abs(t.amount), 0)
-  const consumed  = (totalExpense / DEFAULT_BUDGET) * 100
-  const remaining = Math.max(0, DEFAULT_BUDGET - totalExpense)
-  const now2      = new Date()
-  const daysLeft  = new Date(now2.getFullYear(), now2.getMonth() + 1, 0).getDate() - now2.getDate()
-  const total     = useCountUp(totalExpense, { duration: 1500 })
-  const forecast  = forecastMonthEnd(totalExpense, now2)
-  const overBudget = forecast.forecast > DEFAULT_BUDGET
-  const forecastColor = overBudget ? DOWN : forecast.forecast > DEFAULT_BUDGET * 0.9 ? AMBER : KAI.text2
+function donutArcPath(cx: number, cy: number, outerR: number, innerR: number, startDeg: number, endDeg: number) {
+  const sweep = endDeg - startDeg
+  if (sweep >= 359.9) {
+    // Full circle rendered as two arcs to avoid degenerate path
+    const o1 = polarToCartesian(cx, cy, outerR, 0)
+    const o2 = polarToCartesian(cx, cy, outerR, 179.9)
+    const i1 = polarToCartesian(cx, cy, innerR, 179.9)
+    const i2 = polarToCartesian(cx, cy, innerR, 0)
+    return `M ${o1.x} ${o1.y} A ${outerR} ${outerR} 0 1 1 ${o2.x} ${o2.y} A ${outerR} ${outerR} 0 1 1 ${o1.x} ${o1.y} M ${i2.x} ${i2.y} A ${innerR} ${innerR} 0 1 0 ${i1.x} ${i1.y} A ${innerR} ${innerR} 0 1 0 ${i2.x} ${i2.y} Z`
+  }
+  const large = sweep > 180 ? 1 : 0
+  const o1 = polarToCartesian(cx, cy, outerR, startDeg)
+  const o2 = polarToCartesian(cx, cy, outerR, endDeg)
+  const i1 = polarToCartesian(cx, cy, innerR, endDeg)
+  const i2 = polarToCartesian(cx, cy, innerR, startDeg)
+  return [
+    `M ${o1.x.toFixed(2)} ${o1.y.toFixed(2)}`,
+    `A ${outerR} ${outerR} 0 ${large} 1 ${o2.x.toFixed(2)} ${o2.y.toFixed(2)}`,
+    `L ${i1.x.toFixed(2)} ${i1.y.toFixed(2)}`,
+    `A ${innerR} ${innerR} 0 ${large} 0 ${i2.x.toFixed(2)} ${i2.y.toFixed(2)}`,
+    'Z',
+  ].join(' ')
+}
+
+/* ─── Category Donut Hero ─── */
+function CategoryRingHero({ transactions }: { transactions: Transaction[] }) {
+  const [active, setActive] = useState<string | null>(null)
+
+  const cats = buildCategoryData(transactions)
+  const totalExpense = cats.reduce((s, [, { amount }]) => s + amount, 0)
+  const totalAnimated = useCountUp(totalExpense, { duration: 1400 })
+
+  const now2     = new Date()
+  const daysLeft = new Date(now2.getFullYear(), now2.getMonth() + 1, 0).getDate() - now2.getDate()
+
+  // Top 5 + まとめ
+  const top5 = cats.slice(0, 5)
+  const restAmount = cats.slice(5).reduce((s, [, { amount }]) => s + amount, 0)
+  const segments: [string, { amount: number; color: string }][] = [
+    ...top5,
+    ...(restAmount > 0 ? [['その他', { amount: restAmount, color: '#5e5e72' }] as [string, { amount: number; color: string }]] : []),
+  ]
+
+  const SIZE = 180
+  const OUTER_R = 80
+  const INNER_R = 55
+  const CX = SIZE / 2
+  const CY = SIZE / 2
+  const GAP_DEG = segments.length > 1 ? 2.5 : 0
+
+  let cumDeg = 0
+  const arcs = segments.map(([name, { amount, color }]) => {
+    const frac = totalExpense > 0 ? amount / totalExpense : 0
+    const spanDeg = frac * 360
+    const startDeg = cumDeg + GAP_DEG / 2
+    const endDeg   = cumDeg + spanDeg - GAP_DEG / 2
+    cumDeg += spanDeg
+    return { name, amount, color, startDeg, endDeg, pct: Math.round(frac * 100) }
+  })
+
+  const activeArc = active ? arcs.find((a) => a.name === active) : null
+  const displayAmount  = activeArc?.amount ?? totalExpense
+  const displayLabel   = activeArc?.name ?? '今月の支出'
+  const displayColor   = activeArc?.color ?? CORAL
+  const displayPct     = activeArc?.pct ?? null
+
+  const handleSegment = (name: string) =>
+    setActive((prev) => (prev === name ? null : name))
+
+  if (totalExpense === 0) {
+    return (
+      <section style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, marginTop: 2, animation: 'kai-rise .8s ease-out both' }}>
+        <div style={{ width: SIZE, height: SIZE, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <svg width={SIZE} height={SIZE}>
+            <circle cx={CX} cy={CY} r={OUTER_R} fill="none" stroke="rgba(255,255,255,.06)" strokeWidth={OUTER_R - INNER_R}/>
+          </svg>
+          <div style={{ position: 'absolute', fontSize: 12, color: TEXT3 }}>データなし</div>
+        </div>
+      </section>
+    )
+  }
 
   return (
-    <section
-      style={{
-        display: 'flex', justifyContent: 'center', alignItems: 'center',
-        position: 'relative', marginTop: 2,
-        animation: 'kai-rise .8s ease-out both',
-      }}
-    >
-      <Ring percent={consumed} size={180} stroke={12} color={CORAL} delayMs={300}/>
-      <div
-        style={{
+    <section style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, marginTop: 2, animation: 'kai-rise .8s ease-out both' }}>
+      <div style={{ position: 'relative', width: SIZE, height: SIZE }}>
+        <svg width={SIZE} height={SIZE} style={{ display: 'block' }}>
+          {/* Track */}
+          <circle cx={CX} cy={CY} r={(OUTER_R + INNER_R) / 2} fill="none" stroke="rgba(255,255,255,.04)" strokeWidth={OUTER_R - INNER_R}/>
+          {/* Segments */}
+          {arcs.map(({ name, color, startDeg, endDeg }) => (
+            <path
+              key={name}
+              d={donutArcPath(CX, CY, OUTER_R, INNER_R, startDeg, endDeg)}
+              fill={color}
+              opacity={active && active !== name ? 0.25 : 1}
+              style={{ cursor: 'pointer', transition: 'opacity .18s' }}
+              onMouseEnter={() => setActive(name)}
+              onMouseLeave={() => setActive(null)}
+              onClick={() => handleSegment(name)}
+            />
+          ))}
+        </svg>
+
+        {/* Center label */}
+        <div style={{
           position: 'absolute', inset: 0,
           display: 'flex', flexDirection: 'column',
           alignItems: 'center', justifyContent: 'center',
-        }}
-      >
-        <div style={{ fontSize: 9, color: TEXT3, fontWeight: 600, letterSpacing: '.1em', textTransform: 'uppercase' }}>今月の支出</div>
-        <div style={{ fontFamily: 'var(--font-jetbrains),JetBrains Mono,monospace', fontWeight: 700, fontSize: 27, color: TEXT, letterSpacing: '-.02em', marginTop: 2 }}>{yen(total)}</div>
-        <div style={{ fontSize: 10, color: CORAL, fontWeight: 600, marginTop: 3 }}>残り {yen(remaining)}</div>
-        {forecast.forecast > 0 && (
-          <div
+          pointerEvents: 'none',
+        }}>
+          <div style={{ fontSize: 9, color: displayColor, fontWeight: 700, letterSpacing: '.08em', transition: 'color .18s' }}>
+            {displayLabel}
+          </div>
+          <div style={{
+            fontFamily: 'var(--font-jetbrains),JetBrains Mono,monospace',
+            fontWeight: 700, fontSize: activeArc ? 20 : 25,
+            color: TEXT, letterSpacing: '-.02em', marginTop: 2, transition: 'font-size .15s',
+          }}>
+            {activeArc ? yen(displayAmount) : yen(totalAnimated)}
+          </div>
+          {displayPct !== null ? (
+            <div style={{ fontSize: 11, color: displayColor, fontWeight: 700, marginTop: 2 }}>
+              {displayPct}%
+            </div>
+          ) : (
+            <div style={{ fontSize: 9, color: KAI.text4, marginTop: 2, fontFamily: 'var(--font-jetbrains),JetBrains Mono,monospace' }}>
+              {daysLeft} days left
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Legend */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 12px', justifyContent: 'center', maxWidth: 280 }}>
+        {arcs.map(({ name, color }) => (
+          <button
+            key={name}
+            type="button"
+            onClick={() => handleSegment(name)}
             style={{
-              fontSize: 9, marginTop: 4, color: forecastColor,
-              fontFamily: 'var(--font-jetbrains),JetBrains Mono,monospace', fontWeight: 600,
+              display: 'flex', alignItems: 'center', gap: 5,
+              fontSize: 10.5, color: active === name ? color : TEXT3,
+              fontWeight: active === name ? 700 : 500,
+              background: 'none', border: 'none', cursor: 'pointer',
+              padding: '2px 0', fontFamily: 'inherit',
+              transition: 'color .18s, font-weight .18s',
             }}
           >
-            {overBudget ? '⚠' : '~'} 月末予測 {yen(forecast.forecast)}
-          </div>
-        )}
-        <div style={{ fontSize: 9, color: KAI.text4, marginTop: 1, fontFamily: 'var(--font-jetbrains),JetBrains Mono,monospace' }}>{daysLeft} days left</div>
+            <span style={{ width: 7, height: 7, borderRadius: 2, background: color, display: 'inline-block', flexShrink: 0 }} />
+            {name}
+          </button>
+        ))}
       </div>
     </section>
   )
@@ -222,8 +337,10 @@ function DesktopRecentTx({ transactions }: { transactions: Transaction[] }) {
           borderBottom: i < recent.length - 1 ? '1px solid rgba(255,255,255,.04)' : 'none',
           animation: `kai-rise .3s ${.08 + i * .025}s ease-out both`,
         }}>
-          <div style={{ width: 30, height: 30, borderRadius: 9, flexShrink: 0, background: `${t.categories?.color ?? TEXT3}18`, border: `1px solid ${t.categories?.color ?? TEXT3}2a`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>
-            {t.categories?.icon ?? '·'}
+          <div style={{ width: 30, height: 30, borderRadius: 9, flexShrink: 0, background: `${t.categories?.color ?? TEXT3}18`, border: `1px solid ${t.categories?.color ?? TEXT3}2a`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {t.categories?.icon
+              ? <CategoryIcon name={t.categories.icon} size={14} color={t.categories?.color ?? TEXT3} />
+              : <span style={{ fontSize: 14, color: TEXT3 }}>·</span>}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 12, color: TEXT2, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.payee}</div>
@@ -314,9 +431,12 @@ function TodayCard({ transactions }: { transactions: Transaction[] }) {
                   background: `${t.categories?.color ?? TEXT3}1c`,
                   border: `1px solid ${t.categories?.color ?? TEXT3}33`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 11,
                 }}
-              >{t.categories?.icon ?? '·'}</div>
+              >
+                {t.categories?.icon
+                  ? <CategoryIcon name={t.categories.icon} size={12} color={t.categories?.color ?? TEXT3} />
+                  : <span style={{ fontSize: 11, color: TEXT3 }}>·</span>}
+              </div>
               <span style={{ flex: 1, fontSize: 11.5, color: TEXT2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.payee}</span>
               <span style={{ fontSize: 11, fontWeight: 700, color: TEXT, fontFamily: 'var(--font-jetbrains),JetBrains Mono,monospace', letterSpacing: '-.01em', minWidth: 42, textAlign: 'right' }}>
                 ¥{Math.abs(t.amount).toLocaleString('ja-JP')}
@@ -333,14 +453,16 @@ function TodayCard({ transactions }: { transactions: Transaction[] }) {
 }
 
 /* ─── Category chip (single cell) ─── */
-function CategoryChipItem({ name, value, total, color, idx }: { name: string; value: number; total: number; color: string; idx: number }) {
+function CategoryChipItem({ name, value, total, color, icon, idx }: { name: string; value: number; total: number; color: string; icon: string | null; idx: number }) {
   const pct = Math.min(100, (value / Math.max(total, 1)) * 100)
   const animatedPct = useCountUp(pct, { duration: 1200, delay: 400 + idx * 80 })
 
   return (
     <div style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.06)', borderRadius: 14, padding: '10px 12px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-        <div style={{ width: 22, height: 22, borderRadius: 7, background: `${color}22`, border: `1px solid ${color}44`, display: 'flex', alignItems: 'center', justifyContent: 'center', color, fontSize: 11 }}>·</div>
+        <div style={{ width: 22, height: 22, borderRadius: 7, background: `${color}22`, border: `1px solid ${color}44`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {icon ? <CategoryIcon name={icon} size={12} color={color} /> : <span style={{ color, fontSize: 11 }}>·</span>}
+        </div>
         <span style={{ fontSize: 12, color: '#e8e8f0', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{name}</span>
       </div>
       <div style={{ fontSize: 14, fontWeight: 700, fontFamily: 'var(--font-jetbrains),JetBrains Mono,monospace', color: TEXT, letterSpacing: '-.01em' }}>
@@ -366,8 +488,8 @@ function CategoryChips({ transactions }: { transactions: Transaction[] }) {
 
   return (
     <section style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, animation: 'kai-rise .6s .35s ease-out both' }}>
-      {top4.map(([name, { amount, color }], i) => (
-        <CategoryChipItem key={name} name={name} value={amount} total={total} color={color} idx={i}/>
+      {top4.map(([name, { amount, color, icon }], i) => (
+        <CategoryChipItem key={name} name={name} value={amount} total={total} color={color} icon={icon} idx={i}/>
       ))}
     </section>
   )
@@ -595,7 +717,7 @@ function NowTab({ transactions, allTransactions, month, streak }: { transactions
     <>
       {/* Mobile: mock DashboardScreen order */}
       <div className="lg:hidden space-y-3">
-        <RingHero transactions={transactions} />
+        <CategoryRingHero transactions={transactions} />
         <TodayCard transactions={transactions} />
         <GoalSection transactions={transactions} />
         <CategoryChips transactions={transactions} />

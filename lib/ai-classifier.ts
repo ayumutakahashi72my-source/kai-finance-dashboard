@@ -385,6 +385,55 @@ ${JSON.stringify(inputJson)}
 
 // ===== Upsert Categories =====
 
+const CATEGORY_PALETTE = [
+  '#5eead4', '#22d3ee', '#60a5fa', '#a78bfa',
+  '#f472b6', '#fb923c', '#fbbf24', '#4ade80',
+  '#fb7185', '#818cf8', '#34d399', '#f59e0b',
+  '#e879f9', '#38bdf8', '#a3e635',
+]
+
+export function pickCategoryColor(name: string): string {
+  let h = 0
+  for (let i = 0; i < name.length; i++) h = Math.imul(31, h) + name.charCodeAt(i) | 0
+  return CATEGORY_PALETTE[Math.abs(h) % CATEGORY_PALETTE.length]
+}
+
+const LUCIDE_ICON_NAMES = [
+  'ShoppingCart', 'Utensils', 'Car', 'Train', 'Home', 'Zap', 'Droplets',
+  'Wifi', 'Smartphone', 'Heart', 'Shirt', 'BookOpen', 'Gamepad2', 'Music',
+  'Coffee', 'Beer', 'Dumbbell', 'Scissors', 'Baby', 'GraduationCap',
+  'Gift', 'Plane', 'PawPrint', 'Wrench', 'ShoppingBag', 'CreditCard',
+  'Banknote', 'Building2', 'Sun', 'Tv', 'Package', 'Pizza', 'Briefcase',
+  'Landmark', 'Bus', 'Bike', 'Camera', 'MapPin', 'Star',
+]
+
+export async function fetchCategoryIcons(names: string[]): Promise<Map<string, string>> {
+  if (!names.length) return new Map()
+  try {
+    const apiKey = getEnvKey('ANTHROPIC_API_KEY')
+    const client = new Anthropic({ apiKey })
+    const prompt = `以下の日本語支出カテゴリ名に対して、最も適切なLucideアイコン名を1つずつ選んでください。
+使用可能なアイコン一覧: ${LUCIDE_ICON_NAMES.join(', ')}
+カテゴリ: ${names.join(', ')}
+必ずJSON形式のみで返してください（説明不要）: {"カテゴリ名": "IconName", ...}`
+    const msg = await client.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 256,
+      messages: [{ role: 'user', content: prompt }],
+    })
+    const text = msg.content[0]?.type === 'text' ? msg.content[0].text.trim() : ''
+    const json = text.match(/\{[\s\S]*\}/)?.[0]
+    if (!json) return new Map()
+    const parsed = JSON.parse(json) as Record<string, string>
+    const validSet = new Set(LUCIDE_ICON_NAMES)
+    return new Map(
+      Object.entries(parsed).filter(([, v]) => validSet.has(v))
+    )
+  } catch {
+    return new Map()
+  }
+}
+
 async function upsertCategoriesByName(
   names: string[],
   householdId: string,
@@ -403,9 +452,16 @@ async function upsertCategoriesByName(
 
   const toCreate = names.filter((n) => !nameToId.has(n))
   if (toCreate.length) {
+    // 新規カテゴリに色とアイコンを付与
+    const iconMap = await fetchCategoryIcons(toCreate)
     const { data: created } = await supabase
       .from('categories')
-      .insert(toCreate.map((name) => ({ name, household_id: householdId })))
+      .insert(toCreate.map((name) => ({
+        name,
+        household_id: householdId,
+        color: pickCategoryColor(name),
+        icon: iconMap.get(name) ?? null,
+      })))
       .select('id, name')
     for (const c of created ?? []) nameToId.set(c.name, c.id)
   }
@@ -423,13 +479,41 @@ type RagUpsert = {
   embedding: number[] | null
 }
 
+type UserKnowledgeUpsert = {
+  user_id: string
+  payee_key: string
+  category_name: string
+  confidence: number
+  embedding: number[] | null
+}
+
+async function syncUserKnowledge(
+  ragUpserts: RagUpsert[],
+  idToName: Map<string, string>,
+  userId: string,
+  supabase: SupabaseClient
+): Promise<void> {
+  const upserts: UserKnowledgeUpsert[] = ragUpserts
+    .flatMap((r) => {
+      const name = idToName.get(r.category_id)
+      if (!name) return []
+      return [{ user_id: userId, payee_key: r.payee_key, category_name: name, confidence: r.confidence, embedding: r.embedding }]
+    })
+  if (!upserts.length) return
+  const { error } = await supabase
+    .from('user_category_knowledge')
+    .upsert(upserts, { onConflict: 'user_id,payee_key' })
+  if (error) console.error('[classifier] user_category_knowledge upsert failed:', error.message)
+}
+
 // ===== classifyTransactions =====
 // Pipeline: corrections → exact cache → vector top-k → LLM rerank (ambiguous) → full LLM (no candidates)
 
 export async function classifyTransactions(
   items: ClassifyItem[],
   householdId: string,
-  supabase: SupabaseClient
+  supabase: SupabaseClient,
+  userId?: string
 ): Promise<ClassifyResult> {
   const categoryIdMap = new Map<number, string>()
   if (!items.length) return { categoryIdMap }
@@ -792,6 +876,7 @@ export async function classifyTransactions(
       .from('category_rag')
       .upsert(ragUpserts, { onConflict: 'household_id,payee_key' })
     if (ragErr) console.error('[classifier] category_rag upsert failed:', ragErr.message)
+    if (userId) void syncUserKnowledge(ragUpserts, idToName, userId, supabase)
   }
 
   void writeClassificationLogs(logs, supabase)
@@ -815,7 +900,8 @@ export async function classifyTransactions(
 export async function classifyFreeForm(
   items: ClassifyItem[],
   householdId: string,
-  supabase: SupabaseClient
+  supabase: SupabaseClient,
+  userId?: string
 ): Promise<Map<number, string>> {
   const categoryIdMap = new Map<number, string>()
   if (!items.length) return categoryIdMap
@@ -971,6 +1057,7 @@ export async function classifyFreeForm(
     if (ragUpserts.length) {
       const { error: ragErr } = await supabase.from('category_rag').upsert(ragUpserts, { onConflict: 'household_id,payee_key' })
       if (ragErr) console.error('[classifier] category_rag upsert failed:', ragErr.message)
+      if (userId) void syncUserKnowledge(ragUpserts, existingIdToName, userId, supabase)
     }
     void writeClassificationLogs(logs, supabase)
     return categoryIdMap
@@ -1025,6 +1112,7 @@ export async function classifyFreeForm(
     if (ragUpserts.length) {
       const { error: ragErr } = await supabase.from('category_rag').upsert(ragUpserts, { onConflict: 'household_id,payee_key' })
       if (ragErr) console.error('[classifier] category_rag upsert failed:', ragErr.message)
+      if (userId) void syncUserKnowledge(ragUpserts, existingIdToName, userId, supabase)
     }
     void writeClassificationLogs(logs, supabase)
     return categoryIdMap
@@ -1136,6 +1224,7 @@ export async function classifyFreeForm(
   if (ragUpserts.length) {
     const { error: ragErr } = await supabase.from('category_rag').upsert(ragUpserts, { onConflict: 'household_id,payee_key' })
     if (ragErr) console.error('[classifier] category_rag upsert failed:', ragErr.message)
+    if (userId) void syncUserKnowledge(ragUpserts, existingIdToName, userId, supabase)
   }
 
   if (tokenAccum.inputTokens > 0 || tokenAccum.outputTokens > 0) {

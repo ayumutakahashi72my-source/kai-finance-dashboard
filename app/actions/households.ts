@@ -57,9 +57,52 @@ export async function createHousehold(
     { name: '日用品',     color: '#f97316' },
     { name: 'その他',     color: '#8b8ba0' },
   ]
-  await supabase
+  const { data: insertedCats } = await supabase
     .from('categories')
     .insert(DEFAULT_CATEGORIES.map((c) => ({ ...c, household_id: household.id })))
+    .select('id, name')
+
+  // 過去の世帯で学習した分類知識をシード
+  const { data: knowledge } = await supabase
+    .from('user_category_knowledge')
+    .select('payee_key, category_name, confidence, hit_count, embedding')
+    .eq('user_id', user.id)
+
+  if (knowledge?.length) {
+    const nameToId = new Map(insertedCats?.map((c) => [c.name, c.id]) ?? [])
+
+    // 既存カテゴリにない名前だけ追加作成（「その他」系は除外）
+    const badNames = new Set(['未分類', 'その他', '不明', 'unknown', 'other'])
+    const newNames = [...new Set(knowledge.map((k) => k.category_name))]
+      .filter((n) => !nameToId.has(n) && !badNames.has(n))
+    if (newNames.length) {
+      const { data: created } = await supabase
+        .from('categories')
+        .insert(newNames.map((name) => ({ name, household_id: household.id })))
+        .select('id, name')
+      for (const c of created ?? []) nameToId.set(c.name, c.id)
+    }
+
+    // category_rag にシード
+    const ragSeed = knowledge
+      .flatMap((k) => {
+        const catId = nameToId.get(k.category_name)
+        if (!catId) return []
+        return [{
+          household_id: household.id,
+          payee_key: k.payee_key,
+          category_id: catId,
+          confidence: k.confidence,
+          hit_count: k.hit_count,
+          embedding: k.embedding,
+        }]
+      })
+    if (ragSeed.length) {
+      await supabase
+        .from('category_rag')
+        .upsert(ragSeed, { onConflict: 'household_id,payee_key' })
+    }
+  }
 
   revalidatePath('/')
   return { success: true }

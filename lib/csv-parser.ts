@@ -69,8 +69,13 @@ export function parseMfCsv(csvText: string): CsvParseResult {
 
   result.data.forEach((row, i) => {
     const rawTransfer = findCol(row, '振替')
-    // 振替行はスキップ
-    if (rawTransfer?.trim().toUpperCase() === 'TRUE') return
+    // 振替行はスキップ（MF CSVは "1" または "TRUE" で表現される）
+    const transfer = rawTransfer?.trim()
+    if (transfer === '1' || transfer?.toUpperCase() === 'TRUE') return
+
+    // 計算対象=0 の行もスキップ（MFが集計から除外している行）
+    const calcTarget = findCol(row, '計算対象')
+    if (calcTarget?.trim() === '0') return
 
     const rawDate = findCol(row, '日付')?.trim()
     const rawAmount = findCol(row, '金額（円）', '金額(円)', '金額')?.trim().replace(/,/g, '')

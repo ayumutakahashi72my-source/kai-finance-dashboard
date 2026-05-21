@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { parseMfCsv, buildSourceHash, decodeCsvBuffer } from '@/lib/csv-parser'
-import { classifyTransactions, classifyFreeForm, normalizeKeyword } from '@/lib/ai-classifier'
+import { classifyTransactions, classifyFreeForm, normalizeKeyword, pickCategoryColor, fetchCategoryIcons } from '@/lib/ai-classifier'
 import { writeClassificationLogs, type ClassificationLogEntry } from '@/lib/classification-logger'
 
 /** category_hint "食費 / 外食" → "食費"。空・「その他」系は空文字を返す */
@@ -13,7 +13,7 @@ function extractMajorCategory(hint: string): string {
 
 /**
  * MF大項目からカテゴリを自動作成し、name→id マップを返す。
- * 既存カテゴリは再利用し、新規のみ insert する。
+ * 新規カテゴリには色とアイコンを付与する。
  */
 async function upsertCategoriesByName(
   names: string[],
@@ -33,9 +33,15 @@ async function upsertCategoriesByName(
 
   const toCreate = names.filter((n) => !nameToId.has(n))
   if (toCreate.length) {
+    const iconMap = await fetchCategoryIcons(toCreate)
     const { data: created } = await supabase
       .from('categories')
-      .insert(toCreate.map((name) => ({ name, household_id: householdId })))
+      .insert(toCreate.map((name) => ({
+        name,
+        household_id: householdId,
+        color: pickCategoryColor(name),
+        icon: iconMap.get(name) ?? null,
+      })))
       .select('id, name')
     for (const c of created ?? []) nameToId.set(c.name, c.id)
   }
@@ -101,7 +107,7 @@ export async function POST(req: NextRequest) {
 
   // Step 3: 大項目なし・「その他」行は AI が自由にカテゴリを付ける
   if (needsAI.length) {
-    const aiMap = await classifyFreeForm(needsAI, membership.household_id, supabase)
+    const aiMap = await classifyFreeForm(needsAI, membership.household_id, supabase, user.id)
     for (const [idx, catId] of aiMap) categoryIdMap.set(idx, catId)
   }
 

@@ -27,6 +27,13 @@ export async function GET(request: NextRequest) {
     )
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
+      // クッキーに保存された招待トークンがあればそちらを優先
+      const pendingInvite = cookieStore.get('kai_pending_invite')
+      if (pendingInvite?.value) {
+        const response = NextResponse.redirect(`${origin}/invite/${pendingInvite.value}`)
+        response.cookies.delete('kai_pending_invite')
+        return response
+      }
       return NextResponse.redirect(`${origin}${next}`)
     }
     console.error('[auth/callback] exchangeCodeForSession error:', error)

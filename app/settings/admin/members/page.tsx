@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import Link from 'next/link'
-import { ChevronLeft, ShieldCheck, ShieldOff, Crown } from 'lucide-react'
+import { ChevronLeft, ShieldCheck, ShieldOff, Crown, UserPlus, Copy, Check } from 'lucide-react'
 import { KAI } from '@/lib/kai-tokens'
 import { Skeleton } from '@/components/ui/Skeleton'
 
@@ -24,6 +24,25 @@ const MONO: React.CSSProperties = {
 export default function AdminMembersPage() {
   const qc = useQueryClient()
   const [pendingId, setPendingId] = useState<string | null>(null)
+  const [inviteUrl, setInviteUrl] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
+
+  const { mutate: createInvite, isPending: inviting } = useMutation({
+    mutationFn: () =>
+      fetch('/api/settings/members/invite', { method: 'POST' }).then(async (r) => {
+        const j = await r.json().catch(() => ({}))
+        if (!r.ok) throw new Error(j.error ?? `HTTP ${r.status}`)
+        return j as { url: string }
+      }),
+    onSuccess: (data) => setInviteUrl(data.url),
+  })
+
+  async function handleCopy() {
+    if (!inviteUrl) return
+    await navigator.clipboard.writeText(inviteUrl)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
 
   const { data: members, isLoading, isError } = useQuery<Member[]>({
     queryKey: ['admin_members'],
@@ -103,6 +122,63 @@ export default function AdminMembersPage() {
             管理者は AI 分析・メンバー権限変更が可能になります。
             自分自身の権限は変更できません（管理者が0人になるのを防ぐため）。
           </p>
+        </div>
+
+        {/* 招待セクション */}
+        <div style={{
+          background: 'rgba(20,22,32,0.75)', backdropFilter: 'blur(24px)',
+          border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14,
+          padding: '16px 18px', marginBottom: 20,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+            <div>
+              <p style={{ fontSize: 13, fontWeight: 600, color: KAI.text1, marginBottom: 2 }}>メンバーを招待</p>
+              <p style={{ fontSize: 11, color: KAI.text4 }}>招待リンクを発行してシェア（有効期限48時間）</p>
+            </div>
+            <button
+              onClick={() => { setInviteUrl(null); createInvite() }}
+              disabled={inviting}
+              style={{
+                padding: '8px 14px', borderRadius: 9, border: `1px solid ${KAI.cyan}40`,
+                background: `${KAI.cyan}10`, color: KAI.cyan, fontSize: 12, fontWeight: 600,
+                cursor: inviting ? 'not-allowed' : 'pointer', opacity: inviting ? 0.6 : 1,
+                display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              <UserPlus size={13} strokeWidth={2}/>
+              {inviting ? '作成中…' : 'リンク発行'}
+            </button>
+          </div>
+
+          {inviteUrl && (
+            <div style={{ marginTop: 12 }}>
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+                borderRadius: 9, padding: '8px 12px',
+              }}>
+                <p style={{ fontSize: 11, color: KAI.text3, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: 'monospace' }}>
+                  {inviteUrl}
+                </p>
+                <button
+                  onClick={handleCopy}
+                  style={{
+                    padding: '4px 10px', borderRadius: 7, border: `1px solid ${copied ? KAI.success + '44' : 'rgba(255,255,255,0.12)'}`,
+                    background: copied ? `${KAI.success}10` : 'rgba(255,255,255,0.06)',
+                    color: copied ? KAI.success : KAI.text3, fontSize: 11, fontWeight: 600,
+                    cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0,
+                  }}
+                >
+                  {copied ? <Check size={12}/> : <Copy size={12}/>}
+                  {copied ? 'コピー済み' : 'コピー'}
+                </button>
+              </div>
+              <p style={{ fontSize: 10, color: KAI.text4, marginTop: 6, paddingLeft: 2 }}>
+                このリンクを送ると相手がGoogleログイン後に参加できます
+              </p>
+            </div>
+          )}
         </div>
 
         {/* メンバー一覧 */}

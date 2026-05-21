@@ -24,7 +24,8 @@ export async function POST(req: NextRequest) {
   const { categoryIdMap } = await classifyTransactions(
     [{ index: 0, payee, category_hint: '' }],
     membership.household_id,
-    supabase
+    supabase,
+    user.id
   )
 
   const categoryId = categoryIdMap.get(0) ?? null

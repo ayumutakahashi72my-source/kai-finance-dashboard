@@ -65,7 +65,7 @@ export async function POST() {
   for (let offset = 0; offset < allRows.length; offset += CHUNK) {
     const chunk = allRows.slice(offset, offset + CHUNK)
     const items = chunk.map((r, i) => ({ index: i, payee: r.payee, category_hint: '' }))
-    const aiMap = await classifyFreeForm(items, membership.household_id, supabase)
+    const aiMap = await classifyFreeForm(items, membership.household_id, supabase, user.id)
 
     for (const [i, catId] of aiMap) {
       const row = chunk[i]

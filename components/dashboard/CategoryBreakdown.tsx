@@ -2,6 +2,7 @@
 
 import { DEFAULT_CATEGORY_COLORS } from '@/lib/types'
 import type { Transaction } from '@/lib/types'
+import { CategoryIcon } from '@/components/ui/CategoryIcon'
 
 export function CategoryBreakdown({ transactions }: { transactions: Transaction[] }) {
   const expenses = transactions.filter((t) => t.amount < 0)
@@ -60,8 +61,8 @@ export function CategoryBreakdown({ transactions }: { transactions: Transaction[
             return (
               <div key={name} style={{ animationDelay: `${i * 80}ms` }}>
                 <div className="mb-[5px] flex items-baseline justify-between">
-                  <span className="text-[14px] font-medium text-[#f0f0f5]">
-                    {icon && <span className="mr-1">{icon}</span>}
+                  <span className="text-[14px] font-medium text-[#f0f0f5]" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                    {icon && <CategoryIcon name={icon} size={14} color={color} />}
                     {name}
                   </span>
                   <span className="mono text-[13px] text-[#c4c4d0]">

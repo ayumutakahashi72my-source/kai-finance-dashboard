@@ -16,6 +16,9 @@ import {
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
+import { LeaveHouseholdButton } from '@/components/settings/LeaveHouseholdButton'
+import { CleanupCardTransfersButton } from '@/components/settings/CleanupCardTransfersButton'
+import { FixCategoryColorsButton } from '@/components/settings/FixCategoryColorsButton'
 
 function MfIcon({ size = 18 }: { size?: number }) {
   return (
@@ -99,11 +102,12 @@ export default async function SettingsPage() {
 
   const { data: member } = await supabase
     .from('household_members')
-    .select('is_admin')
+    .select('is_admin, role')
     .eq('user_id', user.id)
     .limit(1)
     .single()
   const isAdmin = !!member?.is_admin
+  const isOwner = member?.role === 'owner'
 
   return (
     <div className="min-h-screen" style={{ background: '#0c0a14' }}>
@@ -219,7 +223,7 @@ export default async function SettingsPage() {
               <SettingsRow
                 customIcon={<MfIcon size={36} />}
                 title="MoneyForward Me 連携"
-                description="毎朝 6:00 に取引を自動取込"
+                description="手動で取引を取込"
                 href="/settings/integrations/mf"
               />
             </Card>
@@ -266,6 +270,20 @@ export default async function SettingsPage() {
                   href="/settings/admin/members"
                   accent="#fb9477"
                 />
+              </Card>
+            </div>
+          )}
+
+          {/* データ修正・危険な操作 */}
+          {member && (
+            <div>
+              <p style={{ fontSize: 11, color: '#5e5e72', fontWeight: 700, letterSpacing: '.10em', marginBottom: 8, paddingLeft: 4 }}>危険な操作</p>
+              <Card>
+                <FixCategoryColorsButton />
+                <div style={{ borderTop: '1px solid rgba(255,255,255,0.055)' }} />
+                <CleanupCardTransfersButton />
+                <div style={{ borderTop: '1px solid rgba(255,255,255,0.055)' }} />
+                <LeaveHouseholdButton isOwner={isOwner} />
               </Card>
             </div>
           )}
