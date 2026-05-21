@@ -162,14 +162,20 @@ function donutArcPath(cx: number, cy: number, outerR: number, innerR: number, st
 }
 
 /* ─── Category Donut Hero ─── */
+const VB = 260   // SVG viewBox size (scales with container)
+const CX = VB / 2
+const CY = VB / 2
+const OUTER_R = 114
+const INNER_R  = 76
+const MONO_FONT = 'var(--font-jetbrains),JetBrains Mono,monospace'
+
 function CategoryRingHero({ transactions }: { transactions: Transaction[] }) {
-  // hover と selected を分離してモバイルのタッチバグを解消
-  const [hovered, setHovered] = useState<string | null>(null)
+  const [hovered,  setHovered]  = useState<string | null>(null)
   const [selected, setSelected] = useState<string | null>(null)
   const active = hovered ?? selected
 
   const cats = buildCategoryData(transactions)
-  const totalExpense = cats.reduce((s, [, { amount }]) => s + amount, 0)
+  const totalExpense  = cats.reduce((s, [, { amount }]) => s + amount, 0)
   const totalAnimated = useCountUp(totalExpense, { duration: 1400 })
 
   const now2     = new Date()
@@ -182,17 +188,11 @@ function CategoryRingHero({ transactions }: { transactions: Transaction[] }) {
     ...(restAmount > 0 ? [['その他', { amount: restAmount, color: '#5e5e72' }] as [string, { amount: number; color: string }]] : []),
   ]
 
-  const SIZE = 176
-  const OUTER_R = 78
-  const INNER_R = 53
-  const CX = SIZE / 2
-  const CY = SIZE / 2
   const GAP_DEG = segments.length > 1 ? 2.5 : 0
-
   let cumDeg = 0
   const arcs = segments.map(([name, { amount, color }]) => {
-    const frac = totalExpense > 0 ? amount / totalExpense : 0
-    const spanDeg = frac * 360
+    const frac     = totalExpense > 0 ? amount / totalExpense : 0
+    const spanDeg  = frac * 360
     const startDeg = cumDeg + GAP_DEG / 2
     const endDeg   = cumDeg + spanDeg - GAP_DEG / 2
     cumDeg += spanDeg
@@ -204,65 +204,61 @@ function CategoryRingHero({ transactions }: { transactions: Transaction[] }) {
   const displayLbl = activeArc?.name ?? '今月の支出'
   const displayClr = activeArc?.color ?? CORAL
   const displayPct = activeArc?.pct ?? null
-
-  if (totalExpense === 0) {
-    return (
-      <div className="rounded-[18px] p-4" style={{ ...panel, animation: 'kai-rise .8s ease-out both', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-        <svg width={SIZE} height={SIZE}>
-          <circle cx={CX} cy={CY} r={(OUTER_R + INNER_R) / 2} fill="none" stroke="rgba(255,255,255,.06)" strokeWidth={OUTER_R - INNER_R}/>
-        </svg>
-        <p style={{ fontSize: 12, color: TEXT3 }}>今月の支出データなし</p>
-      </div>
-    )
-  }
+  const amtStr     = activeArc ? yen(displayAmt) : yen(totalAnimated)
 
   return (
     <div className="rounded-[18px]" style={{ ...panel, animation: 'kai-rise .8s ease-out both' }}>
       {/* header */}
-      <div style={{ padding: '14px 16px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+      <div style={{ padding: '14px 18px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
         <p style={{ fontSize: 11, color: TEXT3, fontWeight: 700, letterSpacing: '.08em' }}>カテゴリ別支出</p>
-        <p style={{ fontSize: 9, color: KAI.text4, fontFamily: 'var(--font-jetbrains),JetBrains Mono,monospace' }}>{daysLeft} days left</p>
+        <p style={{ fontSize: 9, color: KAI.text4, fontFamily: MONO_FONT }}>{daysLeft} days left</p>
       </div>
 
-      {/* donut + center */}
-      <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 8px', position: 'relative' }}>
-        <div style={{ position: 'relative', width: SIZE, height: SIZE }}>
-          <svg width={SIZE} height={SIZE} style={{ display: 'block' }}>
-            <circle cx={CX} cy={CY} r={(OUTER_R + INNER_R) / 2} fill="none" stroke="rgba(255,255,255,.04)" strokeWidth={OUTER_R - INNER_R}/>
-            {arcs.map(({ name, color, startDeg, endDeg }) => (
-              <path
-                key={name}
-                d={donutArcPath(CX, CY, OUTER_R, INNER_R, startDeg, endDeg)}
-                fill={color}
-                opacity={active && active !== name ? 0.22 : 1}
-                style={{ cursor: 'pointer', transition: 'opacity .18s' }}
-                onMouseEnter={() => setHovered(name)}
-                onMouseLeave={() => setHovered(null)}
-                onClick={() => setSelected((p) => (p === name ? null : name))}
-              />
-            ))}
-          </svg>
-          <div style={{
-            position: 'absolute', inset: 0,
-            display: 'flex', flexDirection: 'column',
-            alignItems: 'center', justifyContent: 'center',
-            pointerEvents: 'none',
-          }}>
-            <div style={{ fontSize: 9, color: displayClr, fontWeight: 700, letterSpacing: '.06em', transition: 'color .18s', maxWidth: INNER_R * 1.8, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {displayLbl}
-            </div>
-            <div style={{ fontFamily: 'var(--font-jetbrains),JetBrains Mono,monospace', fontWeight: 700, fontSize: activeArc ? 18 : 23, color: TEXT, letterSpacing: '-.02em', marginTop: 2, transition: 'font-size .15s' }}>
-              {activeArc ? yen(displayAmt) : yen(totalAnimated)}
-            </div>
-            {displayPct !== null && (
-              <div style={{ fontSize: 11, color: displayClr, fontWeight: 700, marginTop: 1 }}>{displayPct}%</div>
-            )}
-          </div>
-        </div>
-      </div>
+      {/* SVG donut — scales with panel width, center labels inside SVG (no overflow) */}
+      <svg
+        viewBox={`0 0 ${VB} ${VB}`}
+        style={{ width: '100%', display: 'block', padding: '8px 0 4px' }}
+        aria-hidden="true"
+      >
+        {/* track */}
+        <circle cx={CX} cy={CY} r={(OUTER_R + INNER_R) / 2} fill="none" stroke="rgba(255,255,255,.05)" strokeWidth={OUTER_R - INNER_R} />
+
+        {/* segments */}
+        {totalExpense === 0 ? (
+          <circle cx={CX} cy={CY} r={(OUTER_R + INNER_R) / 2} fill="none" stroke="rgba(255,255,255,.08)" strokeWidth={OUTER_R - INNER_R} />
+        ) : arcs.map(({ name, color, startDeg, endDeg }) => (
+          <path
+            key={name}
+            d={donutArcPath(CX, CY, OUTER_R, INNER_R, startDeg, endDeg)}
+            fill={color}
+            opacity={active && active !== name ? 0.2 : 1}
+            style={{ cursor: 'pointer', transition: 'opacity .18s' }}
+            onMouseEnter={() => setHovered(name)}
+            onMouseLeave={() => setHovered(null)}
+            onClick={() => setSelected((p) => (p === name ? null : name))}
+          />
+        ))}
+
+        {/* center text — all inside SVG, no overflow risk */}
+        {totalExpense === 0 ? (
+          <text x={CX} y={CY + 5} textAnchor="middle" fontSize="13" fill={TEXT3}>データなし</text>
+        ) : (
+          <>
+            <text x={CX} y={CY - 16} textAnchor="middle" fontSize="10" fontWeight="700" fill={displayClr} letterSpacing="0.5" style={{ transition: 'fill .18s' }}>
+              {displayLbl.length > 10 ? `${displayLbl.slice(0, 10)}…` : displayLbl}
+            </text>
+            <text x={CX} y={CY + 16} textAnchor="middle" fontSize="26" fontWeight="800" fill={TEXT} fontFamily={MONO_FONT} letterSpacing="-0.5">
+              {amtStr}
+            </text>
+            <text x={CX} y={CY + 34} textAnchor="middle" fontSize="12" fontWeight="700" fill={displayPct !== null ? displayClr : KAI.text4} style={{ transition: 'fill .18s' }}>
+              {displayPct !== null ? `${displayPct}%` : `残り ${daysLeft}日`}
+            </text>
+          </>
+        )}
+      </svg>
 
       {/* legend */}
-      <div style={{ padding: '0 14px 14px', display: 'flex', flexWrap: 'wrap', gap: '5px 10px', justifyContent: 'center' }}>
+      <div style={{ padding: '2px 16px 14px', display: 'flex', flexWrap: 'wrap', gap: '6px 12px', justifyContent: 'center' }}>
         {arcs.map(({ name, color }) => (
           <button
             key={name}
@@ -270,14 +266,14 @@ function CategoryRingHero({ transactions }: { transactions: Transaction[] }) {
             onClick={() => setSelected((p) => (p === name ? null : name))}
             style={{
               display: 'flex', alignItems: 'center', gap: 5,
-              fontSize: 10.5, color: active === name ? color : TEXT3,
+              fontSize: 11, color: active === name ? color : TEXT3,
               fontWeight: active === name ? 700 : 400,
               background: 'none', border: 'none', cursor: 'pointer',
-              padding: '1px 0', fontFamily: 'inherit',
+              padding: '2px 0', fontFamily: 'inherit',
               transition: 'color .18s',
             }}
           >
-            <span style={{ width: 7, height: 7, borderRadius: 2, background: color, flexShrink: 0, display: 'inline-block' }} />
+            <span style={{ width: 8, height: 8, borderRadius: 2, background: color, flexShrink: 0, display: 'inline-block' }} />
             {name}
           </button>
         ))}
