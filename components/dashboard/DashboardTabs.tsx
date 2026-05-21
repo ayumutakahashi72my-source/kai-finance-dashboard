@@ -19,6 +19,19 @@ import { useCountUp } from '@/components/kai/hooks'
 import { KAI, yen } from '@/lib/kai-tokens'
 import type { Transaction } from '@/lib/types'
 
+/* ─── category color fallback (same palette as server-side pickCategoryColor) ─── */
+const CAT_PALETTE = [
+  '#5eead4', '#22d3ee', '#60a5fa', '#a78bfa',
+  '#f472b6', '#fb923c', '#fbbf24', '#4ade80',
+  '#fb7185', '#818cf8', '#34d399', '#f59e0b',
+  '#e879f9', '#38bdf8', '#a3e635',
+]
+function pickColor(name: string): string {
+  let h = 0
+  for (let i = 0; i < name.length; i++) h = Math.imul(31, h) + name.charCodeAt(i) | 0
+  return CAT_PALETTE[Math.abs(h) % CAT_PALETTE.length]
+}
+
 /* ─── design tokens ─── */
 const CORAL  = KAI.coral
 const CORALG = 'rgba(251,148,119,0.22)'
@@ -64,7 +77,7 @@ function buildCategoryData(transactions: Transaction[]) {
   const byCategory = Object.entries(
     expenses.reduce<Record<string, { amount: number; color: string; icon: string | null }>>((acc, t) => {
       const name = t.categories?.name ?? 'その他'
-      const color = t.categories?.color ?? '#8b8ba0'
+      const color = t.categories?.color ?? pickColor(name)
       const icon = t.categories?.icon ?? null
       acc[name] = { amount: (acc[name]?.amount ?? 0) + Math.abs(t.amount), color, icon }
       return acc
@@ -337,7 +350,7 @@ function DesktopRecentTx({ transactions }: { transactions: Transaction[] }) {
           borderBottom: i < recent.length - 1 ? '1px solid rgba(255,255,255,.04)' : 'none',
           animation: `kai-rise .3s ${.08 + i * .025}s ease-out both`,
         }}>
-          <div style={{ width: 30, height: 30, borderRadius: 9, flexShrink: 0, background: `${t.categories?.color ?? TEXT3}18`, border: `1px solid ${t.categories?.color ?? TEXT3}2a`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: 30, height: 30, borderRadius: 9, flexShrink: 0, background: `${t.categories?.color ?? pickColor(t.categories?.name ?? '')}18`, border: `1px solid ${t.categories?.color ?? pickColor(t.categories?.name ?? '')}2a`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             {t.categories?.icon
               ? <CategoryIcon name={t.categories.icon} size={14} color={t.categories?.color ?? TEXT3} />
               : <span style={{ fontSize: 14, color: TEXT3 }}>·</span>}

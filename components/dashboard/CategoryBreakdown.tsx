@@ -1,8 +1,19 @@
 'use client'
 
-import { DEFAULT_CATEGORY_COLORS } from '@/lib/types'
 import type { Transaction } from '@/lib/types'
 import { CategoryIcon } from '@/components/ui/CategoryIcon'
+
+const CAT_PALETTE = [
+  '#5eead4', '#22d3ee', '#60a5fa', '#a78bfa',
+  '#f472b6', '#fb923c', '#fbbf24', '#4ade80',
+  '#fb7185', '#818cf8', '#34d399', '#f59e0b',
+  '#e879f9', '#38bdf8', '#a3e635',
+]
+function pickColor(name: string): string {
+  let h = 0
+  for (let i = 0; i < name.length; i++) h = Math.imul(31, h) + name.charCodeAt(i) | 0
+  return CAT_PALETTE[Math.abs(h) % CAT_PALETTE.length]
+}
 
 export function CategoryBreakdown({ transactions }: { transactions: Transaction[] }) {
   const expenses = transactions.filter((t) => t.amount < 0)
@@ -14,8 +25,7 @@ export function CategoryBreakdown({ transactions }: { transactions: Transaction[
       const color =
         t.categories?.parent?.color ??
         t.categories?.color ??
-        DEFAULT_CATEGORY_COLORS[name] ??
-        '#8b8ba0'
+        pickColor(name)
       const icon = t.categories?.icon ?? undefined
       acc[name] = { amount: (acc[name]?.amount ?? 0) + Math.abs(t.amount), color, icon }
       return acc
