@@ -14,10 +14,10 @@ async function snapshotKnowledge(
   if (!ragRows?.length) return
 
   const entries = ragRows
-    .filter((r) => (r.categories as { name: string } | null)?.name)
+    .filter((r) => (r.categories as unknown as { name: string } | null)?.name)
     .map((r) => ({
       payee_key: r.payee_key,
-      category_name: (r.categories as { name: string }).name,
+      category_name: (r.categories as unknown as { name: string }).name,
       confidence: r.confidence,
       hit_count: r.hit_count,
       embedding: r.embedding,
