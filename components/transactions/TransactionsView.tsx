@@ -9,6 +9,7 @@ import { getCategoryIcon } from '@/lib/category-icons'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { TransactionFilters, readFiltersFromUrl, isFilterActive } from '@/components/transactions/TransactionFilters'
 import { EditDialog, DeleteConfirmDialog } from '@/components/transactions/TransactionList'
+import { DuplicateChecker } from '@/components/transactions/DuplicateChecker'
 import type { Transaction, Category } from '@/lib/types'
 
 /* ─── helpers ─────────────────────────────────────────────────────── */
@@ -284,7 +285,8 @@ export function TransactionsView({ month }: { month: string }) {
         </>
       )}
 
-      {/* ── 0. 検索・フィルタ ── */}
+      {/* ── 0. 重複チェック + 検索・フィルタ ── */}
+      <DuplicateChecker />
       <TransactionFilters categories={allCats} />
 
       {/* ── フィルタ active 時は flat list 表示 ── */}
