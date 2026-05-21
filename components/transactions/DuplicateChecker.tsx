@@ -18,13 +18,16 @@ type DupTx = {
 
 type DupGroup = DupTx[]
 
+// グループごとに「どちらを削除するか選択中」のstate
+type ConfirmState = { groupIdx: number; deleteId: string } | null
+
 export function DuplicateChecker() {
   const qc = useQueryClient()
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [groups, setGroups] = useState<DupGroup[] | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
-  const [confirmId, setConfirmId] = useState<string | null>(null)
+  const [confirm, setConfirm] = useState<ConfirmState>(null)
 
   async function handleCheck() {
     if (open && groups !== null) { setOpen(false); return }
@@ -52,11 +55,9 @@ export function DuplicateChecker() {
       qc.invalidateQueries({ queryKey: ['transactions'] })
     } finally {
       setDeletingId(null)
-      setConfirmId(null)
+      setConfirm(null)
     }
   }
-
-  const totalDups = groups?.reduce((s, g) => s + g.length, 0) ?? 0
 
   return (
     <div>
@@ -96,85 +97,118 @@ export function DuplicateChecker() {
             <div style={{ padding: '20px 16px', textAlign: 'center', fontSize: 13, color: KAI.text4 }}>
               チェック中…
             </div>
-          ) : groups === null || groups.length === 0 ? (
+          ) : !groups || groups.length === 0 ? (
             <div style={{ padding: '20px 16px', textAlign: 'center', fontSize: 13, color: KAI.text3 }}>
-              {groups?.length === 0 ? '重複取引は見つかりませんでした ✓' : ''}
+              {groups ? '重複取引は見つかりませんでした ✓' : ''}
             </div>
           ) : (
             <>
               <div style={{
                 padding: '10px 14px', borderBottom: '1px solid rgba(255,255,255,.05)',
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
               }}>
                 <span style={{ fontSize: 11, color: KAI.text4, fontWeight: 700, letterSpacing: '.08em' }}>
-                  重複の可能性 — {groups.length}グループ / {totalDups}件
+                  重複の可能性 — {groups.length}グループ
                 </span>
               </div>
 
-              {groups.map((group, gi) => (
-                <div key={gi} style={{ borderBottom: gi < groups.length - 1 ? '1px solid rgba(255,255,255,.05)' : 'none' }}>
-                  <div style={{ padding: '8px 14px 4px', fontSize: 10, color: KAI.text4, letterSpacing: '.06em', fontWeight: 700 }}>
-                    {group[0].occurred_on} · ¥{Math.abs(group[0].amount).toLocaleString()}
-                  </div>
-                  {group.map((tx, ti) => (
-                    <div
-                      key={tx.id}
-                      style={{
-                        display: 'flex', alignItems: 'center', gap: 10,
-                        padding: '8px 14px',
-                        borderTop: ti > 0 ? '1px solid rgba(255,255,255,.03)' : 'none',
-                      }}
-                    >
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ fontSize: 13, fontWeight: 500, color: KAI.text2, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {tx.payee}
-                        </p>
-                        <p style={{ fontSize: 10, color: KAI.text4, margin: '2px 0 0', ...MONO }}>
-                          {tx.categories?.name ?? '未分類'}
-                        </p>
-                      </div>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: tx.amount < 0 ? KAI.danger : KAI.success, ...MONO, flexShrink: 0 }}>
-                        {tx.amount < 0 ? '−' : '+'}¥{Math.abs(tx.amount).toLocaleString()}
-                      </span>
+              {groups.map((group, gi) => {
+                const isConfirming = confirm?.groupIdx === gi
+                const deleteTarget = isConfirming ? group.find((tx) => tx.id === confirm.deleteId) : null
+                const keepTarget   = isConfirming ? group.find((tx) => tx.id !== confirm.deleteId) : null
 
-                      {confirmId === tx.id ? (
-                        <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                return (
+                  <div key={gi} style={{ borderBottom: gi < groups.length - 1 ? '1px solid rgba(255,255,255,.05)' : 'none', padding: '12px 14px' }}>
+                    {/* 日付・金額ヘッダ */}
+                    <div style={{ fontSize: 10, color: KAI.text4, fontWeight: 700, letterSpacing: '.06em', marginBottom: 8 }}>
+                      {group[0].occurred_on} · ¥{Math.abs(group[0].amount).toLocaleString()}
+                    </div>
+
+                    {/* 確認画面 */}
+                    {isConfirming && deleteTarget && keepTarget ? (
+                      <div style={{
+                        borderRadius: 10,
+                        background: 'rgba(251,113,133,.07)', border: '1px solid rgba(251,113,133,.2)',
+                        padding: '10px 12px',
+                      }}>
+                        <p style={{ fontSize: 12, color: KAI.danger, fontWeight: 700, margin: '0 0 8px' }}>
+                          この取引を削除しますか？
+                        </p>
+                        {/* 削除対象 */}
+                        <div style={{ marginBottom: 6, padding: '6px 10px', borderRadius: 8, background: 'rgba(251,113,133,.1)', border: '1px solid rgba(251,113,133,.25)' }}>
+                          <div style={{ fontSize: 10, color: KAI.danger, fontWeight: 700, marginBottom: 2 }}>削除する</div>
+                          <div style={{ fontSize: 13, color: KAI.text1, fontWeight: 500 }}>{deleteTarget.payee}</div>
+                          <div style={{ fontSize: 10, color: KAI.text4, ...MONO }}>{deleteTarget.categories?.name ?? '未分類'}</div>
+                        </div>
+                        {/* 残す方 */}
+                        <div style={{ marginBottom: 10, padding: '6px 10px', borderRadius: 8, background: 'rgba(74,222,128,.06)', border: '1px solid rgba(74,222,128,.18)' }}>
+                          <div style={{ fontSize: 10, color: KAI.success, fontWeight: 700, marginBottom: 2 }}>残す</div>
+                          <div style={{ fontSize: 13, color: KAI.text1, fontWeight: 500 }}>{keepTarget.payee}</div>
+                          <div style={{ fontSize: 10, color: KAI.text4, ...MONO }}>{keepTarget.categories?.name ?? '未分類'}</div>
+                        </div>
+                        <div style={{ display: 'flex', gap: 8 }}>
                           <button
-                            onClick={() => setConfirmId(null)}
+                            onClick={() => setConfirm(null)}
                             style={{
-                              fontSize: 11, padding: '4px 10px', borderRadius: 8,
+                              flex: 1, fontSize: 12, padding: '7px 0', borderRadius: 8,
                               border: '1px solid rgba(255,255,255,.12)', background: 'none',
                               color: KAI.text3, cursor: 'pointer', fontFamily: 'inherit',
                             }}
                           >キャンセル</button>
                           <button
-                            onClick={() => handleDelete(tx.id)}
-                            disabled={deletingId === tx.id}
+                            onClick={() => handleDelete(confirm.deleteId)}
+                            disabled={deletingId === confirm.deleteId}
                             style={{
-                              fontSize: 11, padding: '4px 10px', borderRadius: 8,
-                              border: '1px solid rgba(251,113,133,.3)',
-                              background: 'rgba(251,113,133,.15)',
+                              flex: 1, fontSize: 12, padding: '7px 0', borderRadius: 8,
+                              border: '1px solid rgba(251,113,133,.35)',
+                              background: 'rgba(251,113,133,.18)',
                               color: '#fb7185', cursor: 'pointer', fontFamily: 'inherit',
-                              opacity: deletingId === tx.id ? 0.5 : 1,
+                              fontWeight: 700,
+                              opacity: deletingId === confirm.deleteId ? 0.5 : 1,
                             }}
-                          >{deletingId === tx.id ? '削除中…' : '削除する'}</button>
+                          >{deletingId === confirm.deleteId ? '削除中…' : '削除する'}</button>
                         </div>
-                      ) : (
-                        <button
-                          onClick={() => setConfirmId(tx.id)}
-                          style={{
-                            fontSize: 11, padding: '4px 10px', borderRadius: 8,
-                            border: '1px solid rgba(251,113,133,.2)',
-                            background: 'rgba(251,113,133,.08)',
-                            color: '#fb7185', cursor: 'pointer', fontFamily: 'inherit',
-                            flexShrink: 0,
-                          }}
-                        >削除</button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ))}
+                      </div>
+                    ) : (
+                      <>
+                        {/* 2件を並べて表示 */}
+                        {group.map((tx, ti) => (
+                          <div
+                            key={tx.id}
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: 10,
+                              padding: '6px 0',
+                              borderTop: ti > 0 ? '1px solid rgba(255,255,255,.04)' : 'none',
+                            }}
+                          >
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <p style={{ fontSize: 13, fontWeight: 500, color: KAI.text2, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {tx.payee}
+                              </p>
+                              <p style={{ fontSize: 10, color: KAI.text4, margin: '2px 0 0', ...MONO }}>
+                                {tx.categories?.name ?? '未分類'}
+                              </p>
+                            </div>
+                            <span style={{ fontSize: 12, fontWeight: 700, color: tx.amount < 0 ? KAI.danger : KAI.success, ...MONO, flexShrink: 0 }}>
+                              {tx.amount < 0 ? '−' : '+'}¥{Math.abs(tx.amount).toLocaleString()}
+                            </span>
+                            {/* 「こちらを削除」ボタン */}
+                            <button
+                              onClick={() => setConfirm({ groupIdx: gi, deleteId: tx.id })}
+                              style={{
+                                fontSize: 10, padding: '4px 9px', borderRadius: 7,
+                                border: '1px solid rgba(255,255,255,.12)',
+                                background: 'rgba(255,255,255,.04)',
+                                color: KAI.text3, cursor: 'pointer', fontFamily: 'inherit',
+                                flexShrink: 0, whiteSpace: 'nowrap',
+                              }}
+                            >こちらを削除</button>
+                          </div>
+                        ))}
+                      </>
+                    )}
+                  </div>
+                )
+              })}
             </>
           )}
         </div>
