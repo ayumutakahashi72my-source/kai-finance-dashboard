@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import Link from 'next/link'
 import AcceptPanel from './AcceptPanel'
 import LoginToAccept from './LoginToAccept'
 
@@ -72,13 +73,13 @@ async function AuthenticatedInviteView({ token, userId }: { token: string; userI
       }}>
         <p style={{ fontSize: 16, fontWeight: 700, color: '#34d399', marginBottom: 8 }}>すでに参加しています</p>
         <p style={{ fontSize: 13, color: '#8b8ba0', marginBottom: 20 }}>「{info.household_name}」のメンバーです。</p>
-        <a href="/" style={{
+        <Link href="/" style={{
           display: 'inline-block', padding: '10px 24px', borderRadius: 10,
           background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
           color: '#f0f0f5', fontSize: 13, textDecoration: 'none',
         }}>
           ダッシュボードへ
-        </a>
+        </Link>
       </div>
     )
   }
