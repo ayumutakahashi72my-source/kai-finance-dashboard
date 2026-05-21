@@ -162,11 +162,11 @@ function donutArcPath(cx: number, cy: number, outerR: number, innerR: number, st
 }
 
 /* ─── Category Donut Hero ─── */
-const VB = 260   // SVG viewBox size (scales with container)
+const VB = 200
 const CX = VB / 2
 const CY = VB / 2
-const OUTER_R = 114
-const INNER_R  = 76
+const OUTER_R = 88
+const INNER_R  = 62
 const MONO_FONT = 'var(--font-jetbrains),JetBrains Mono,monospace'
 
 function CategoryRingHero({ transactions }: { transactions: Transaction[] }) {
@@ -207,76 +207,87 @@ function CategoryRingHero({ transactions }: { transactions: Transaction[] }) {
   const amtStr     = activeArc ? yen(displayAmt) : yen(totalAnimated)
 
   return (
-    <div className="rounded-[18px]" style={{ ...panel, animation: 'kai-rise .8s ease-out both' }}>
+    <div style={{ ...panel, padding: '14px 16px', animation: 'kai-rise .8s ease-out both' }}>
       {/* header */}
-      <div style={{ padding: '14px 18px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
         <p style={{ fontSize: 11, color: TEXT3, fontWeight: 700, letterSpacing: '.08em' }}>カテゴリ別支出</p>
-        <p style={{ fontSize: 9, color: KAI.text4, fontFamily: MONO_FONT }}>{daysLeft} days left</p>
+        <p style={{ fontSize: 9, color: KAI.text4, fontFamily: MONO_FONT }}>残り {daysLeft}日</p>
       </div>
 
-      {/* SVG donut — scales with panel width, center labels inside SVG (no overflow) */}
-      <svg
-        viewBox={`0 0 ${VB} ${VB}`}
-        style={{ width: '100%', display: 'block', padding: '8px 0 4px' }}
-        aria-hidden="true"
-      >
-        {/* track */}
-        <circle cx={CX} cy={CY} r={(OUTER_R + INNER_R) / 2} fill="none" stroke="rgba(255,255,255,.05)" strokeWidth={OUTER_R - INNER_R} />
-
-        {/* segments */}
-        {totalExpense === 0 ? (
-          <circle cx={CX} cy={CY} r={(OUTER_R + INNER_R) / 2} fill="none" stroke="rgba(255,255,255,.08)" strokeWidth={OUTER_R - INNER_R} />
-        ) : arcs.map(({ name, color, startDeg, endDeg }) => (
-          <path
-            key={name}
-            d={donutArcPath(CX, CY, OUTER_R, INNER_R, startDeg, endDeg)}
-            fill={color}
-            opacity={active && active !== name ? 0.2 : 1}
-            style={{ cursor: 'pointer', transition: 'opacity .18s' }}
-            onMouseEnter={() => setHovered(name)}
-            onMouseLeave={() => setHovered(null)}
-            onClick={() => setSelected((p) => (p === name ? null : name))}
-          />
-        ))}
-
-        {/* center text — all inside SVG, no overflow risk */}
-        {totalExpense === 0 ? (
-          <text x={CX} y={CY + 5} textAnchor="middle" fontSize="13" fill={TEXT3}>データなし</text>
-        ) : (
-          <>
-            <text x={CX} y={CY - 16} textAnchor="middle" fontSize="10" fontWeight="700" fill={displayClr} letterSpacing="0.5" style={{ transition: 'fill .18s' }}>
-              {displayLbl.length > 10 ? `${displayLbl.slice(0, 10)}…` : displayLbl}
-            </text>
-            <text x={CX} y={CY + 16} textAnchor="middle" fontSize="26" fontWeight="800" fill={TEXT} fontFamily={MONO_FONT} letterSpacing="-0.5">
-              {amtStr}
-            </text>
-            <text x={CX} y={CY + 34} textAnchor="middle" fontSize="12" fontWeight="700" fill={displayPct !== null ? displayClr : KAI.text4} style={{ transition: 'fill .18s' }}>
-              {displayPct !== null ? `${displayPct}%` : `残り ${daysLeft}日`}
-            </text>
-          </>
-        )}
-      </svg>
-
-      {/* legend */}
-      <div style={{ padding: '2px 16px 14px', display: 'flex', flexWrap: 'wrap', gap: '6px 12px', justifyContent: 'center' }}>
-        {arcs.map(({ name, color }) => (
-          <button
-            key={name}
-            type="button"
-            onClick={() => setSelected((p) => (p === name ? null : name))}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 5,
-              fontSize: 11, color: active === name ? color : TEXT3,
-              fontWeight: active === name ? 700 : 400,
-              background: 'none', border: 'none', cursor: 'pointer',
-              padding: '2px 0', fontFamily: 'inherit',
-              transition: 'color .18s',
-            }}
+      <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
+        {/* SVG donut */}
+        <div style={{ flexShrink: 0 }}>
+          <svg
+            viewBox={`0 0 ${VB} ${VB}`}
+            style={{ width: 148, height: 148, display: 'block' }}
+            aria-hidden="true"
           >
-            <span style={{ width: 8, height: 8, borderRadius: 2, background: color, flexShrink: 0, display: 'inline-block' }} />
-            {name}
-          </button>
-        ))}
+            {/* track */}
+            <circle cx={CX} cy={CY} r={(OUTER_R + INNER_R) / 2} fill="none" stroke="rgba(255,255,255,.06)" strokeWidth={OUTER_R - INNER_R} />
+
+            {/* segments */}
+            {totalExpense === 0 ? (
+              <circle cx={CX} cy={CY} r={(OUTER_R + INNER_R) / 2} fill="none" stroke="rgba(255,255,255,.08)" strokeWidth={OUTER_R - INNER_R} />
+            ) : arcs.map(({ name, color, startDeg, endDeg }) => (
+              <path
+                key={name}
+                d={donutArcPath(CX, CY, OUTER_R, INNER_R, startDeg, endDeg)}
+                fill={color}
+                opacity={active && active !== name ? 0.18 : 1}
+                style={{ cursor: 'pointer', transition: 'opacity .18s' }}
+                onMouseEnter={() => setHovered(name)}
+                onMouseLeave={() => setHovered(null)}
+                onClick={() => setSelected((p) => (p === name ? null : name))}
+              />
+            ))}
+
+            {/* center text */}
+            {totalExpense === 0 ? (
+              <text x={CX} y={CY + 5} textAnchor="middle" fontSize="11" fill={TEXT3}>データなし</text>
+            ) : (
+              <>
+                <text x={CX} y={CY - 14} textAnchor="middle" fontSize="9" fontWeight="700" fill={displayClr} letterSpacing="0.4" style={{ transition: 'fill .18s' }}>
+                  {displayLbl.length > 10 ? `${displayLbl.slice(0, 10)}…` : displayLbl}
+                </text>
+                <text x={CX} y={CY + 12} textAnchor="middle" fontSize="20" fontWeight="800" fill={TEXT} fontFamily={MONO_FONT} letterSpacing="-0.5">
+                  {amtStr}
+                </text>
+                <text x={CX} y={CY + 28} textAnchor="middle" fontSize="10" fontWeight="700" fill={displayPct !== null ? displayClr : KAI.text4} style={{ transition: 'fill .18s' }}>
+                  {displayPct !== null ? `${displayPct}%` : '今月'}
+                </text>
+              </>
+            )}
+          </svg>
+        </div>
+
+        {/* legend — 縦並び */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1, minWidth: 0 }}>
+          {arcs.map(({ name, color, pct, amount }) => (
+            <button
+              key={name}
+              type="button"
+              onClick={() => setSelected((p) => (p === name ? null : name))}
+              onMouseEnter={() => setHovered(name)}
+              onMouseLeave={() => setHovered(null)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 7,
+                background: active === name ? `${color}12` : 'none',
+                border: active === name ? `1px solid ${color}30` : '1px solid transparent',
+                borderRadius: 8, padding: '4px 6px',
+                cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left',
+                transition: 'all .15s', width: '100%',
+              }}
+            >
+              <span style={{ width: 8, height: 8, borderRadius: 2, background: color, flexShrink: 0, display: 'inline-block', opacity: active && active !== name ? 0.3 : 1, transition: 'opacity .18s' }} />
+              <span style={{ fontSize: 11, color: active === name ? color : TEXT2, fontWeight: active === name ? 700 : 400, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', transition: 'color .18s' }}>
+                {name}
+              </span>
+              <span style={{ fontSize: 10, color: active === name ? color : TEXT3, fontFamily: MONO_FONT, flexShrink: 0, transition: 'color .18s' }}>
+                {active === name ? yen(amount) : `${pct}%`}
+              </span>
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   )
