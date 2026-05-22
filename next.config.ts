@@ -1,12 +1,10 @@
 import type { NextConfig } from 'next'
 import path from 'path'
-import withPWA from '@ducanh2912/next-pwa'
 
-const baseConfig: NextConfig = {
+const nextConfig: NextConfig = {
   turbopack: {
     root: path.resolve(__dirname),
   },
-  // Native addon をバンドルせずランタイムの node_modules から参照させる
   serverExternalPackages: [
     'playwright', 'playwright-core', '@sparticuz/chromium-min',
     'onnxruntime-node',
@@ -31,13 +29,4 @@ const baseConfig: NextConfig = {
   },
 }
 
-export default withPWA({
-  dest: 'public',
-  cacheOnFrontEndNav: true,
-  aggressiveFrontEndNavCaching: true,
-  reloadOnOnline: true,
-  disable: process.env.NODE_ENV === 'development',
-  workboxOptions: {
-    disableDevLogs: true,
-  },
-})(baseConfig)
+export default nextConfig

@@ -68,7 +68,6 @@ export const metadata: Metadata = {
     ],
     apple: [{ url: '/app-icon-180.png', sizes: '180x180' }],
   },
-  manifest: '/manifest.webmanifest',
 }
 
 export const viewport: Viewport = {

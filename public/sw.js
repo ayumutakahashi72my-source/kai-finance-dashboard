@@ -1,8 +1,5 @@
 // ── PWA installability: install / activate / fetch ───────────────
-const CACHE_NAME = 'kai-v1'
-
-self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE_NAME).then(c => c.add('/')))
+self.addEventListener('install', () => {
   self.skipWaiting()
 })
 
@@ -10,13 +7,8 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim())
 })
 
-self.addEventListener('fetch', (event) => {
-  if (event.request.mode === 'navigate') {
-    event.respondWith(
-      fetch(event.request).catch(() => caches.match('/'))
-    )
-  }
-})
+// fetch ハンドラが必須（ないと Chrome が PWA と認識しない）
+self.addEventListener('fetch', () => {})
 
 // ── Push notifications ────────────────────────────────────────────
 self.addEventListener('push', (event) => {
