@@ -31,7 +31,7 @@ export type IconName =
   | 'grid' | 'chart' | 'calendar' | 'sparkle' | 'plus' | 'bell'
   | 'link' | 'pie' | 'msg' | 'arrow' | 'arrowUp' | 'arrowDown' | 'arrowRight'
   | 'refresh' | 'tag' | 'search' | 'settings' | 'coffee' | 'cart'
-  | 'home' | 'user' | 'check' | 'train' | 'bag' | 'bank' | 'lock'
+  | 'home' | 'user' | 'check' | 'train' | 'bag' | 'bank' | 'lock' | 'camera'
 
 interface IconProps {
   name: IconName
@@ -67,6 +67,7 @@ export function Icon({ name, size = 18, stroke = 1.8 }: IconProps) {
     bag:      (<g><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18M16 10a4 4 0 0 1-8 0"/></g>),
     bank:     (<g><path d="M3 21h18"/><path d="M5 21V9l7-5 7 5v12"/><path d="M9 21v-7M15 21v-7M12 21v-7"/></g>),
     lock:     (<g><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></g>),
+    camera:   (<g><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0-2-2h-3z"/><circle cx="12" cy="13" r="3"/></g>),
   }
 
   return (
@@ -149,115 +150,130 @@ export function CAvatar({ size = 32, initial = 'あ' }: CAvatarProps) {
 }
 
 // ──────────────────────────────────────────────────────────────────
-// Ring — Apple Watch style 円弧プログレス
+// KaiSystemBrand — left-top brand badge (システム ID 風)
 // ──────────────────────────────────────────────────────────────────
 
-interface RingProps {
-  percent?:  number
-  size?:     number
-  stroke?:   number
-  color?:    string
-  track?:    string
-  delayMs?:  number
-  gradient?: boolean
+interface KaiSystemBrandProps {
+  size?: 'sm' | 'md' | 'lg'
 }
 
-export function Ring({
-  percent  = 65,
-  size     = 160,
-  stroke   = 14,
-  color    = KAI.coral,
-  track    = 'rgba(255,255,255,.07)',
-  delayMs  = 200,
-  gradient = true,
-}: RingProps) {
-  const r = (size - stroke) / 2
-  const c = 2 * Math.PI * r
-  const target = c - (c * Math.min(percent, 100)) / 100
-  const gradId = `kai-ring-grad-${size}-${Math.round(percent * 10)}`
-
-  return (
-    <svg width={size} height={size} style={{ display: 'block' }} aria-hidden="true">
-      {gradient && (
-        <defs>
-          <linearGradient id={gradId} x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stopColor={color}/>
-            <stop offset="1" stopColor={color} stopOpacity="0.6"/>
-          </linearGradient>
-        </defs>
-      )}
-      <circle cx={size / 2} cy={size / 2} r={r} stroke={track} strokeWidth={stroke} fill="none"/>
-      <circle
-        cx={size / 2} cy={size / 2} r={r}
-        stroke={gradient ? `url(#${gradId})` : color}
-        strokeWidth={stroke} fill="none"
-        strokeLinecap="round"
-        transform={`rotate(-90 ${size / 2} ${size / 2})`}
-        strokeDasharray={c}
-        strokeDashoffset={target}
-        style={{
-          animation: `kai-ring-draw 1.4s ${delayMs / 1000}s cubic-bezier(.2,.8,.3,1) both`,
-          ['--ring-target' as string]: String(target),
-        }}
-      />
-    </svg>
-  )
-}
-
-// ──────────────────────────────────────────────────────────────────
-// KaiSystemBrand — app brand lockup (logo + wordmark)
-// ──────────────────────────────────────────────────────────────────
-
-export function KaiSystemBrand({ size = 'sm' }: { size?: 'sm' | 'md' | 'lg' }) {
+export function KaiSystemBrand({ size = 'sm' }: KaiSystemBrandProps) {
   const av = size === 'lg' ? 42 : size === 'md' ? 38 : 34
   const titleSize = size === 'lg' ? 18 : size === 'md' ? 16 : 15
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: size === 'lg' ? 14 : 11 }}>
       <div style={{ position: 'relative', flexShrink: 0 }}>
         <div style={{
-          padding: 1.2, borderRadius: 12,
+          padding: 1.2,
+          borderRadius: 12,
           background: 'linear-gradient(135deg, rgba(251,148,119,.65), rgba(122,167,255,.65))',
         }}>
           <div style={{
-            width: av, height: av, borderRadius: 11,
-            background: KAI.bgCard,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            position: 'relative', overflow: 'hidden',
+            width: av,
+            height: av,
+            borderRadius: 11,
+            background: '#0c0a14',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            position: 'relative',
+            overflow: 'hidden',
           }}>
             <div style={{
               position: 'absolute', top: 0, left: 0, right: 0, height: '42%',
               background: 'linear-gradient(180deg, rgba(255,255,255,.07), transparent)',
-            }}/>
-            <KaiLogo size={Math.round(av * 0.46)} gradientId={`c-brand-${size}`}/>
-            <span style={{ position: 'absolute', top: 3, left: 3, width: 4, height: 4, borderTop: `1px solid ${KAI.coral}99`, borderLeft: `1px solid ${KAI.coral}99` }}/>
-            <span style={{ position: 'absolute', bottom: 3, right: 3, width: 4, height: 4, borderBottom: `1px solid ${KAI.blue}99`, borderRight: `1px solid ${KAI.blue}99` }}/>
+            }} />
+            <KaiLogo size={Math.round(av * 0.46)} gradientId={`c-brand-${size}`} />
+            <span aria-hidden style={{ position: 'absolute', top: 3, left: 3, width: 4, height: 4, borderTop: `1px solid ${KAI.coral}99`, borderLeft: `1px solid ${KAI.coral}99` }} />
+            <span aria-hidden style={{ position: 'absolute', bottom: 3, right: 3, width: 4, height: 4, borderBottom: `1px solid ${KAI.blue}99`, borderRight: `1px solid ${KAI.blue}99` }} />
           </div>
         </div>
         <span style={{
           position: 'absolute', top: -2, right: -2,
           width: 9, height: 9, borderRadius: '50%',
-          background: KAI.green, border: `2px solid ${KAI.bgCard}`,
+          background: '#4ade80', border: '2px solid #0c0a14',
           boxShadow: '0 0 6px rgba(74,222,128,.7)',
           animation: 'kai-pulse-mint 2.4s ease-in-out infinite',
-        }}/>
+          display: 'block',
+        }} />
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-          <span style={{ fontSize: titleSize, fontWeight: 700, color: KAI.text1, letterSpacing: '-.02em', lineHeight: 1 }}>kai</span>
+          <span style={{ fontSize: titleSize, fontWeight: 700, color: '#f0f0f5', letterSpacing: '-.02em', lineHeight: 1 }}>kai</span>
           <span style={{
-            fontSize: 8, fontFamily: 'var(--font-jetbrains), JetBrains Mono, monospace', color: KAI.text3, fontWeight: 700,
-            letterSpacing: '.14em', padding: '1px 5px',
-            background: 'rgba(255,255,255,.04)', border: `1px solid ${KAI.border}`,
+            fontSize: 8,
+            fontFamily: 'var(--font-jetbrains), JetBrains Mono, monospace',
+            color: '#8b8ba0',
+            fontWeight: 700,
+            letterSpacing: '.14em',
+            padding: '1px 5px',
+            background: 'rgba(255,255,255,.04)',
+            border: '1px solid rgba(255,255,255,.10)',
             borderRadius: 4,
           }}>v2.4</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 9, fontFamily: 'var(--font-jetbrains), JetBrains Mono, monospace', letterSpacing: '.14em', fontWeight: 700, marginTop: 2 }}>
           <span style={{ color: KAI.coral }}>家計簿管理</span>
-          <span style={{ color: KAI.text5 }}>/</span>
-          <span style={{ color: KAI.text3 }}>HH-072</span>
+          <span style={{ color: '#3e3e55' }}>/</span>
+          <span style={{ color: '#8b8ba0' }}>HH-072</span>
         </div>
       </div>
     </div>
+  )
+}
+
+// ──────────────────────────────────────────────────────────────────
+// Ring — Apple Watch 風リングチャート
+// ──────────────────────────────────────────────────────────────────
+
+interface RingProps {
+  percent?: number
+  size?: number
+  stroke?: number
+  color?: string
+  track?: string
+  /** アニメーション開始遅延 (ms) */
+  delayMs?: number
+}
+
+export function Ring({
+  percent = 65,
+  size = 160,
+  stroke = 14,
+  color = KAI.coral,
+  track = 'rgba(255,255,255,.07)',
+  delayMs = 200,
+}: RingProps) {
+  const r = (size - stroke) / 2
+  const c = 2 * Math.PI * r
+  const target = c - (c * percent) / 100
+  return (
+    <svg width={size} height={size} style={{ display: 'block' }}>
+      <defs>
+        <linearGradient id={`ring-grad-${size}-${color.replace('#', '')}`} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor={color} />
+          <stop offset="1" stopColor={color} stopOpacity={0.6} />
+        </linearGradient>
+      </defs>
+      <circle cx={size / 2} cy={size / 2} r={r} stroke={track} strokeWidth={stroke} fill="none" />
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={r}
+        stroke={`url(#ring-grad-${size}-${color.replace('#', '')})`}
+        strokeWidth={stroke}
+        fill="none"
+        strokeLinecap="round"
+        transform={`rotate(-90 ${size / 2} ${size / 2})`}
+        strokeDasharray={c}
+        strokeDashoffset={target}
+        style={{
+          // @ts-expect-error CSS custom property
+          '--ring-target': target,
+          animation: `kai-ring-draw 1.4s ${delayMs / 1000}s cubic-bezier(.2,.8,.3,1) both`,
+        }}
+      />
+    </svg>
   )
 }
 

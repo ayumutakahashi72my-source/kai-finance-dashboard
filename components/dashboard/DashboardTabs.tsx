@@ -730,7 +730,6 @@ function NowTab({ transactions, allTransactions, month, streak }: { transactions
       {/* Mobile: mock DashboardScreen order */}
       <div className="lg:hidden space-y-3">
         <CategoryRingHero transactions={transactions} />
-        <TodayCard transactions={transactions} />
         <GoalSection transactions={transactions} />
         <CategoryChips transactions={transactions} />
         <DashKpiRow transactions={transactions} month={month} />
@@ -738,7 +737,6 @@ function NowTab({ transactions, allTransactions, month, streak }: { transactions
         {showChat && <AiChatPanel />}
         <ScoreCard month={month} />
         <AiSummaryCard />
-        <StreakCard streak={streak} />
       </div>
 
       {/* Desktop: data dashboard layout */}

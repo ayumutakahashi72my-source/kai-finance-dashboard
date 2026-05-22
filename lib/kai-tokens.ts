@@ -7,22 +7,22 @@
 //   <div style={{ color: KAI.text1, background: KAI.bg }}/>
 
 export const KAI = {
-  // ── Surfaces ─────────────────────────────────────────
-  bg:        '#0a0a10',                          // primary dark surface
-  bgCard:    '#0c0a14',                          // C-direction warm-tinted card bg
-  bgPanel:   'rgba(20,22,32,0.66)',
-  bgPanelSolid: '#14161f',
+  // ── Surfaces (CSS 変数 — テーマ切替で自動更新) ────────
+  bg:           'var(--kai-bg)',
+  bgCard:       'var(--kai-bg-card)',
+  bgPanel:      'var(--kai-bg-panel)',
+  bgPanelSolid: 'var(--kai-bg-panel-solid)',
 
-  border:    'rgba(255,255,255,0.06)',
-  border2:   'rgba(255,255,255,0.10)',
-  borderStrong: 'rgba(255,255,255,0.16)',
+  border:       'var(--kai-border)',
+  border2:      'var(--kai-border2)',
+  borderStrong: 'var(--kai-border-strong)',
 
-  // ── Text scale ───────────────────────────────────────
-  text1:     '#f0f0f5',                          // primary
-  text2:     '#c4c4d0',                          // secondary
-  text3:     '#8b8ba0',                          // tertiary
-  text4:     '#5e5e72',                          // muted
-  text5:     '#3e3e55',                          // faintest
+  // ── Text scale (CSS 変数 — テーマ切替で自動更新) ──────
+  text1:     'var(--kai-text1)',                 // primary
+  text2:     'var(--kai-text2)',                 // secondary
+  text3:     'var(--kai-text3)',                 // tertiary
+  text4:     'var(--kai-text4)',                 // muted
+  text5:     'var(--kai-text5)',                 // faintest
 
   // ── C-direction accents ──────────────────────────────
   coral:     '#fb9477',                          // PRIMARY accent (warm)

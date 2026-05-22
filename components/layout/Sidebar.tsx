@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { KAI } from '@/lib/kai-tokens'
 import { Icon, KaiSystemBrand } from '@/components/kai/shared'
+import { ThemeToggle } from '@/components/kai/ThemeToggle'
 import { AddPickerSheet } from '@/components/layout/AddPickerSheet'
 
 const CORAL = KAI.coral
@@ -32,13 +33,13 @@ export function Sidebar() {
       <AddPickerSheet open={pickerOpen} onClose={() => setPickerOpen(false)} onDone={handlePickerDone} />
     <aside className="fixed left-0 top-0 z-40 hidden h-screen w-[220px] flex-col lg:flex"
       style={{
-        background: 'rgba(8,8,14,0.75)',
+        background: 'var(--kai-bg-sidebar)',
         backdropFilter: 'blur(24px)',
-        borderRight: '1px solid rgba(255,255,255,0.10)',
+        borderRight: `1px solid ${KAI.border2}`,
       }}
     >
       {/* Brand */}
-      <div style={{ padding: '20px 16px', borderBottom: '1px solid rgba(255,255,255,0.10)' }}>
+      <div style={{ padding: '20px 16px', borderBottom: `1px solid ${KAI.border2}` }}>
         <KaiSystemBrand size="md" />
       </div>
 
@@ -93,20 +94,21 @@ export function Sidebar() {
         </button>
       </div>
 
-      {/* Footer — household badge */}
-      <div style={{ borderTop: '1px solid rgba(255,255,255,0.10)', padding: 14 }}>
+      {/* Footer — household badge + theme toggle */}
+      <div style={{ borderTop: `1px solid ${KAI.border2}`, padding: 14 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{
             width: 36, height: 36, borderRadius: 11,
             background: `linear-gradient(135deg, rgba(251,148,119,0.35), rgba(122,167,255,0.25))`,
-            border: '1px solid rgba(255,255,255,0.16)',
+            border: `1px solid ${KAI.borderStrong}`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: 14, fontWeight: 700, color: KAI.text1,
           }}>家</div>
-          <div>
+          <div style={{ flex: 1, minWidth: 0 }}>
             <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: KAI.text1 }}>マイホーム</p>
             <p style={{ margin: 0, fontSize: 11, color: KAI.text3, fontFamily: 'var(--font-jetbrains), JetBrains Mono, monospace', letterSpacing: '.04em' }}>HOUSEHOLD</p>
           </div>
+          <ThemeToggle />
         </div>
       </div>
     </aside>

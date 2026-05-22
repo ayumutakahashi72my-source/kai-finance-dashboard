@@ -53,3 +53,6 @@ mock/*.png
 mock/*.bmp
 mock/design_handoff_*/
 mock/nextjs/
+
+# OCR models (大容量バイナリ — Vercel ビルド時に download-ocr-models.ts で取得)
+/public/models/

@@ -6,7 +6,9 @@ import { useRouter } from 'next/navigation'
 import { getCategories } from '@/app/actions/categories'
 import { createTransaction } from '@/app/actions/transactions'
 import { parseMfCsv, decodeCsvBuffer } from '@/lib/csv-parser'
+import { ReceiptCapture } from '@/components/transactions/ReceiptCapture'
 import type { Category } from '@/lib/types'
+import type { OcrResult } from '@/lib/ocr'
 
 // ── design tokens (inline to avoid 'use client' boundary issues with KAI shared) ──
 const CORAL  = '#fb9477'
@@ -22,7 +24,7 @@ const TEXT4  = '#5e5e72'
 const TEXT5  = '#3e3e55'
 const BG     = 'rgba(18,16,28,0.97)'
 
-type Step = 'picker' | 'manual' | 'csv' | 'mf'
+type Step = 'picker' | 'manual' | 'csv' | 'mf' | 'receipt'
 
 interface ImportResult {
   inserted: number
@@ -116,6 +118,19 @@ function PickerStep({ onPick, onClose }: { onPick: (s: Step) => void; onClose: (
       tag: '今すぐ',
     },
     {
+      key: 'receipt' as Step,
+      accent: AMBER,
+      icon: (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={AMBER} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z"/>
+          <circle cx="12" cy="13" r="3"/>
+        </svg>
+      ),
+      title: 'レシート読取',
+      desc: 'カメラで撮影してAI自動入力 · 約3秒',
+      tag: 'AI',
+    },
+    {
       key: 'csv' as Step,
       accent: BLUE,
       icon: (
@@ -202,7 +217,14 @@ function FieldCell({ label, mono, children }: { label: string; mono?: boolean; c
 }
 
 // ── Step: Manual entry ────────────────────────────────────────────────────────
-function ManualStep({ onBack, onDone }: { onBack: () => void; onDone: () => void }) {
+interface OcrPrefill {
+  payee?: string
+  amount?: number
+  occurred_on?: string
+  confidence?: number
+}
+
+function ManualStep({ onBack, onDone, prefill }: { onBack: () => void; onDone: () => void; prefill?: OcrPrefill }) {
   const [categories, setCategories] = useState<Category[]>([])
   const [isIncome, setIsIncome] = useState(false)
   const [amount, setAmount]     = useState('')
@@ -220,6 +242,14 @@ function ManualStep({ onBack, onDone }: { onBack: () => void; onDone: () => void
   useEffect(() => {
     getCategories().then((cats) => setCategories(cats as Category[]))
   }, [])
+
+  // Apply OCR prefill on mount
+  useEffect(() => {
+    if (!prefill) return
+    if (prefill.payee) setMemo(prefill.payee)
+    if (prefill.amount) setAmount(String(Math.abs(prefill.amount)))
+    if (prefill.occurred_on) setDate(prefill.occurred_on)
+  }, [prefill])
 
   // debounced AI classify when memo changes
   useEffect(() => {
@@ -297,12 +327,31 @@ function ManualStep({ onBack, onDone }: { onBack: () => void; onDone: () => void
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       <BackBtn onClick={onBack}/>
 
+      {/* OCR read warning */}
+      {prefill && prefill.confidence !== undefined && prefill.confidence < 0.50 && (
+        <div style={{ padding: '8px 12px', background: `${RED}0d`, border: `1px solid ${RED}33`, borderRadius: 10, fontSize: 11, color: RED }}>
+          ⚠ 読み取れませんでした。手動で入力してください。
+        </div>
+      )}
+      {prefill && prefill.confidence !== undefined && prefill.confidence >= 0.50 && prefill.confidence < 0.80 && (
+        <div style={{ padding: '8px 12px', background: `${AMBER}0d`, border: `1px solid ${AMBER}33`, borderRadius: 10, fontSize: 11, color: AMBER }}>
+          ⚠ 一部の項目のみ読み取れました。内容を確認してください。
+        </div>
+      )}
+
       {/* Title row */}
       <div style={{ marginTop: -6 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
             <div style={{ fontSize: 9, color: TEXT3, fontWeight: 700, letterSpacing: '.14em', textTransform: 'uppercase', fontFamily: 'var(--font-mono),monospace' }}>QUICK ENTRY</div>
-            <div style={{ fontSize: 20, fontWeight: 700, color: TEXT1, letterSpacing: '-.02em', marginTop: 2 }}>支出を記録</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2 }}>
+              <div style={{ fontSize: 20, fontWeight: 700, color: TEXT1, letterSpacing: '-.02em' }}>支出を記録</div>
+              {prefill && prefill.confidence !== undefined && prefill.confidence >= 0.80 && (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 9, color: VIOLET, fontFamily: 'var(--font-mono),monospace', letterSpacing: '.06em', background: `${VIOLET}10`, border: `1px solid ${VIOLET}30`, borderRadius: 6, padding: '2px 7px' }}>
+                  ✦ OCR読取
+                </span>
+              )}
+            </div>
           </div>
           <span style={{ fontSize: 10, color: TEXT3, fontFamily: 'var(--font-mono),monospace', letterSpacing: '.08em' }}>{timeStr}</span>
         </div>
@@ -1092,14 +1141,17 @@ interface Props {
 export function AddPickerSheet({ open, onClose, onDone }: Props) {
   const router = useRouter()
   const [step, setStep] = useState<Step>('picker')
+  const [ocrPrefill, setOcrPrefill] = useState<OcrPrefill | undefined>()
 
   const handleClose = useCallback(() => {
     setStep('picker')
+    setOcrPrefill(undefined)
     onClose()
   }, [onClose])
 
   const handleDone = useCallback(() => {
     setStep('picker')
+    setOcrPrefill(undefined)
     onClose()
     if (onDone) onDone()
     else router.refresh()
@@ -1108,19 +1160,30 @@ export function AddPickerSheet({ open, onClose, onDone }: Props) {
   // CSV・MF完了後は収支画面へ
   const handleImportDone = useCallback(() => {
     setStep('picker')
+    setOcrPrefill(undefined)
     onClose()
     router.push('/transactions')
   }, [onClose, router])
 
+  function handleOcrResult(data: OcrResult) {
+    setOcrPrefill({
+      payee:       data.payee || undefined,
+      amount:      data.amount || undefined,
+      occurred_on: data.occurred_on || undefined,
+      confidence:  data.confidence,
+    })
+    setStep('manual')
+  }
 
   if (!open) return null
 
   return (
     <SheetChrome onBackdropClick={handleClose}>
-      {step === 'picker' && <PickerStep onPick={setStep} onClose={handleClose}/>}
-      {step === 'manual' && <ManualStep onBack={() => setStep('picker')} onDone={handleDone}/>}
-      {step === 'csv'    && <CsvStep    onBack={() => setStep('picker')} onDone={handleImportDone}/>}
-      {step === 'mf'     && <MfStep     onBack={() => setStep('picker')} onDone={handleImportDone}/>}
+      {step === 'picker'  && <PickerStep onPick={setStep} onClose={handleClose}/>}
+      {step === 'receipt' && <ReceiptCapture onResult={handleOcrResult} onCancel={() => setStep('picker')}/>}
+      {step === 'manual'  && <ManualStep onBack={() => { setStep('picker'); setOcrPrefill(undefined) }} onDone={handleDone} prefill={ocrPrefill}/>}
+      {step === 'csv'     && <CsvStep    onBack={() => setStep('picker')} onDone={handleImportDone}/>}
+      {step === 'mf'      && <MfStep     onBack={() => setStep('picker')} onDone={handleImportDone}/>}
     </SheetChrome>
   )
 }

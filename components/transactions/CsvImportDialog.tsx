@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { UploadIcon, FileTextIcon, CheckCircleIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -12,6 +12,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { parseMfCsv, decodeCsvBuffer } from '@/lib/csv-parser'
+import { SyncLoading } from '@/components/kai/SyncLoading'
 
 interface ImportResult {
   inserted: number
@@ -27,13 +28,39 @@ export function CsvImportDialog({ onImported, defaultOpen = false }: { onImporte
   const [preview, setPreview] = useState<{ count: number; errors: string[] } | null>(null)
   const [result, setResult] = useState<ImportResult | null>(null)
   const [loading, setLoading] = useState(false)
+  const [loadProgress, setLoadProgress] = useState(0)
   const [dragOver, setDragOver] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+  const progressRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  // インポート中: 0→90% を疑似シミュレート（完了で 1.0 にジャンプ）
+  useEffect(() => {
+    if (loading) {
+      setLoadProgress(0)
+      const total = preview?.count ?? 20
+      const stepMs = Math.max(120, Math.min(600, (total * 30)))
+      progressRef.current = setInterval(() => {
+        setLoadProgress((p) => {
+          const next = p + (0.9 - p) * 0.18
+          return next > 0.88 ? 0.88 : next
+        })
+      }, stepMs)
+    } else {
+      if (progressRef.current) clearInterval(progressRef.current)
+      if (result) {
+        setLoadProgress(1)
+        const t = setTimeout(() => setLoadProgress(0), 600)
+        return () => clearTimeout(t)
+      }
+    }
+    return () => { if (progressRef.current) clearInterval(progressRef.current) }
+  }, [loading, result, preview?.count])
 
   function reset() {
     setFile(null)
     setPreview(null)
     setResult(null)
+    setLoadProgress(0)
   }
 
   async function handleFile(f: File) {
@@ -65,6 +92,16 @@ export function CsvImportDialog({ onImported, defaultOpen = false }: { onImporte
   }
 
   return (
+    <>
+      {/* CSV インポート中のフルスクリーンロード */}
+      {loading && (
+        <SyncLoading
+          progress={loadProgress}
+          statusLabel="CSV · 取込み中"
+          transactions={[]}
+        />
+      )}
+
     <Dialog
       open={open}
       onOpenChange={(next) => {
@@ -195,5 +232,6 @@ export function CsvImportDialog({ onImported, defaultOpen = false }: { onImporte
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    </>
   )
 }

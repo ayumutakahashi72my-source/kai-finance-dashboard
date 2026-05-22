@@ -58,7 +58,7 @@ RLSでデータが見えない時：Supabaseテーブルエディタで直接確
 
 ## 現在のPhase
 
-**Phase 2 / Week 11** — 取引編集削除・スコア永続化・月初Cron 完了
+**Phase 2 / Week 12** — Skeleton UI・ScoreCard・レシートOCR 完了
 
 | Week | 内容 | 状態 |
 |------|------|------|
@@ -73,19 +73,25 @@ RLSでデータが見えない時：Supabaseテーブルエディタで直接確
 | 9 | ダッシュボードUI（月切替・AiSummaryCard・AiChatPanel） | ✅ |
 | 10 | 予算ダッシュボード（BudgetDashboard・ScoreRing・BudgetSuggestCard・SpendingPatternCard） | ✅ |
 | 11 | 取引編集・削除（PATCH/DELETE API + UI）・monthly_scoresマイグレーション・スコア計算ライブラリ・月初Cron | ✅ |
-| 12 | Skeleton UI全画面適用・固定費管理UI・ダッシュボードにスコアカード追加 | 未 |
+| 12 | Skeleton UI全画面適用・レシートOCR（PP-OCRv5 + 3層RAG）・ダッシュボードにスコアカード追加 | ✅ |
 
-### Week 11 実装内容
-- `supabase/migrations/20260515000013_monthly_scores.sql` — monthly_scores・fixed_expense_suggestions テーブル
-- `lib/score-calculator.ts` — recalculateScore(supabase, householdId, month)
-- `app/api/transactions/[id]/route.ts` — PATCH・DELETE（スコア再計算統合）
-- `components/transactions/TransactionList.tsx` — ⋯メニュー・編集ダイアログ・削除確認ダイアログ追加
-- `app/api/cron/monthly/route.ts` — 月初Cron（スコア確定・月次サマリー・予算提案・固定費検出・クリーンアップ）
-- `vercel.json` — `/api/cron/monthly` schedule追加（毎月1日 00:01 JST）
+### Week 12 実装内容
+- `components/ui/Skeleton.tsx` — `skeleton-shimmer` → `kai-skeleton` バグ修正（CSS変数使用）
+- `components/dashboard/ScoreCard.tsx` — monthly_scoresからスコアを取得（TanStack Query）、3バリアント（default/mini/big）
+- `app/api/scores/route.ts` — GET /api/scores?month=YYYY-MM
+- `components/dashboard/DashboardTabs.tsx` — NowTabでScoreCard（AiSummaryCardの上）配置済み
+- `components/ui/Skeleton.tsx` / `components/transactions/TransactionsView.tsx` / `components/dashboard/AiSummaryCard.tsx` — Skeleton適用済み
+- `lib/ocr.ts` — PP-OCRv5 + sharp + 3層RAGパイプライン（rules→store_cache→Haiku）
+- `app/api/transactions/ocr/route.ts` — POST /api/transactions/ocr
+- `components/transactions/ReceiptCapture.tsx` — カメラ入力UI
+- `components/transactions/ReceiptAnalyzingV2.tsx` — 解析中UI（DESIGN-LOCKED）
+- `components/layout/AddPickerSheet.tsx` — レシート読取ステップ追加・OcrPrefill→ManualStep連携
+- `supabase/migrations/20260522000030_ocr_store_cache.sql` — **未適用（Supabase側で要実行）**
+- `scripts/download-ocr-models.ts` — PP-OCRv5 モデルURL修正
+- `public/models/` — PP-OCRv5_mobile_det_infer.onnx・rec_infer.onnx・ppocrv5_dict.txt 配置済み
 
 ### 次の指示
-Week 12: **Skeleton UI全画面適用 + ダッシュボードにスコアカード追加**を実装してください。
-- `components/ui/Skeleton.tsx` — shimmerアニメーションのSkeletonアトム（panel / line-sm / line-md / line-lg / block バリアント）
-- `components/dashboard/ScoreCard.tsx` — monthly_scoresからスコアを取得して表示（TanStack Query）
-- `app/page.tsx` — ScoreCardをAiSummaryCardの上に配置
-- 各ページの isLoading 時に Skeleton を適用（BudgetDashboard は実装済み・他ページも統一）
+Week 13: **固定費管理UI + 目標設定ページ改善**を実装してください。
+- `components/budget/FixedExpenseCard.tsx` — fixed_expense_suggestions を表示・承認/却下UI
+- `app/settings/goals/page.tsx` — 目標作成・編集フォームのUX改善（バリデーション強化）
+- `app/budget/page.tsx` — FixedExpenseCardをBudgetDashboardの下に追加

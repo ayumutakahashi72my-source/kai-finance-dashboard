@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  
+  <defs>
+    
+    <linearGradient id="ring" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fb9477"></stop>
+      <stop offset="1" stop-color="#7aa7ff"></stop>
+    </linearGradient>
+    
+    <linearGradient id="topHL" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.06"></stop>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"></stop>
+    </linearGradient>
+    
+    <linearGradient id="wave" x1="0" y1="0" x2="16" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fb9477"></stop>
+      <stop offset="1" stop-color="#7aa7ff"></stop>
+    </linearGradient>
+    
+    <clipPath id="innerClip">
+      <rect x="18" y="18" width="988" height="988" rx="225" ry="225"></rect>
+    </clipPath>
+  </defs>
+
+  
+  <rect x="0" y="0" width="1024" height="1024" rx="243" ry="243" fill="url(#ring)"></rect>
+
+  
+  <rect x="18" y="18" width="988" height="988" rx="225" ry="225" fill="#0c0a14"></rect>
+
+  
+  <g clip-path="url(#innerClip)">
+    <rect x="18" y="18" width="988" height="416" fill="url(#topHL)"></rect>
+  </g>
+
+  
+  <g stroke-width="13" stroke-linecap="square" fill="none">
+    
+    <path d="M105 192 L105 105 L192 105" stroke="#fb9477" stroke-opacity="0.8"></path>
+    
+    <path d="M919 832 L919 919 L832 919" stroke="#7aa7ff" stroke-opacity="0.8"></path>
+  </g>
+
+  
+  
+  <path transform="translate(215 215) scale(37.125)" d="M1 9 h2.5 l2 -4.5 l3.5 9 l2 -4.5 H15" stroke="url(#wave)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"></path>
+</svg>

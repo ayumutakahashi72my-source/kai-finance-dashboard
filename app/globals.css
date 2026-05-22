@@ -96,6 +96,19 @@
   to   { transform: translateY(0); }
 }
 
+/* ── Splash / Loading 画面用 keyframes ── */
+@keyframes kai-splash-fade {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes kai-splash-fade-soft {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes kai-splash-draw {
+  to { stroke-dashoffset: 0; }
+}
+
 /* (legacy — 既存コード用に残す。新規コードで使わない) */
 @keyframes ticker     { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 @keyframes meshShift  { 0% { transform: translate(0,0) scale(1); } 50% { transform: translate(2%,1%) scale(1.04); } 100% { transform: translate(-2%,-1%) scale(1.02); } }
@@ -142,21 +155,21 @@
  */
 .kai-input {
   width: 100%;
-  background: rgba(255,255,255,.03);
-  border: 1px solid rgba(255,255,255,.07);
+  background: var(--kai-input-bg);
+  border: 1px solid var(--kai-input-border);
   border-radius: 10px;
   padding: 11px 13px;
   font-size: 14px;
-  color: #f0f0f5;
+  color: var(--kai-text1);
   font-family: inherit;
   outline: none;
   box-sizing: border-box;
   transition: border-color .15s, background .15s;
 }
-.kai-input::placeholder { color: #5e5e72; }
+.kai-input::placeholder { color: var(--kai-text4); }
 .kai-input:focus {
   border-color: rgba(251,148,119,.5);
-  background: rgba(255,255,255,.05);
+  background: var(--kai-input-bg);
 }
 /* autofill 対策（Chrome / Safari） */
 .kai-input:-webkit-autofill,
@@ -200,9 +213,9 @@
   border: none;
 }
 .kai-btn-secondary {
-  background: rgba(255,255,255,.04);
-  border-color: rgba(255,255,255,.12);
-  color: #c4c4d0;
+  background: var(--kai-btn-sec-bg);
+  border-color: var(--kai-btn-sec-border);
+  color: var(--kai-btn-sec-color);
 }
 .kai-btn-danger {
   background: rgba(251,113,133,.08);
@@ -215,13 +228,65 @@
 /* ─────────────────── shimmer / glint utilities ─────────────────── */
 .kai-skeleton {
   background: linear-gradient(90deg,
-    rgba(255,255,255,0.04) 25%,
-    rgba(255,255,255,0.09) 50%,
-    rgba(255,255,255,0.04) 75%);
+    var(--kai-skeleton-lo) 25%,
+    var(--kai-skeleton-hi) 50%,
+    var(--kai-skeleton-lo) 75%);
   background-size: 200% 100%;
   animation: kai-shimmer 1.6s ease-in-out infinite;
 }
 
+
+/* ==========================================================================
+ * 3.5. KAI テーマ切替 CSS 変数（surface / text / border）
+ *   - アクセントカラー（coral / blue / violet など）はブランドカラーなので固定。
+ *   - :root = dark デフォルト、:root.light = ライトモード上書き。
+ * ========================================================================== */
+
+:root {
+  --kai-bg:              #0a0a10;
+  --kai-bg-card:         #0c0a14;
+  --kai-bg-panel:        rgba(20,22,32,0.66);
+  --kai-bg-panel-solid:  #14161f;
+  --kai-bg-sidebar:      rgba(8,8,14,0.75);
+  --kai-border:          rgba(255,255,255,0.06);
+  --kai-border2:         rgba(255,255,255,0.10);
+  --kai-border-strong:   rgba(255,255,255,0.16);
+  --kai-text1:           #f0f0f5;
+  --kai-text2:           #c4c4d0;
+  --kai-text3:           #8b8ba0;
+  --kai-text4:           #5e5e72;
+  --kai-text5:           #3e3e55;
+  --kai-input-bg:        rgba(255,255,255,0.03);
+  --kai-input-border:    rgba(255,255,255,0.07);
+  --kai-btn-sec-bg:      rgba(255,255,255,0.04);
+  --kai-btn-sec-border:  rgba(255,255,255,0.12);
+  --kai-btn-sec-color:   #c4c4d0;
+  --kai-skeleton-hi:     rgba(255,255,255,0.09);
+  --kai-skeleton-lo:     rgba(255,255,255,0.04);
+}
+
+:root.light {
+  --kai-bg:              #faf9fc;
+  --kai-bg-card:         #ffffff;
+  --kai-bg-panel:        rgba(250,249,252,0.92);
+  --kai-bg-panel-solid:  #f3f2f8;
+  --kai-bg-sidebar:      rgba(250,249,252,0.88);
+  --kai-border:          rgba(0,0,0,0.07);
+  --kai-border2:         rgba(0,0,0,0.10);
+  --kai-border-strong:   rgba(0,0,0,0.16);
+  --kai-text1:           #0e0e14;
+  --kai-text2:           #3a3a50;
+  --kai-text3:           #6b6b82;
+  --kai-text4:           #9b9bb0;
+  --kai-text5:           #b8b8cc;
+  --kai-input-bg:        rgba(0,0,0,0.03);
+  --kai-input-border:    rgba(0,0,0,0.10);
+  --kai-btn-sec-bg:      rgba(0,0,0,0.04);
+  --kai-btn-sec-border:  rgba(0,0,0,0.12);
+  --kai-btn-sec-color:   #3a3a50;
+  --kai-skeleton-hi:     rgba(0,0,0,0.08);
+  --kai-skeleton-lo:     rgba(0,0,0,0.04);
+}
 
 /* ==========================================================================
  * 4. shadcn oklch トークン（既存）
@@ -373,8 +438,8 @@
  * ========================================================================== */
 
 html, body {
-  background: var(--bg-primary);
-  color: var(--text-primary);
+  background: var(--kai-bg);
+  color: var(--kai-text1);
 }
 
 @layer base {
@@ -409,4 +474,33 @@ select:focus-visible,
 a:focus-visible {
   outline: 2px solid #fb9477;
   outline-offset: 2px;
+}
+
+/* ==========================================================================
+ * OCR v2 (ReceiptAnalyzingV2) keyframes
+ * ========================================================================== */
+
+@keyframes ocrv2-blink {
+  50% { opacity: .35; }
+}
+
+@keyframes ocrv2-stream {
+  from { opacity: 0; transform: translateX(-4px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes ocrv2-caret {
+  50% { opacity: 0; }
+}
+
+@keyframes ocrv2-scanv {
+  0%   { top: -24px; opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { top: 100%;  opacity: 0; }
+}
+
+@keyframes ocrv2-box-in {
+  from { transform: scale(.85); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
 }

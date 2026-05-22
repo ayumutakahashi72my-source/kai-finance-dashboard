@@ -14,5 +14,5 @@ interface Props {
 }
 
 export function Skeleton({ variant = 'line-md', className = '' }: Props) {
-  return <div className={`skeleton-shimmer ${SIZES[variant]} ${className}`} />
+  return <div className={`kai-skeleton ${SIZES[variant]} ${className}`} />
 }
