@@ -1,3 +1,24 @@
+// ── PWA installability: install / activate / fetch ───────────────
+const CACHE_NAME = 'kai-v1'
+
+self.addEventListener('install', (event) => {
+  event.waitUntil(caches.open(CACHE_NAME).then(c => c.add('/')))
+  self.skipWaiting()
+})
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(self.clients.claim())
+})
+
+self.addEventListener('fetch', (event) => {
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request).catch(() => caches.match('/'))
+    )
+  }
+})
+
+// ── Push notifications ────────────────────────────────────────────
 self.addEventListener('push', (event) => {
   if (!event.data) return
   const data = event.data.json()

@@ -57,8 +57,6 @@ mock/nextjs/
 # OCR models (大容量バイナリ — Vercel ビルド時に download-ocr-models.ts で取得)
 /public/models/
 
-# next-pwa が生成する Service Worker (ビルド時に自動生成)
-/public/sw.js
-/public/sw.js.map
+# next-pwa が生成する workbox ファイル (ビルド時に自動生成)
 /public/workbox-*.js
 /public/workbox-*.js.map
