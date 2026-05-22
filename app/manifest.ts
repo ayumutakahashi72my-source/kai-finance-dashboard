@@ -6,7 +6,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: 'kai — 家計簿管理',
     short_name: 'kai',
     description: 'AI × 家計管理。支出の削減・節約をサポートするダッシュボード。',
-    start_url: '/',
+    start_url: '/login',
     scope: '/',
     display: 'standalone',
     orientation: 'portrait',
@@ -14,7 +14,6 @@ export default function manifest(): MetadataRoute.Manifest {
     theme_color: '#0a0a10',
     icons: [
       { src: '/app-icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
-      { src: '/app-icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
       { src: '/app-icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
     ],
   }

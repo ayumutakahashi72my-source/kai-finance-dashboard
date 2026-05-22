@@ -38,6 +38,7 @@ export const metadata: Metadata = {
   title: 'kai — 家計簿管理',
   applicationName: 'kai',
   description: 'AI × 家計管理。支出の削減・節約をサポートするダッシュボード。',
+  manifest: '/manifest.webmanifest',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
@@ -63,7 +64,6 @@ export const metadata: Metadata = {
     icon: [
       { url: '/app-icon-192.png', sizes: '192x192', type: 'image/png' },
       { url: '/app-icon-512.png', sizes: '512x512', type: 'image/png' },
-      { url: '/app-icon.svg',     type: 'image/svg+xml' },
     ],
     apple: [{ url: '/app-icon-180.png', sizes: '180x180' }],
   },
@@ -83,6 +83,8 @@ export default function RootLayout({
       <body className="min-h-full antialiased" style={{ fontFamily: "var(--font-inter), var(--font-sans), sans-serif", background: '#0a0a10' }}>
         {/* Prevent browser scroll restoration from shifting the fixed splash */}
         <script dangerouslySetInnerHTML={{ __html: `if('scrollRestoration'in history)history.scrollRestoration='manual'` }} />
+        {/* Capture beforeinstallprompt before React hydrates — InstallBanner reads window.__pwaInstallEvent */}
+        <script dangerouslySetInnerHTML={{ __html: `window.__pwaInstallEvent=null;window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();window.__pwaInstallEvent=e;});` }} />
         <HairlineSplash />
         <Providers>
           {children}

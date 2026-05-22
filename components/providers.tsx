@@ -17,9 +17,29 @@ export function Providers({ children }: { children: React.ReactNode }) {
   )
 
   useEffect(() => {
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').catch(() => {/* ignore */})
-    }
+    if (!('serviceWorker' in navigator)) return
+
+    console.log('[PWA] controller at mount:', navigator.serviceWorker.controller)
+
+    navigator.serviceWorker
+      .register('/sw.js', { scope: '/' })
+      .then((reg) => {
+        console.log('[PWA] SW registered, state:', reg.active?.state ?? 'no active worker')
+      })
+      .catch((err) => console.warn('[PWA] SW registration failed:', err))
+
+    navigator.serviceWorker.ready.then((reg) => {
+      console.log('[PWA] SW ready — scope:', reg.scope)
+      console.log('[PWA] controller after ready:', navigator.serviceWorker.controller)
+    })
+
+    window.addEventListener('beforeinstallprompt', () => {
+      console.log('[PWA] beforeinstallprompt fired')
+    })
+
+    window.addEventListener('appinstalled', () => {
+      console.log('[PWA] appinstalled fired')
+    })
   }, [])
 
   return (

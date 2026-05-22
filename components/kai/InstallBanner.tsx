@@ -14,13 +14,14 @@ declare global {
   }
 }
 
-type Platform = 'chrome-android' | 'ios' | 'samsung' | 'other'
+type Platform = 'chrome-android' | 'ios' | 'samsung' | 'chrome-desktop' | 'other'
 
 function detectPlatform(): Platform {
   const ua = navigator.userAgent
   if (/iPhone|iPad|iPod/.test(ua)) return 'ios'
   if (/SamsungBrowser/.test(ua)) return 'samsung'
   if (/Android/.test(ua) && /Chrome/.test(ua)) return 'chrome-android'
+  if (/Chrome/.test(ua) && !/Mobile/.test(ua)) return 'chrome-desktop'
   return 'other'
 }
 
@@ -37,7 +38,8 @@ export function InstallBanner() {
     if (sessionStorage.getItem(DISMISSED_KEY)) return
 
     const p = detectPlatform()
-    if (p === 'other') return
+    // 'other' は beforeinstallprompt があれば表示、なければスキップ
+    if (p === 'other' && !window.__pwaInstallEvent) return
     setPlatform(p)
 
     // 早期キャプチャ済みのイベントを取得
@@ -72,10 +74,11 @@ export function InstallBanner() {
   if (dismissed || !platform) return null
 
   const guideText: Record<Platform, string[]> = {
-    'chrome-android': ['画面右上の「⋮」をタップ', '「アプリをインストール」または「ホーム画面に追加」をタップ'],
-    'samsung':        ['画面下の「☰」メニューをタップ', '「ページを追加」→「ホーム画面」をタップ'],
-    'ios':            ['画面下の「□↑」共有ボタンをタップ', '「ホーム画面に追加」をタップ'],
-    'other':          ['ブラウザのメニューから「ホーム画面に追加」をタップ'],
+    'chrome-android':  ['画面右上の「⋮」をタップ', '「アプリをインストール」または「ホーム画面に追加」をタップ'],
+    'samsung':         ['画面下の「☰」メニューをタップ', '「ページを追加」→「ホーム画面」をタップ'],
+    'ios':             ['画面下の「□↑」共有ボタンをタップ', '「ホーム画面に追加」をタップ'],
+    'chrome-desktop':  ['アドレスバー右端のインストールアイコン（⊕）をクリック', 'または右上の「⋮」→「kai をインストール」をクリック'],
+    'other':           ['ブラウザのメニューから「ホーム画面に追加」を選択'],
   }
 
   return (
