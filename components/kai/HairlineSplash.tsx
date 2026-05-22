@@ -30,7 +30,7 @@ interface HairlineSplashProps {
 }
 
 export function HairlineSplash({
-  autoHideMs = 1800,
+  autoHideMs = 3000,
   visible,
   onDone,
 }: HairlineSplashProps) {
