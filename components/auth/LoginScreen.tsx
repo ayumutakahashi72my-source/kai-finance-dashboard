@@ -95,16 +95,16 @@ export function LoginScreen({ onGoogleSignIn, onTermsClick }: LoginScreenProps) 
           <h1
             style={{
               margin: 0,
-              fontFamily:
-                '"Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif',
-              fontSize: 34,
-              fontWeight: 300,
+              fontFamily: 'var(--font-serif), "Georgia", serif',
+              fontStyle: 'italic',
+              fontSize: 36,
+              fontWeight: 400,
               letterSpacing: '-.01em',
               lineHeight: 1.3,
               color: KAI.text1,
             }}
           >
-            kaiへようこそ。
+            kaiへようこそ
           </h1>
         </div>
         <div style={{ animation: 'kai-splash-fade .9s .55s both ease-out' }}>
