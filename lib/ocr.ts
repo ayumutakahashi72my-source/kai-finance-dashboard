@@ -106,10 +106,9 @@ async function getOcrService(): Promise<OcrService> {
 // ── Image → RGBA pixel data (sharp preprocessing) ─────────────────
 async function toImageData(buf: Buffer) {
   const { data, info } = await sharp(buf)
-    .grayscale()
     .normalize()
     .sharpen({ sigma: 1.5 })
-    .ensureAlpha()
+    .flatten({ background: { r: 255, g: 255, b: 255 } })
     .toBuffer({ resolveWithObject: true })
 
   return {
