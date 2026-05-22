@@ -126,6 +126,8 @@ export function HairlineSplash({
         style={{
           position: 'absolute',
           inset: 0,
+          paddingTop: 'env(safe-area-inset-top, 0px)',
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
