@@ -7,8 +7,16 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim())
 })
 
-// fetch ハンドラが必須（ないと Chrome が PWA と認識しない）
-self.addEventListener('fetch', () => {})
+// Chrome が PWA と認識するための fetch ハンドラ (network-first)
+self.addEventListener('fetch', (event) => {
+  // GET 以外・chrome-extension はスキップ
+  if (event.request.method !== 'GET') return
+  if (!event.request.url.startsWith('http')) return
+
+  event.respondWith(
+    fetch(event.request).catch(() => caches.match(event.request))
+  )
+})
 
 // ── Push notifications ────────────────────────────────────────────
 self.addEventListener('push', (event) => {

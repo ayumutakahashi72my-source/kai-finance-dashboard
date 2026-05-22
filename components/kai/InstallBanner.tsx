@@ -7,6 +7,13 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
 }
 
+// layout.tsx の早期スクリプトが window.__pwaInstallEvent に保存している
+declare global {
+  interface Window {
+    __pwaInstallEvent?: BeforeInstallPromptEvent | null
+  }
+}
+
 type Platform = 'chrome-android' | 'ios' | 'samsung' | 'other'
 
 function detectPlatform(): Platform {
@@ -26,15 +33,20 @@ export function InstallBanner() {
   const [dismissed, setDismissed] = useState(false)
 
   useEffect(() => {
-    // インストール済み or 過去に閉じた場合はスキップ
     if (window.matchMedia('(display-mode: standalone)').matches) return
     if (sessionStorage.getItem(DISMISSED_KEY)) return
 
     const p = detectPlatform()
-    // デスクトップは対象外
     if (p === 'other') return
     setPlatform(p)
 
+    // 早期キャプチャ済みのイベントを取得
+    if (window.__pwaInstallEvent) {
+      setDeferred(window.__pwaInstallEvent)
+      window.__pwaInstallEvent = null
+    }
+
+    // 念のため未来のイベントも待つ
     const handler = (e: Event) => {
       e.preventDefault()
       setDeferred(e as BeforeInstallPromptEvent)
@@ -50,12 +62,10 @@ export function InstallBanner() {
 
   const handleInstall = async () => {
     if (deferred) {
-      // Chrome Android: ネイティブダイアログを出す
       await deferred.prompt()
       const { outcome } = await deferred.userChoice
       if (outcome === 'accepted') { dismiss(); return }
     }
-    // Samsung / iOS / Chrome でダイアログが取れなかった場合: 手順を表示
     setShowGuide(true)
   }
 
@@ -70,7 +80,6 @@ export function InstallBanner() {
 
   return (
     <>
-      {/* インストールバナー */}
       <div
         style={{
           position: 'fixed',
@@ -119,7 +128,6 @@ export function InstallBanner() {
         </div>
       </div>
 
-      {/* 手順ガイド（Chrome でダイアログが取れなかった場合 / Samsung / iOS） */}
       {showGuide && (
         <div
           onClick={() => setShowGuide(false)}
