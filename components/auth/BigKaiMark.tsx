@@ -22,8 +22,7 @@ export function BigKaiMark({
   glow = true,
 }: BigKaiMarkProps) {
   const dashLen = 38
-  const s1 = `${gradientId}-s1`
-  const s2 = `${gradientId}-s2`
+  const flowDelay = drawDelay + drawDuration
   return (
     <svg
       width={size}
@@ -55,27 +54,31 @@ export function BigKaiMark({
           y2="9"
           gradientUnits="userSpaceOnUse"
         >
-          <stop id={s1} stopColor={from} />
-          <stop id={s2} offset="1" stopColor={to} />
+          {/* ベースグラデ: coral → blue (固定) */}
+          <stop offset="0" stopColor={from} />
+          <stop offset="1" stopColor={to} />
+          {/* 光の帯が左から右へ流れる (SMIL) */}
+          <stop stopColor="rgba(255,255,255,0)">
+            <animate
+              attributeName="offset"
+              values="-0.3;1.3"
+              dur="2s"
+              begin={`${flowDelay}s`}
+              repeatCount="indefinite"
+              calcMode="linear"
+            />
+            <animate
+              attributeName="stop-color"
+              values="rgba(255,255,255,0);rgba(255,255,255,0.65);rgba(255,255,255,0)"
+              keyTimes="0;0.5;1"
+              dur="2s"
+              begin={`${flowDelay}s`}
+              repeatCount="indefinite"
+            />
+          </stop>
         </linearGradient>
       </defs>
-      <style>{`
-        @keyframes kai-mark-draw { to { stroke-dashoffset: 0; } }
-        @keyframes ${gradientId}-flow1 {
-          0%   { stop-color: ${from}; }
-          33%  { stop-color: #a78bfa; }
-          66%  { stop-color: #22d3ee; }
-          100% { stop-color: ${from}; }
-        }
-        @keyframes ${gradientId}-flow2 {
-          0%   { stop-color: ${to}; }
-          33%  { stop-color: #fb9477; }
-          66%  { stop-color: #a78bfa; }
-          100% { stop-color: ${to}; }
-        }
-        #${s1} { animation: ${gradientId}-flow1 3s 1.4s ease-in-out infinite; }
-        #${s2} { animation: ${gradientId}-flow2 3s 1.4s ease-in-out infinite; }
-      `}</style>
+      <style>{`@keyframes kai-mark-draw { to { stroke-dashoffset: 0; } }`}</style>
     </svg>
   )
 }
