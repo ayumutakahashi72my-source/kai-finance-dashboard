@@ -22,6 +22,8 @@ export function BigKaiMark({
   glow = true,
 }: BigKaiMarkProps) {
   const dashLen = 38
+  const s1 = `${gradientId}-s1`
+  const s2 = `${gradientId}-s2`
   return (
     <svg
       width={size}
@@ -29,12 +31,7 @@ export function BigKaiMark({
       viewBox="0 0 16 16"
       fill="none"
       aria-hidden
-      style={{
-        display: 'block',
-        filter: glow
-          ? `drop-shadow(0 0 18px ${from}55) drop-shadow(0 0 32px ${to}33)`
-          : 'none',
-      }}
+      style={{ display: 'block' }}
     >
       <path
         d="M1 9h2.5l2-4.5 3.5 9 2-4.5H15"
@@ -46,6 +43,7 @@ export function BigKaiMark({
         strokeDashoffset={dashLen}
         style={{
           animation: `kai-mark-draw ${drawDuration}s ${drawDelay}s cubic-bezier(.65,.05,.36,1) forwards`,
+          filter: glow ? `drop-shadow(0 0 3px ${from}88)` : 'none',
         }}
       />
       <defs>
@@ -57,11 +55,27 @@ export function BigKaiMark({
           y2="9"
           gradientUnits="userSpaceOnUse"
         >
-          <stop stopColor={from} />
-          <stop offset="1" stopColor={to} />
+          <stop id={s1} stopColor={from} />
+          <stop id={s2} offset="1" stopColor={to} />
         </linearGradient>
       </defs>
-      <style>{`@keyframes kai-mark-draw { to { stroke-dashoffset: 0; } }`}</style>
+      <style>{`
+        @keyframes kai-mark-draw { to { stroke-dashoffset: 0; } }
+        @keyframes ${gradientId}-flow1 {
+          0%   { stop-color: ${from}; }
+          33%  { stop-color: #a78bfa; }
+          66%  { stop-color: #22d3ee; }
+          100% { stop-color: ${from}; }
+        }
+        @keyframes ${gradientId}-flow2 {
+          0%   { stop-color: ${to}; }
+          33%  { stop-color: #fb9477; }
+          66%  { stop-color: #a78bfa; }
+          100% { stop-color: ${to}; }
+        }
+        #${s1} { animation: ${gradientId}-flow1 3s 1.4s ease-in-out infinite; }
+        #${s2} { animation: ${gradientId}-flow2 3s 1.4s ease-in-out infinite; }
+      `}</style>
     </svg>
   )
 }
