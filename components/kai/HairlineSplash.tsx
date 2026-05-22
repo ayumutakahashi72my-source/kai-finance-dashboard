@@ -35,6 +35,39 @@ export function HairlineSplash({
   onDone,
 }: HairlineSplashProps) {
   const [show, setShow] = React.useState(true)
+  const [topPad, setTopPad] = React.useState(0)
+
+  // VisualViewport offset補正: OAuthリダイレクト後にChrome URLバーが表示される間、
+  // position:fixed は大きいビューポートで計算されるが視覚的ビューポートは小さい。
+  // offsetTop でその差を検出して中央コンテナに paddingTop として適用する。
+  React.useEffect(() => {
+    const vv = window.visualViewport
+    const update = () => {
+      const vvOffset = vv?.offsetTop ?? 0
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+      if (vvOffset > 0) {
+        // ブラウザモード: URLバー分だけ上にずれる
+        setTopPad(vvOffset)
+      } else if (isStandalone) {
+        // スタンドアロンPWA: ステータスバー分の補正 (safe-area or 24px fallback)
+        const el = document.createElement('div')
+        el.style.cssText = 'height:env(safe-area-inset-top,0px);width:0;position:absolute;visibility:hidden;'
+        document.body.appendChild(el)
+        const sat = el.offsetHeight
+        document.body.removeChild(el)
+        setTopPad(sat > 0 ? sat : 24)
+      } else {
+        setTopPad(0)
+      }
+    }
+    update()
+    vv?.addEventListener('resize', update)
+    vv?.addEventListener('scroll', update)
+    return () => {
+      vv?.removeEventListener('resize', update)
+      vv?.removeEventListener('scroll', update)
+    }
+  }, [])
 
   // Restore scroll restoration after splash hides (was set to 'manual' in layout.tsx <script>)
   React.useEffect(() => {
@@ -126,8 +159,7 @@ export function HairlineSplash({
         style={{
           position: 'absolute',
           inset: 0,
-          paddingTop: 'env(safe-area-inset-top, 24px)',
-          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+          paddingTop: topPad,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
