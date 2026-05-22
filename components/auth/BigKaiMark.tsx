@@ -46,15 +46,16 @@ export function BigKaiMark({
           filter: glow ? `drop-shadow(0 0 3px ${from}88)` : 'none',
         }}
       />
-      {/* グリント: 白い光が左→右へ流れる (CSS stroke-dashoffset) */}
+      {/* グリント: coral の光が左→右へ流れる (CSS stroke-dashoffset) */}
       <path
         d="M1 9h2.5l2-4.5 3.5 9 2-4.5H15"
-        stroke="rgba(255,255,255,0.9)"
-        strokeWidth={2}
+        stroke={from}
+        strokeWidth={2.4}
         strokeLinecap="round"
-        strokeDasharray="2 36"
+        strokeDasharray="2.5 35.5"
         strokeDashoffset={38}
         style={{
+          filter: `drop-shadow(0 0 4px ${from}cc)`,
           animation: `${gradientId}-glint 2s ${flowDelay}s linear infinite`,
         }}
       />
