@@ -26,11 +26,11 @@ export function BigKaiMark({
   const gradRef = React.useRef<SVGLinearGradientElement>(null)
 
   React.useEffect(() => {
-    // Gradient spans 2× the path width (−13 to 15 = 28 units).
-    // Stops: to(blue)@0%, from(coral)@50%, to(blue)@100%.
-    // Translating +14 units (one period) shifts the gradient right → colors move left.
+    // Gradient spans 2× the path width (−13 to 15 = 28 units) with spreadMethod="repeat".
+    // Stops: to@0%, from@50%, to@100% — pattern period = 28 units.
+    // Translating +28 units (one full period) restores the same visual → seamless loop.
     const PERIOD = 2000
-    const SHIFT = 14
+    const SHIFT = 28
     let frame: number
     let startT: number | null = null
     const mountTime = performance.now()
@@ -82,6 +82,7 @@ export function BigKaiMark({
           x2="15"
           y2="9"
           gradientUnits="userSpaceOnUse"
+          spreadMethod="repeat"
         >
           <stop offset="0%"   stopColor={to}   />
           <stop offset="50%"  stopColor={from} />
