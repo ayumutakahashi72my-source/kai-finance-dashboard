@@ -1,16 +1,19 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { LoginScreen } from '@/components/auth/LoginScreen'
 
-const LEGAL_URLS = {
-  tos:     '/legal/terms-of-service.pdf',
-  privacy: '/legal/privacy-policy.pdf',
-  cookie:  '/legal/cookie-policy.pdf',
-  data:    '/legal/data-handling-policy.pdf',
+const LEGAL_ROUTES = {
+  tos:     '/legal/terms',
+  privacy: '/legal/privacy',
+  cookie:  '/legal/cookie',
+  data:    '/legal/data',
 } as const
 
 export default function LoginPageClient() {
+  const router = useRouter()
+
   async function handleGoogleSignIn() {
     const supabase = createClient()
     await supabase.auth.signInWithOAuth({
@@ -20,7 +23,7 @@ export default function LoginPageClient() {
   }
 
   function handleTermsClick(kind: 'tos' | 'privacy' | 'cookie' | 'data') {
-    window.open(LEGAL_URLS[kind], '_blank', 'noopener,noreferrer')
+    router.push(LEGAL_ROUTES[kind])
   }
 
   return <LoginScreen onGoogleSignIn={handleGoogleSignIn} onTermsClick={handleTermsClick} />
