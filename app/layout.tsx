@@ -4,6 +4,7 @@ import './globals.css'
 import { cn } from "@/lib/utils"
 import { Providers } from '@/components/providers'
 import { HairlineSplash } from '@/components/kai/HairlineSplash'
+import { InstallBanner } from '@/components/kai/InstallBanner'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -83,7 +84,10 @@ export default function RootLayout({
     <html lang="ja" suppressHydrationWarning className={cn("h-full dark", inter.variable, notoSansJP.variable, jetbrainsMono.variable, instrumentSerif.variable)} style={{ background: '#0a0a10' }}>
       <body className="min-h-full antialiased" style={{ fontFamily: "var(--font-inter), var(--font-sans), sans-serif", background: '#0a0a10' }}>
         <HairlineSplash />
-        <Providers>{children}</Providers>
+        <Providers>
+          {children}
+          <InstallBanner />
+        </Providers>
       </body>
     </html>
   )
