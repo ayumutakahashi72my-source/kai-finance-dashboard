@@ -109,6 +109,7 @@ async function toImageData(buf: Buffer) {
     .normalize()
     .sharpen({ sigma: 1.5 })
     .flatten({ background: { r: 255, g: 255, b: 255 } })
+    .raw()
     .toBuffer({ resolveWithObject: true })
 
   return {
