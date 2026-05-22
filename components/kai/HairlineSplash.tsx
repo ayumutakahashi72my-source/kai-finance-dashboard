@@ -36,6 +36,15 @@ export function HairlineSplash({
 }: HairlineSplashProps) {
   const [show, setShow] = React.useState(true)
 
+  // Prevent scroll position from shifting the fixed splash on reload
+  React.useEffect(() => {
+    if (show) {
+      const prev = document.body.style.overflow
+      document.body.style.overflow = 'hidden'
+      return () => { document.body.style.overflow = prev }
+    }
+  }, [show])
+
   React.useEffect(() => {
     if (visible === false) {
       setShow(false)

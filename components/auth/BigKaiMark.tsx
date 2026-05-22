@@ -32,6 +32,7 @@ export function BigKaiMark({
       aria-hidden
       style={{ display: 'block' }}
     >
+      {/* ベースパス: coral → blue グラデ */}
       <path
         d="M1 9h2.5l2-4.5 3.5 9 2-4.5H15"
         stroke={`url(#${gradientId})`}
@@ -45,6 +46,18 @@ export function BigKaiMark({
           filter: glow ? `drop-shadow(0 0 3px ${from}88)` : 'none',
         }}
       />
+      {/* グリント: 白い光が左→右へ流れる (CSS stroke-dashoffset) */}
+      <path
+        d="M1 9h2.5l2-4.5 3.5 9 2-4.5H15"
+        stroke="rgba(255,255,255,0.9)"
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeDasharray="2 36"
+        strokeDashoffset={38}
+        style={{
+          animation: `${gradientId}-glint 2s ${flowDelay}s linear infinite`,
+        }}
+      />
       <defs>
         <linearGradient
           id={gradientId}
@@ -54,31 +67,19 @@ export function BigKaiMark({
           y2="9"
           gradientUnits="userSpaceOnUse"
         >
-          {/* ベースグラデ: coral → blue (固定) */}
           <stop offset="0" stopColor={from} />
           <stop offset="1" stopColor={to} />
-          {/* 光の帯が左から右へ流れる (SMIL) */}
-          <stop stopColor="rgba(255,255,255,0)">
-            <animate
-              attributeName="offset"
-              values="-0.3;1.3"
-              dur="2s"
-              begin={`${flowDelay}s`}
-              repeatCount="indefinite"
-              calcMode="linear"
-            />
-            <animate
-              attributeName="stop-color"
-              values="rgba(255,255,255,0);rgba(255,255,255,0.65);rgba(255,255,255,0)"
-              keyTimes="0;0.5;1"
-              dur="2s"
-              begin={`${flowDelay}s`}
-              repeatCount="indefinite"
-            />
-          </stop>
         </linearGradient>
       </defs>
-      <style>{`@keyframes kai-mark-draw { to { stroke-dashoffset: 0; } }`}</style>
+      <style>{`
+        @keyframes kai-mark-draw { to { stroke-dashoffset: 0; } }
+        @keyframes ${gradientId}-glint {
+          0%   { stroke-dashoffset: 38; opacity: 0; }
+          8%   { opacity: 0.9; }
+          88%  { opacity: 0.9; }
+          100% { stroke-dashoffset: 0; opacity: 0; }
+        }
+      `}</style>
     </svg>
   )
 }
