@@ -46,6 +46,23 @@ function HairlineSplashInner({
   onDone,
 }: HairlineSplashProps) {
   const [show, setShow] = React.useState(true)
+  const [topPad, setTopPad] = React.useState(0)
+
+  // useLayoutEffect = ペイント前に同期実行 → topPad が初回フレームから正しい値になり
+  // useEffect より後に適用される "ジャンプ" が発生しない。
+  // position:fixed は layout viewport 基準のため、URLバーが表示されると
+  // コンテンツが visual 中心より上にずれる。offsetTop 分だけ padding で補正する。
+  React.useLayoutEffect(() => {
+    const vv = window.visualViewport
+    const update = () => setTopPad(vv?.offsetTop ?? 0)
+    update()
+    vv?.addEventListener('resize', update)
+    vv?.addEventListener('scroll', update)
+    return () => {
+      vv?.removeEventListener('resize', update)
+      vv?.removeEventListener('scroll', update)
+    }
+  }, [])
 
   // Restore scroll restoration after splash hides (was set to 'manual' in layout.tsx <script>)
   React.useEffect(() => {
@@ -137,6 +154,7 @@ function HairlineSplashInner({
         style={{
           position: 'absolute',
           inset: 0,
+          paddingTop: topPad,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
