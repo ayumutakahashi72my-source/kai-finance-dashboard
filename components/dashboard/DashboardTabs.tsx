@@ -564,30 +564,6 @@ function DashKpiRow({ transactions, month }: { transactions: Transaction[]; mont
   )
 }
 
-/* ─── AI teaser strip ─── */
-function AiTeaser({ onClick }: { onClick: () => void }) {
-  return (
-    <button
-      type="button" onClick={onClick}
-      style={{
-        background: 'linear-gradient(135deg, rgba(251,148,119,.10), rgba(122,167,255,.06))',
-        border: `1px solid ${CORAL}2e`, borderRadius: 12, padding: '9px 12px',
-        display: 'flex', alignItems: 'center', gap: 9,
-        animation: 'kai-rise .6s .58s ease-out both',
-        cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', color: 'inherit', width: '100%',
-      }}
-    >
-      <div style={{ width: 26, height: 26, borderRadius: '50%', flexShrink: 0, background: `linear-gradient(135deg, ${CORAL}, #f5d4b8)`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0a0a10' }}><Icon name="sparkle" size={13} stroke={1.8}/></div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 11.5, color: '#e8e8f0', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-          AI があなたの支出パターンを分析中
-          <span style={{ color: CORAL, fontWeight: 700 }}> · AI に相談する</span>
-        </div>
-      </div>
-      <span style={{ color: CORAL, fontSize: 14 }}>›</span>
-    </button>
-  )
-}
 
 /* ─── Desktop dashboard (full data layout) ─── */
 function DesktopNow({ transactions, allTransactions, month, streak }: { transactions: Transaction[]; allTransactions: Transaction[]; month: string; streak: number }) {
@@ -723,8 +699,6 @@ function GoalSection({ transactions }: { transactions: Transaction[] }) {
 
 /* ─── NOW tab ─── */
 function NowTab({ transactions, allTransactions, month, streak }: { transactions: Transaction[]; allTransactions: Transaction[]; month: string; streak: number }) {
-  const [showChat, setShowChat] = useState(false)
-
   return (
     <>
       {/* Mobile: mock DashboardScreen order */}
@@ -733,10 +707,7 @@ function NowTab({ transactions, allTransactions, month, streak }: { transactions
         <GoalSection transactions={transactions} />
         <CategoryChips transactions={transactions} />
         <DashKpiRow transactions={transactions} month={month} />
-        <AiTeaser onClick={() => setShowChat(true)} />
-        {showChat && <AiChatPanel />}
         <ScoreCard month={month} />
-        <AiSummaryCard />
       </div>
 
       {/* Desktop: data dashboard layout */}
