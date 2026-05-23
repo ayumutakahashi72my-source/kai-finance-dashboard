@@ -12,7 +12,6 @@ import { KaiSystemBrand } from '@/components/kai/shared'
 import type { Transaction } from '@/lib/types'
 
 const CORAL = '#fb9477'
-const BLUE  = '#7aa7ff'
 
 function currentMonthStr() {
   const d = new Date()

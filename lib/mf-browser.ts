@@ -79,10 +79,6 @@ async function launchBrowser(): Promise<{ browser: Browser; isLocal: boolean }> 
   }
 }
 
-function cookieNames(ctx: BrowserContext): string[] {
-  return ctx.cookies().then(cs => cs.map(c => c.name)).catch(() => []) as unknown as string[]
-}
-
 async function logStep(
   page: Page,
   ctx: BrowserContext,

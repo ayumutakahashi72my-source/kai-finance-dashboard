@@ -398,71 +398,6 @@ function DesktopCategoryCard({ transactions }: { transactions: Transaction[] }) 
   )
 }
 
-/* ─── Today's transactions card ─── */
-function TodayCard({ transactions }: { transactions: Transaction[] }) {
-  const now = new Date()
-  const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
-  const todayTx    = transactions.filter((t) => t.occurred_on.startsWith(todayKey) && t.amount < 0)
-  const todayCount = transactions.filter((t) => t.occurred_on.startsWith(todayKey)).length
-  const todayTotal = todayTx.reduce((s, t) => s + Math.abs(t.amount), 0)
-  const todayAnim  = useCountUp(todayTotal, { duration: 1100, delay: 600 })
-
-  return (
-    <section
-      style={{
-        background: 'rgba(255,255,255,.02)', border: '1px solid rgba(255,255,255,.06)',
-        borderRadius: 14, padding: '10px 12px',
-        animation: 'kai-rise .6s .25s ease-out both',
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 8 }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-          <span style={{ fontSize: 10, color: TEXT3, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase' }}>今日</span>
-          <span style={{ fontSize: 16, fontWeight: 700, fontFamily: 'var(--font-jetbrains),JetBrains Mono,monospace', color: TEXT, letterSpacing: '-.02em' }}>{yen(todayAnim)}</span>
-          <span style={{ fontSize: 10, color: KAI.text4 }}>· {todayCount}件</span>
-        </div>
-        <span style={{ fontSize: 10, color: CORAL, fontWeight: 600 }}>詳細 ›</span>
-      </div>
-
-      {todayTx.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '12px 0' }}>
-          <p style={{ fontSize: 12, color: TEXT3 }}>今日の記録はまだありません</p>
-          <p style={{ fontSize: 11, color: KAI.text5, marginTop: 4 }}>+ 追加から記録しよう</p>
-        </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-          {todayTx.slice(0, 4).map((t, i) => (
-            <div
-              key={t.id}
-              style={{ display: 'flex', alignItems: 'center', gap: 9, animation: `kai-rise .35s ${.35 + i * .05}s ease-out both` }}
-            >
-              <div
-                style={{
-                  width: 22, height: 22, borderRadius: 7, flexShrink: 0,
-                  background: `${t.categories?.color ?? TEXT3}1c`,
-                  border: `1px solid ${t.categories?.color ?? TEXT3}33`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}
-              >
-                {t.categories?.icon
-                  ? <CategoryIcon name={t.categories.icon} size={12} color={t.categories?.color ?? TEXT3} />
-                  : <span style={{ fontSize: 11, color: TEXT3 }}>·</span>}
-              </div>
-              <span style={{ flex: 1, fontSize: 11.5, color: TEXT2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.payee}</span>
-              <span style={{ fontSize: 11, fontWeight: 700, color: TEXT, fontFamily: 'var(--font-jetbrains),JetBrains Mono,monospace', letterSpacing: '-.01em', minWidth: 42, textAlign: 'right' }}>
-                ¥{Math.abs(t.amount).toLocaleString('ja-JP')}
-              </span>
-            </div>
-          ))}
-          {todayTx.length > 4 && (
-            <p style={{ fontSize: 11, color: TEXT3, textAlign: 'center', paddingTop: 4 }}>+{todayTx.length - 4}件</p>
-          )}
-        </div>
-      )}
-    </section>
-  )
-}
-
 /* ─── Category chip (single cell) ─── */
 function CategoryChipItem({ name, value, total, color, icon, idx }: { name: string; value: number; total: number; color: string; icon: string | null; idx: number }) {
   const pct = Math.min(100, (value / Math.max(total, 1)) * 100)
@@ -559,7 +494,7 @@ function DashKpiRow({ transactions }: { transactions: Transaction[] }) {
 
 
 /* ─── Desktop dashboard (full data layout) ─── */
-function DesktopNow({ transactions, allTransactions, month, streak }: { transactions: Transaction[]; allTransactions: Transaction[]; month: string; streak: number }) {
+function DesktopNow({ transactions, allTransactions, streak }: { transactions: Transaction[]; allTransactions: Transaction[]; month: string; streak: number }) {
   const monthlyData = buildMonthlyData(allTransactions)
   const prev = monthlyData[monthlyData.length - 2]
 

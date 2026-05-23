@@ -4,11 +4,6 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { retryWithBackoff } from './retry'
 import { trackCost } from './cost-tracker'
 
-interface CategoryTotal {
-  name: string
-  total: number
-}
-
 async function buildMonthContext(
   supabase: SupabaseClient,
   householdId: string,

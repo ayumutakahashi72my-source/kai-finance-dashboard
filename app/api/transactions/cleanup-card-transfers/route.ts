@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/api-guard'
 
 // MF CSV の振替行が誤ってインポートされた際のクリーンアップ。
@@ -7,7 +7,7 @@ import { requireAuth } from '@/lib/api-guard'
 
 const TRANSFER_CATEGORY_NAMES = ['現金・カード', 'カード引き落とし']
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   const auth = await requireAuth()
   if (!auth.ok) return auth.response
   const { supabase, householdId } = auth
@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ count: count ?? 0, categories: cats.map((c) => c.name) })
 }
 
-export async function DELETE(req: NextRequest) {
+export async function DELETE() {
   const auth = await requireAuth()
   if (!auth.ok) return auth.response
   const { supabase, householdId } = auth

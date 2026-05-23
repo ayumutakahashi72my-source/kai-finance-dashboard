@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { parseMfCsv, buildSourceHash, decodeCsvBuffer } from '@/lib/csv-parser'
-import { classifyTransactions, classifyFreeForm, normalizeKeyword, pickCategoryColor, fetchCategoryIcons } from '@/lib/ai-classifier'
+import { classifyFreeForm, normalizeKeyword, pickCategoryColor, fetchCategoryIcons } from '@/lib/ai-classifier'
 import { writeClassificationLogs, type ClassificationLogEntry } from '@/lib/classification-logger'
 
 /** category_hint "食費 / 外食" → "食費"。空・「その他」系は空文字を返す */

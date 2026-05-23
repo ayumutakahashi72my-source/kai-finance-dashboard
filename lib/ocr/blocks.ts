@@ -12,11 +12,8 @@ import type { OCRBlock } from './types'
 type OcrService = Awaited<ReturnType<typeof PaddleOcrService.createInstance>>
 
 declare global {
-  // eslint-disable-next-line no-var
   var __ocrService:      OcrService | undefined
-  // eslint-disable-next-line no-var
   var __ocrInitPromise:  Promise<OcrService> | undefined
-  // eslint-disable-next-line no-var
   var __ocrInferLock:    Promise<void> | undefined
 }
 

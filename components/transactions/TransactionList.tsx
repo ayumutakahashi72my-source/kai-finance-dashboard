@@ -12,7 +12,6 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from '@/components/ui/select'
 import {
   Dialog,
@@ -24,8 +23,6 @@ import {
 import type { Transaction, Category } from '@/lib/types'
 import { DEFAULT_CATEGORY_COLORS } from '@/lib/types'
 import { sortedCategoryOptions } from '@/lib/utils'
-
-const today = () => new Date().toISOString().split('T')[0]
 
 function categoryColor(tx: Transaction): string {
   if (tx.categories?.color) return tx.categories.color

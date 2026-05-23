@@ -95,6 +95,11 @@ function OverallBar({
   )
 }
 
+function CategoryIconDisplay({ name, size = 13, strokeWidth = 1.8 }: { name: string; size?: number; strokeWidth?: number }) {
+  const Icon = getCategoryIcon(name)
+  return <Icon size={size} strokeWidth={strokeWidth} />
+}
+
 /* ─── CategoryBar (カテゴリ別横棒グラフ) ────────────────────────── */
 
 function CategoryBar({
@@ -110,8 +115,6 @@ function CategoryBar({
   const animatedPct     = useCountUp(pct, { duration: 1100, delay: 200 + idx * 70 })
   const over            = cat.budget > 0 && cat.used > cat.budget
   const barColor        = over ? KAI.danger : cat.color
-  const CatIcon         = getCategoryIcon(cat.name)
-
   return (
     <div style={{
       padding: '11px 14px',
@@ -124,7 +127,7 @@ function CategoryBar({
           background: `${cat.color}1c`, border: `1px solid ${cat.color}33`, color: cat.color,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
-          <CatIcon size={13} strokeWidth={1.8}/>
+          <CategoryIconDisplay name={cat.name} size={13} strokeWidth={1.8}/>
         </div>
 
         <span style={{ fontSize: 12.5, fontWeight: 600, color: KAI.text1, flex: 1 }}>

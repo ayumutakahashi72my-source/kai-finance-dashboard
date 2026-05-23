@@ -78,6 +78,11 @@ function BalanceBar({ totalIncome, totalExpense }: { totalIncome: number; totalE
   )
 }
 
+function CategoryIconDisplay({ name, size = 13, strokeWidth = 1.8 }: { name: string; size?: number; strokeWidth?: number }) {
+  const Icon = getCategoryIcon(name)
+  return <Icon size={size} strokeWidth={strokeWidth} />
+}
+
 /* ─── CategoryBar ─────────────────────────────────────────────────── */
 
 function CategoryBar({
@@ -89,8 +94,6 @@ function CategoryBar({
 }) {
   const pct         = totalExpense > 0 ? Math.min(100, (used / totalExpense) * 100) : 0
   const animatedPct = useCountUp(pct, { duration: 1100, delay: 200 + idx * 55 })
-  const CatIcon     = getCategoryIcon(name)
-
   return (
     <div style={{ padding: '11px 14px', animation: `kai-rise .4s ${.15 + idx * .04}s ease-out both` }}>
       {/* 上段: アイコン・名前・金額・管理ボタン */}
@@ -100,7 +103,7 @@ function CategoryBar({
           background: `${color}1c`, border: `1px solid ${color}33`, color,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
-          <CatIcon size={13} strokeWidth={1.8}/>
+          <CategoryIconDisplay name={name} size={13} strokeWidth={1.8}/>
         </div>
 
         <span style={{ fontSize: 12.5, fontWeight: 600, color: KAI.text1, flex: 1 }}>{name}</span>

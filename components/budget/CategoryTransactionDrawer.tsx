@@ -1,8 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { useQueryClient } from '@tanstack/react-query'
 import { Pencil, Trash2, X, TrendingUp } from 'lucide-react'
 import { KAI } from '@/lib/kai-tokens'
 import { getCategoryIcon } from '@/lib/category-icons'

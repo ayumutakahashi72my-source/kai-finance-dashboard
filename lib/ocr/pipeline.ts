@@ -31,8 +31,11 @@ function logOcrMetrics(metrics: OcrMetrics): void {
 // TODO: ocr_store_cache に embedding カラムが追加されたら実装。
 // NOTE: 現時点では embedding fallback なし (コスト・レイテンシ抑制)。
 async function applyEmbeddingFallback(
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _merchant: string,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _householdId: string,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _supabase: SupabaseClient,
 ): Promise<string | null> {
   // stub: null を返せば AI fallback に委譲される
@@ -176,6 +179,6 @@ export async function structureReceiptData({
 
   logOcrMetrics({ merchantConfidence: merchantResult.confidence, amountConfidence: amountResult.confidence, dateConfidence: dateResult.confidence, cacheHit: false, aiUsed: needsAI, timings: { ocr_ms: 0, ...timings } })
 
-  const { canonicalChain: _cc, ...ocrResult } = result
+  const { canonicalChain: _cc, ...ocrResult } = result // eslint-disable-line @typescript-eslint/no-unused-vars
   return { ...ocrResult, timings }
 }

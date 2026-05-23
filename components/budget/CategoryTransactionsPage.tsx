@@ -35,12 +35,12 @@ function groupByDate(txs: Transaction[]) {
   return Object.entries(map).sort(([a], [b]) => b.localeCompare(a))
 }
 
-function currentMonthStr() {
-  const d = new Date()
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
-}
-
 const MONO = 'var(--font-jetbrains), "JetBrains Mono", monospace'
+
+function CategoryIconDisplay({ name, size = 15 }: { name: string; size?: number }) {
+  const Icon = getCategoryIcon(name)
+  return <Icon size={size} />
+}
 
 /* ─── EditDialog ─────────────────────────────────────────────────── */
 
@@ -240,7 +240,6 @@ export function CategoryTransactionsPage({ catName, color, month, initialTxs, ca
     qc.invalidateQueries({ queryKey: ['transactions', month] })
   }, [qc, month])
 
-  const CatIcon = getCategoryIcon(catName)
 
   function renderTxGroups(groups: [string, Transaction[]][], accent: string) {
     return groups.map(([date, txs]) => (
@@ -262,7 +261,6 @@ export function CategoryTransactionsPage({ catName, color, month, initialTxs, ca
           borderRadius: 14, overflow: 'hidden',
         }}>
           {txs.map((tx, i) => {
-            const TxIcon = getCategoryIcon(tx.categories?.name ?? '')
             return (
               <div key={tx.id} style={{
                 display: 'flex', alignItems: 'center', gap: 12,
@@ -274,7 +272,7 @@ export function CategoryTransactionsPage({ catName, color, month, initialTxs, ca
                   background: `${accent}12`, border: `1px solid ${accent}28`, color: accent,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}>
-                  {tx.amount >= 0 ? <TrendingUp size={14}/> : <TxIcon size={14}/>}
+                  {tx.amount >= 0 ? <TrendingUp size={14}/> : <CategoryIconDisplay name={tx.categories?.name ?? ''} size={14}/>}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 13, fontWeight: 500, color: KAI.text1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -349,7 +347,7 @@ export function CategoryTransactionsPage({ catName, color, month, initialTxs, ca
           background: `${color}1c`, border: `1px solid ${color}33`,
           display: 'flex', alignItems: 'center', justifyContent: 'center', color,
         }}>
-          <CatIcon size={15}/>
+          <CategoryIconDisplay name={catName} size={15}/>
         </div>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 16, fontWeight: 700, color: KAI.text1 }}>{catName}</div>

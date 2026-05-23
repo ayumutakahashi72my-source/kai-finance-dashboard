@@ -30,6 +30,7 @@ export default async function CalendarPage({
 
   const { month: rawMonth } = await searchParams
   const month = rawMonth ?? currentMonthStr()
+  const [y, m] = month.split('-')
 
   const displayName = user.user_metadata?.full_name ?? user.email ?? 'ユーザー'
   const avatarUrl = user.user_metadata?.avatar_url as string | undefined
@@ -41,8 +42,6 @@ export default async function CalendarPage({
 
   const totalIncome  = transactions.filter((t) => t.amount > 0).reduce((s, t) => s + t.amount, 0)
   const totalExpense = transactions.filter((t) => t.amount < 0).reduce((s, t) => s + Math.abs(t.amount), 0)
-  const [y, m] = month.split('-')
-  const monthLabel = `${y}年${parseInt(m)}月`
 
   return (
     <div className="min-h-screen" style={{ background: '#0c0a14' }}>
