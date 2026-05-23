@@ -53,6 +53,8 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
     "fast-check": "^4.8.0",
+    "pdf-parse": "^2.4.5",
+    "pdfjs-dist": "^5.7.284",
     "playwright": "^1.60.0",
     "tailwindcss": "^4",
     "typescript": "^5",
