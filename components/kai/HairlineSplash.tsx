@@ -18,6 +18,7 @@
 'use client'
 
 import * as React from 'react'
+import { usePathname } from 'next/navigation'
 import { KAI } from '@/lib/kai-tokens'
 
 interface HairlineSplashProps {
@@ -29,7 +30,17 @@ interface HairlineSplashProps {
   onDone?: () => void
 }
 
-export function HairlineSplash({
+// /login・/auth・/legal ではスプラッシュを出さない
+// → サインインフローでユーザーが同じアニメーションを2回見るのを防ぐ
+export function HairlineSplash(props: HairlineSplashProps) {
+  const pathname = usePathname()
+  if (pathname?.startsWith('/login') || pathname?.startsWith('/auth') || pathname?.startsWith('/legal')) {
+    return null
+  }
+  return <HairlineSplashInner {...props} />
+}
+
+function HairlineSplashInner({
   autoHideMs = 3000,
   visible,
   onDone,
