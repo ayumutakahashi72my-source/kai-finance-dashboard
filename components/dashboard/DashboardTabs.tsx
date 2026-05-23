@@ -8,7 +8,6 @@ import {
 } from 'recharts'
 import { AiSummaryCard } from '@/components/dashboard/AiSummaryCard'
 import { AiChatPanel } from '@/components/dashboard/AiChatPanel'
-import { ScoreCard } from '@/components/dashboard/ScoreCard'
 import { GoalBanner } from '@/components/dashboard/GoalBanner'
 import { GoalProgressCard } from '@/components/dashboard/GoalProgressCard'
 import type { FinancialGoal } from '@/components/dashboard/GoalProgressCard'
@@ -537,14 +536,14 @@ function StreakCard({ streak }: { streak: number }) {
 }
 
 /* ─── KPI row ─── */
-function DashKpiRow({ transactions, month }: { transactions: Transaction[]; month: string }) {
+function DashKpiRow({ transactions }: { transactions: Transaction[] }) {
   const income  = transactions.filter((t) => t.amount >= 0).reduce((s, t) => s + t.amount, 0)
   const expense = transactions.filter((t) => t.amount < 0).reduce((s, t) => s + Math.abs(t.amount), 0)
   const ratio   = income > 0 ? Math.round((expense / income) * 100) : 0
   const ratioColor = ratio > 100 ? DOWN : ratio > 80 ? AMBER : CORAL
 
   return (
-    <div className="kai-rise grid grid-cols-2 gap-2.5" style={{ animationDelay: '160ms' }}>
+    <div className="kai-rise" style={{ animationDelay: '160ms' }}>
       <div className="rounded-[18px] p-4" style={panel}>
         <p style={{ fontSize: 11, color: TEXT3, letterSpacing: '.08em', fontWeight: 700 }}>支出 / 収入</p>
         <p style={{ fontFamily: 'var(--font-mono),monospace', marginTop: 6, fontSize: 24, fontWeight: 700, color: ratioColor }}>
@@ -552,12 +551,6 @@ function DashKpiRow({ transactions, month }: { transactions: Transaction[]; mont
         </p>
         <div style={{ height: 5, background: 'rgba(255,255,255,.05)', borderRadius: 99, marginTop: 8, overflow: 'hidden' }}>
           <div style={{ width: `${Math.min(ratio, 100)}%`, height: '100%', background: ratioColor, boxShadow: `0 0 8px ${ratioColor}66`, transformOrigin: 'left', animation: 'kai-bar-grow 1.2s cubic-bezier(.16,1,.3,1) both' }} />
-        </div>
-      </div>
-      <div className="rounded-[18px] p-4" style={panel}>
-        <p style={{ fontSize: 11, color: TEXT3, letterSpacing: '.08em', fontWeight: 700 }}>スコア</p>
-        <div style={{ marginTop: 6 }}>
-          <ScoreCard month={month} variant="mini" />
         </div>
       </div>
     </div>
@@ -626,7 +619,6 @@ function DesktopNow({ transactions, allTransactions, month, streak }: { transact
           <DesktopRecentTx transactions={transactions}/>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <GoalSection transactions={transactions} />
-            <ScoreCard month={month} />
             <AiSummaryCard/>
             <StreakCard streak={streak}/>
           </div>
@@ -706,8 +698,7 @@ function NowTab({ transactions, allTransactions, month, streak }: { transactions
         <CategoryRingHero transactions={transactions} />
         <GoalSection transactions={transactions} />
         <CategoryChips transactions={transactions} />
-        <DashKpiRow transactions={transactions} month={month} />
-        <ScoreCard month={month} />
+        <DashKpiRow transactions={transactions} />
       </div>
 
       {/* Desktop: data dashboard layout */}
@@ -807,46 +798,12 @@ function AnalyticsTab({ allTransactions, month }: { allTransactions: Transaction
 }
 
 /* ─── Strategy tab ─── */
-function StrategyTab({ month }: { month: string }) {
+function StrategyTab() {
   return (
     <div className="space-y-3">
-      <div className="kai-rise">
-        <BigScorePanel month={month} />
-      </div>
       <AiSummaryCard />
       <div className="kai-rise" style={{ animationDelay: '140ms' }}>
         <AiChatPanel />
-      </div>
-    </div>
-  )
-}
-
-function BigScorePanel({ month }: { month: string }) {
-  return (
-    <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', ...panel, borderRadius: 18, padding: 18 }}>
-        <p style={{ fontSize: 11, color: TEXT3, letterSpacing: '.08em', fontWeight: 700, alignSelf: 'flex-start', marginBottom: 12 }}>今月のスコア</p>
-        <ScoreCard month={month} variant="big" />
-      </div>
-      <div style={{ ...panel, borderRadius: 18, padding: 18 }}>
-        <p style={{ fontSize: 11, color: TEXT3, letterSpacing: '.08em', fontWeight: 700, marginBottom: 16 }}>累積レベル</p>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 6 }}>
-          <div style={{ width: 62, height: 62, borderRadius: '50%', background: `conic-gradient(from 0deg,${CORAL},${BLUE},${VIOLET},${CORAL})`, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 28px ${CORALG}`, marginBottom: 12 }}>
-            <div style={{ width: 54, height: 54, borderRadius: '50%', background: '#0c0a14', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <span style={{ fontFamily: 'var(--font-mono),monospace', fontSize: 28, fontWeight: 800, color: CORAL, textShadow: `0 0 16px ${CORALG}` }}>3</span>
-            </div>
-          </div>
-          <p style={{ fontSize: 14, fontWeight: 700, color: TEXT }}>コツコツ貯蓄者</p>
-          <p style={{ fontFamily: 'var(--font-mono),monospace', fontSize: 12, color: TEXT3, marginTop: 3 }}>累積 0 pt</p>
-        </div>
-        <div style={{ marginTop: 14 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: TEXT3, marginBottom: 5, fontFamily: 'var(--font-mono),monospace', fontWeight: 600 }}>
-            <span>LV.3</span><span>NEXT 172pt</span>
-          </div>
-          <div style={{ height: 6, background: 'rgba(255,255,255,.04)', borderRadius: 99, overflow: 'hidden' }}>
-            <div style={{ height: '100%', width: '43%', background: `linear-gradient(90deg,${CORAL},${BLUE})`, borderRadius: 99, boxShadow: `0 0 10px ${CORALG}` }} />
-          </div>
-        </div>
       </div>
     </div>
   )
@@ -895,7 +852,7 @@ export function DashboardTabs({ transactions, allTransactions, month, streak: st
 
       {tab === 0 && <NowTab transactions={transactions} allTransactions={allTransactions} month={month} streak={streakProp} />}
       {tab === 1 && <AnalyticsTab allTransactions={allTransactions} month={month} />}
-      {tab === 2 && <StrategyTab month={month} />}
+      {tab === 2 && <StrategyTab />}
     </div>
   )
 }
