@@ -52,18 +52,18 @@ const STREAM: StreamLine[] = [
 
 type Stage = 0 | 1 | 2 | 3 | 4
 
-function preprocessImage(file: File): Promise<string> {
+function preprocessImage(file: File): Promise<Blob> {
   return new Promise((resolve, reject) => {
     const img = new Image()
     const url = URL.createObjectURL(file)
     img.onload = () => {
       let { width, height } = img
-      const maxSide = 1400
-      if (width > maxSide || height > maxSide) {
-        const ratio = Math.min(maxSide / width, maxSide / height)
-        width = Math.round(width * ratio)
-        height = Math.round(height * ratio)
-      }
+      const maxShort = 1600, maxLong = 2800
+      const isPortrait = height >= width
+      const [longSide, shortSide] = isPortrait ? [height, width] : [width, height]
+      const ratio = Math.min(maxLong / longSide, maxShort / shortSide, 1)
+      width  = Math.round(width  * ratio)
+      height = Math.round(height * ratio)
       const canvas = document.createElement('canvas')
       canvas.width = width
       canvas.height = height
@@ -72,7 +72,10 @@ function preprocessImage(file: File): Promise<string> {
       ctx.drawImage(img, 0, 0, width, height)
       ctx.filter = 'none'
       URL.revokeObjectURL(url)
-      resolve(canvas.toDataURL('image/jpeg', 0.85))
+      canvas.toBlob(blob => {
+        if (!blob) { reject(new Error('canvas.toBlob failed')); return }
+        resolve(blob)
+      }, 'image/jpeg', 0.82)
     }
     img.onerror = reject
     img.src = url
@@ -108,11 +111,12 @@ export function ReceiptAnalyzingV2({ image, onDone, onError, onCancel }: Props) 
     let cancelled = false
     ;(async () => {
       try {
-        const base64 = await preprocessImage(image)
+        const blob = await preprocessImage(image)
+        const formData = new FormData()
+        formData.append('file', blob, 'receipt.jpg')
         const res = await fetch('/api/transactions/ocr', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ image: base64 }),
+          body: formData,
         })
         if (!res.ok) {
           if (!cancelled) onError(`HTTP ${res.status}`)

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/api-guard'
-import { extractReceiptText, structureReceiptText } from '@/lib/ocr'
+import { extractReceiptBlocks, structureReceiptData } from '@/lib/ocr'
 
-export const maxDuration = 30
+export const maxDuration = 45
 
 export async function POST(request: NextRequest) {
   const auth = await requireAuth()
@@ -10,16 +10,20 @@ export async function POST(request: NextRequest) {
   const { supabase, householdId } = auth
 
   try {
-    const body = await request.json() as { image?: string }
-    if (!body.image) {
+    const form = await request.formData()
+    const file = form.get('file') as File | null
+    if (!file) {
       return NextResponse.json({ error: '画像が必要です' }, { status: 400 })
     }
 
-    const base64 = body.image.replace(/^data:image\/\w+;base64,/, '')
-    const buf = Buffer.from(base64, 'base64')
+    const t_ocr0 = Date.now()
+    const buf = Buffer.from(await file.arrayBuffer())
+    const rawBlocks = await extractReceiptBlocks(buf)
+    const ocr_ms = Date.now() - t_ocr0
 
-    const rawText = await extractReceiptText(buf)
-    const result = await structureReceiptText(rawText, householdId, supabase)
+    const { timings, ...result } = await structureReceiptData({ blocks: rawBlocks, householdId, supabase })
+
+    console.log('[OCR] timings', { ...timings, ocr_ms, total_ms: timings.total_ms + ocr_ms })
 
     return NextResponse.json(result)
   } catch (err) {
