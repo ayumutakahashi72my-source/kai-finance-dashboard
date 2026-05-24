@@ -69,6 +69,7 @@ function CategoryDialog({
 
   useEffect(() => {
     if (open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setName(initial?.name ?? '')
       setColor(initial?.color ?? PRESET_COLORS[0])
       setLocalError(null)

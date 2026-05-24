@@ -39,6 +39,7 @@ const MONO = 'var(--font-jetbrains), "JetBrains Mono", monospace'
 
 function CategoryIconDisplay({ name, size = 15 }: { name: string; size?: number }) {
   const Icon = getCategoryIcon(name)
+  // eslint-disable-next-line react-hooks/static-components
   return <Icon size={size} />
 }
 

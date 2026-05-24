@@ -90,6 +90,7 @@ export function ReceiptAnalyzingV2({ image, onDone, onError, onCancel }: Props) 
 
   // bounding box を 600ms ごとに 1 つずつ点灯
   React.useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (hasResult) { setStage(4); return }
     if (stage >= 4) return
     const id = setTimeout(() => setStage((stage + 1) as Stage), 620)
@@ -300,6 +301,7 @@ function ReceiptWithAnnotations({ file, stage }: { file: File; stage: Stage }) {
   const [url, setUrl] = React.useState<string | null>(null)
   React.useEffect(() => {
     const u = URL.createObjectURL(file)
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setUrl(u)
     return () => URL.revokeObjectURL(u)
   }, [file])

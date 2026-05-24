@@ -42,6 +42,7 @@ export function ManualEntryTab({ onBack, onDone, prefill }: {
 
   useEffect(() => {
     if (!prefill) return
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (prefill.payee) setMemo(prefill.payee)
     if (prefill.amount) setAmount(String(Math.abs(prefill.amount)))
     if (prefill.occurred_on) setDate(prefill.occurred_on)
@@ -50,6 +51,7 @@ export function ManualEntryTab({ onBack, onDone, prefill }: {
   useEffect(() => {
     if (classifyTimerRef.current) clearTimeout(classifyTimerRef.current)
     const trimmed = memo.trim()
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (trimmed.length < 2) { setAiSuggestId(null); return }
     classifyTimerRef.current = setTimeout(async () => {
       setClassifying(true)

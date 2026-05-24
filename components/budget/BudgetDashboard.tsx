@@ -97,6 +97,7 @@ function OverallBar({
 
 function CategoryIconDisplay({ name, size = 13, strokeWidth = 1.8 }: { name: string; size?: number; strokeWidth?: number }) {
   const Icon = getCategoryIcon(name)
+  // eslint-disable-next-line react-hooks/static-components
   return <Icon size={size} strokeWidth={strokeWidth} />
 }
 

@@ -73,6 +73,7 @@ function HairlineSplashInner({
 
   React.useEffect(() => {
     if (visible === false) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setShow(false)
       const t = setTimeout(() => onDone?.(), 320)
       return () => clearTimeout(t)

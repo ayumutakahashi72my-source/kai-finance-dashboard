@@ -48,9 +48,6 @@ function heatColor(ratio: number): string {
   return `rgba(251,148,119,${alpha.toFixed(2)})`
 }
 
-function fmt(n: number) {
-  return n >= 10000 ? `${(n / 10000).toFixed(1)}万` : n.toLocaleString()
-}
 
 // ──────────────────────────────────────────────
 // 取引詳細パネル（モバイル: ボトムシート / PC: モーダル）

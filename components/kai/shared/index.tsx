@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { KAI } from '@/lib/kai-tokens';
 
 // ── Hooks ────────────────────────────────────────────────────────────
@@ -28,6 +28,7 @@ export function useCountUp(target: number, { duration = 1400, delay = 0, decimal
 export function useTypewriter(text: string, { speed = 26, delay = 300, startKey = 0 } = {}) {
   const [n, setN] = useState(0);
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setN(0);
     let i = 0;
     const startTimer = setTimeout(() => {

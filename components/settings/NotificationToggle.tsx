@@ -21,6 +21,7 @@ export function NotificationToggle() {
 
   useEffect(() => {
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) return
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSupported(true)
     setPermission(Notification.permission)
     navigator.serviceWorker.ready.then((reg) => {

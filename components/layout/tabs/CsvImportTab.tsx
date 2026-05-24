@@ -3,7 +3,7 @@
 import React, { useState, useRef } from 'react'
 import { parseMfCsv, decodeCsvBuffer } from '@/lib/csv-parser'
 import {
-  CORAL, BLUE, VIOLET, GREEN, RED, AMBER,
+  CORAL, BLUE, VIOLET, GREEN, AMBER,
   TEXT1, TEXT3, TEXT4, TEXT5,
   ImportResult, BackBtn,
 } from './_shared'

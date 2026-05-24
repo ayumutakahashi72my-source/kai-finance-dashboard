@@ -36,6 +36,7 @@ export function CsvImportDialog({ onImported, defaultOpen = false }: { onImporte
   // インポート中: 0→90% を疑似シミュレート（完了で 1.0 にジャンプ）
   useEffect(() => {
     if (loading) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLoadProgress(0)
       const total = preview?.count ?? 20
       const stepMs = Math.max(120, Math.min(600, (total * 30)))

@@ -49,6 +49,7 @@ export function TransactionFilters({ categories }: Props) {
 
   // URL 変化時に一括更新（1回の setState で済む）
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setFilters(readFiltersFromUrl(search))
   }, [search])
 

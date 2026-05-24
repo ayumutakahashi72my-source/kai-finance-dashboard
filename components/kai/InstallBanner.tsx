@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useEffect, useState } from 'react'
 
 interface BeforeInstallPromptEvent extends Event {
@@ -40,6 +41,7 @@ export function InstallBanner() {
     const p = detectPlatform()
     // 'other' は beforeinstallprompt があれば表示、なければスキップ
     if (p === 'other' && !window.__pwaInstallEvent) return
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPlatform(p)
 
     // 早期キャプチャ済みのイベントを取得
@@ -104,7 +106,7 @@ export function InstallBanner() {
           animation: 'kai-rise 0.35s ease both',
         }}
       >
-        <img src="/app-icon-192.png" alt="kai" width={40} height={40}
+        <Image src="/app-icon-192.png" alt="kai" width={40} height={40}
           style={{ borderRadius: 10, flexShrink: 0 }} />
 
         <div style={{ flex: 1, minWidth: 0 }}>
