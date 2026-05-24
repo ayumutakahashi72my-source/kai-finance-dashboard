@@ -119,6 +119,7 @@ function DeadlineInput({ value, onChange, initialMode = 'years' }: DeadlineInput
         <input
           type="date"
           value={dateStr}
+          min={new Date().toISOString().slice(0, 10)}
           onChange={(e) => applyDate(e.target.value)}
           style={{
             padding: '10px 12px', borderRadius: 9,
@@ -166,7 +167,7 @@ function CreateForm({ onCancel, onCreated }: CreateFormProps) {
     setError('')
     if (!name.trim()) { setError('目標名を入力してください'); return }
     const amt = parseInt(amount.replace(/,/g, ''), 10)
-    if (!amt || amt <= 0) { setError('金額を正しく入力してください'); return }
+    if (!amt || amt < 1000) { setError('金額は1,000円以上で設定してください'); return }
     if (!deadline) { setError('期限を入力してください'); return }
     if (new Date(deadline) <= new Date()) { setError('期限は今日より後の日付を設定してください'); return }
     createMut.mutate({ name: name.trim(), target_amount: amt, deadline })
@@ -179,12 +180,18 @@ function CreateForm({ onCancel, onCreated }: CreateFormProps) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {/* 目標名 */}
         <div>
-          <label style={{ fontSize: 11, color: KAI.text3, fontWeight: 700, letterSpacing: '.06em', display: 'block', marginBottom: 5 }}>
-            目標名
-          </label>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 5 }}>
+            <label style={{ fontSize: 11, color: KAI.text3, fontWeight: 700, letterSpacing: '.06em' }}>
+              目標名
+            </label>
+            <span style={{ fontSize: 10, color: name.length >= 40 ? KAI.warning : KAI.text5 }}>
+              {name.length}/50
+            </span>
+          </div>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
             placeholder="海外旅行、車の購入、緊急資金…"
             maxLength={50}
             style={{
@@ -274,6 +281,7 @@ function GoalCard({ goal, onDeleted, onUpdated }: GoalCardProps) {
   const [name, setName]         = useState(goal.name)
   const [amount, setAmount]     = useState(String(goal.target_amount))
   const [deadline, setDeadline] = useState(goal.deadline)
+  const [editError, setEditError] = useState('')
   const [calculating, setCalc]  = useState(false)
   const [calcError, setCalcError] = useState('')
   const qc = useQueryClient()
@@ -329,8 +337,12 @@ function GoalCard({ goal, onDeleted, onUpdated }: GoalCardProps) {
   }
 
   function handleSave() {
+    setEditError('')
+    if (!name.trim()) { setEditError('目標名を入力してください'); return }
     const amt = parseInt(amount.replace(/,/g, ''), 10)
-    if (!name.trim() || !amt || amt <= 0 || !/^\d{4}-\d{2}-\d{2}$/.test(deadline)) return
+    if (!amt || amt < 1000) { setEditError('金額は1,000円以上で設定してください'); return }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(deadline)) { setEditError('期限を入力してください'); return }
+    if (new Date(deadline) <= new Date()) { setEditError('期限は今日より後の日付を設定してください'); return }
     patchMut.mutate({ name: name.trim(), target_amount: amt, deadline })
   }
 
@@ -371,7 +383,7 @@ function GoalCard({ goal, onDeleted, onUpdated }: GoalCardProps) {
               <button onClick={handleSave} disabled={patchMut.isPending} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: KAI.success, padding: 2 }}>
                 <CheckIcon size={16} />
               </button>
-              <button onClick={() => { setEditing(false); setName(goal.name); setAmount(String(goal.target_amount)); setDeadline(goal.deadline) }} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: KAI.text3, padding: 2 }}>
+              <button onClick={() => { setEditing(false); setEditError(''); setName(goal.name); setAmount(String(goal.target_amount)); setDeadline(goal.deadline) }} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: KAI.text3, padding: 2 }}>
                 <XIcon size={16} />
               </button>
             </>
@@ -402,11 +414,19 @@ function GoalCard({ goal, onDeleted, onUpdated }: GoalCardProps) {
                 fontFamily: 'var(--font-jetbrains),JetBrains Mono,monospace',
               }}
             />
+            {amount && !isNaN(parseInt(amount, 10)) && parseInt(amount, 10) > 0 && (
+              <p style={{ fontSize: 11, color: KAI.coral, marginTop: 3, fontFamily: 'var(--font-jetbrains),JetBrains Mono,monospace' }}>
+                {yen(parseInt(amount, 10))}
+              </p>
+            )}
           </div>
           <div>
             <label style={{ fontSize: 10, color: KAI.text4, display: 'block', marginBottom: 3 }}>期限</label>
             <DeadlineInput value={deadline} onChange={setDeadline} initialMode="date" />
           </div>
+          {editError && (
+            <p style={{ fontSize: 11, color: KAI.danger, margin: 0 }}>{editError}</p>
+          )}
         </div>
       ) : (
         <>
