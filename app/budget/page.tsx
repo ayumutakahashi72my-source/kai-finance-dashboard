@@ -6,6 +6,7 @@ import { BottomBar } from '@/components/layout/BottomBar'
 import { MonthSwitcher } from '@/components/dashboard/MonthSwitcher'
 import { KaiSystemBrand } from '@/components/kai/shared'
 import { BudgetDashboard } from '@/components/budget/BudgetDashboard'
+import { FixedExpenseCard } from '@/components/budget/FixedExpenseCard'
 import { getHousehold } from '@/app/actions/households'
 
 function currentMonthStr() {
@@ -72,6 +73,7 @@ export default async function BudgetPage({
 
         <main className="mx-auto max-w-2xl space-y-3 px-4 py-5 pb-32 lg:pb-10">
           <BudgetDashboard month={month} />
+          <FixedExpenseCard />
         </main>
       </div>
 

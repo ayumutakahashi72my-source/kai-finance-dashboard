@@ -1,18 +1,19 @@
 'use client'
 
 import { useState } from 'react'
-import { RefreshCw, Pin } from 'lucide-react'
+import { RefreshCw, Pin, CheckCircle2 } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { KAI } from '@/lib/kai-tokens'
 
 interface FixedExpense {
-  id:          string
-  payee:       string
-  avg_amount:  number
-  months_seen: number
-  dismissed:   boolean
-  detected_at: string
+  id:           string
+  payee:        string
+  avg_amount:   number
+  months_seen:  number
+  dismissed:    boolean
+  confirmed_at: string | null
+  detected_at:  string
 }
 
 const MONO: React.CSSProperties = {
@@ -23,28 +24,41 @@ function FixedRow({
   item,
   onDismiss,
   onRestore,
+  onConfirm,
   pendingId,
 }: {
   item: FixedExpense
   onDismiss: (id: string) => void
   onRestore: (id: string) => void
+  onConfirm: (id: string) => void
   pendingId: string | null
 }) {
+  const isConfirmed = !!item.confirmed_at
+  const isPending   = pendingId === item.id
+
+  const iconColor = item.dismissed ? KAI.text4 : isConfirmed ? KAI.green : KAI.violet
+  const iconBg    = item.dismissed ? 'rgba(255,255,255,.04)' : isConfirmed ? `${KAI.green}18` : `${KAI.violet}18`
+  const iconBorder = item.dismissed ? 'rgba(255,255,255,.08)' : isConfirmed ? `${KAI.green}30` : `${KAI.violet}30`
+
   return (
     <div style={{
       display: 'flex', alignItems: 'center', gap: 10,
       padding: '10px 14px',
-      opacity: item.dismissed ? 0.45 : pendingId === item.id ? 0.6 : 1,
+      opacity: item.dismissed ? 0.45 : isPending ? 0.6 : 1,
       transition: 'opacity .2s',
     }}>
       {/* アイコン */}
       <div style={{
         width: 32, height: 32, borderRadius: 10, flexShrink: 0,
-        background: item.dismissed ? 'rgba(255,255,255,.04)' : `${KAI.violet}18`,
-        border: `1px solid ${item.dismissed ? 'rgba(255,255,255,.08)' : KAI.violet + '30'}`,
+        background: iconBg, border: `1px solid ${iconBorder}`,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        color: item.dismissed ? KAI.text4 : KAI.violet,
-      }}><RefreshCw size={14} strokeWidth={2}/></div>
+        color: iconColor,
+      }}>
+        {isConfirmed
+          ? <CheckCircle2 size={14} strokeWidth={2}/>
+          : <RefreshCw size={14} strokeWidth={2}/>
+        }
+      </div>
 
       {/* 名前・期間 */}
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -68,30 +82,50 @@ function FixedRow({
       </span>
 
       {/* ボタン */}
-      {item.dismissed ? (
+      {isConfirmed ? (
+        <span style={{
+          fontSize: 9, fontWeight: 700, padding: '3px 7px', borderRadius: 6,
+          background: `${KAI.green}18`, border: `1px solid ${KAI.green}33`,
+          color: KAI.green, whiteSpace: 'nowrap', flexShrink: 0,
+          letterSpacing: '.06em',
+        }}>登録済み</span>
+      ) : item.dismissed ? (
         <button
           type="button"
-          disabled={pendingId === item.id}
+          disabled={isPending}
           onClick={() => onRestore(item.id)}
           style={{
             fontSize: 10, fontWeight: 600, padding: '4px 9px', borderRadius: 7,
             background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.12)',
-            color: KAI.text3, cursor: pendingId === item.id ? 'not-allowed' : 'pointer',
+            color: KAI.text3, cursor: isPending ? 'not-allowed' : 'pointer',
             fontFamily: 'inherit', whiteSpace: 'nowrap', flexShrink: 0,
           }}
-        >{pendingId === item.id ? '…' : '元に戻す'}</button>
+        >{isPending ? '…' : '元に戻す'}</button>
       ) : (
-        <button
-          type="button"
-          disabled={pendingId === item.id}
-          onClick={() => onDismiss(item.id)}
-          style={{
-            fontSize: 10, fontWeight: 600, padding: '4px 9px', borderRadius: 7,
-            background: `${KAI.danger}12`, border: `1px solid ${KAI.danger}30`,
-            color: KAI.danger, cursor: pendingId === item.id ? 'not-allowed' : 'pointer',
-            fontFamily: 'inherit', whiteSpace: 'nowrap', flexShrink: 0,
-          }}
-        >{pendingId === item.id ? '…' : '却下'}</button>
+        <div style={{ display: 'flex', gap: 5, flexShrink: 0 }}>
+          <button
+            type="button"
+            disabled={isPending}
+            onClick={() => onConfirm(item.id)}
+            style={{
+              fontSize: 10, fontWeight: 600, padding: '4px 9px', borderRadius: 7,
+              background: `${KAI.violet}18`, border: `1px solid ${KAI.violet}38`,
+              color: KAI.violet, cursor: isPending ? 'not-allowed' : 'pointer',
+              fontFamily: 'inherit', whiteSpace: 'nowrap',
+            }}
+          >{isPending ? '…' : '承認'}</button>
+          <button
+            type="button"
+            disabled={isPending}
+            onClick={() => onDismiss(item.id)}
+            style={{
+              fontSize: 10, fontWeight: 600, padding: '4px 9px', borderRadius: 7,
+              background: `${KAI.danger}12`, border: `1px solid ${KAI.danger}30`,
+              color: KAI.danger, cursor: isPending ? 'not-allowed' : 'pointer',
+              fontFamily: 'inherit', whiteSpace: 'nowrap',
+            }}
+          >{isPending ? '…' : '却下'}</button>
+        </div>
       )}
     </div>
   )
@@ -108,12 +142,12 @@ export function FixedExpenseCard() {
   })
 
   const { mutate } = useMutation({
-    mutationFn: ({ id, dismissed }: { id: string; dismissed: boolean }) => {
-      setPendingId(id)
+    mutationFn: (payload: { id: string; dismissed?: boolean; confirmed?: boolean }) => {
+      setPendingId(payload.id)
       return fetch('/api/fixed-expenses', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, dismissed }),
+        body: JSON.stringify(payload),
       }).then(async (r) => {
         const j = await r.json()
         if (!r.ok) throw new Error(j.error ?? '更新失敗')
@@ -137,7 +171,8 @@ export function FixedExpenseCard() {
   )
 
   const all       = data?.data ?? []
-  const active    = all.filter((x) => !x.dismissed)
+  const active    = all.filter((x) => !x.dismissed && !x.confirmed_at)
+  const confirmed = all.filter((x) => !!x.confirmed_at)
   const dismissed = all.filter((x) => x.dismissed)
 
   if (all.length === 0) return null
@@ -149,13 +184,24 @@ export function FixedExpenseCard() {
         <span style={{ fontSize: 10, color: KAI.text4, letterSpacing: '.14em', fontWeight: 700, textTransform: 'uppercase' }}>
           固定費候補
         </span>
-        <span style={{
-          fontSize: 10, color: KAI.violet, fontWeight: 700, ...MONO,
-          background: `${KAI.violet}18`, border: `1px solid ${KAI.violet}30`,
-          borderRadius: 6, padding: '2px 7px',
-        }}>
-          {active.length} 件
-        </span>
+        <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
+          {confirmed.length > 0 && (
+            <span style={{
+              fontSize: 9, fontWeight: 700, ...MONO,
+              background: `${KAI.green}18`, border: `1px solid ${KAI.green}30`,
+              borderRadius: 6, padding: '2px 7px', color: KAI.green,
+            }}>
+              {confirmed.length} 登録済
+            </span>
+          )}
+          <span style={{
+            fontSize: 10, color: KAI.violet, fontWeight: 700, ...MONO,
+            background: `${KAI.violet}18`, border: `1px solid ${KAI.violet}30`,
+            borderRadius: 6, padding: '2px 7px',
+          }}>
+            {active.length} 件
+          </span>
+        </div>
       </div>
 
       <div style={{
@@ -175,6 +221,22 @@ export function FixedExpenseCard() {
           </p>
         </div>
 
+        {/* 承認済み */}
+        {confirmed.map((item, i) => (
+          <div
+            key={item.id}
+            style={{ borderBottom: i < confirmed.length - 1 || active.length > 0 || dismissed.length > 0 ? '1px solid rgba(255,255,255,.04)' : 'none' }}
+          >
+            <FixedRow
+              item={item}
+              onDismiss={(id) => mutate({ id, dismissed: true })}
+              onRestore={(id) => mutate({ id, dismissed: false })}
+              onConfirm={(id) => mutate({ id, confirmed: true })}
+              pendingId={pendingId}
+            />
+          </div>
+        ))}
+
         {/* アクティブな候補 */}
         {active.length > 0 ? (
           active.map((item, i) => (
@@ -186,15 +248,16 @@ export function FixedExpenseCard() {
                 item={item}
                 onDismiss={(id) => mutate({ id, dismissed: true })}
                 onRestore={(id) => mutate({ id, dismissed: false })}
+                onConfirm={(id) => mutate({ id, confirmed: true })}
                 pendingId={pendingId}
               />
             </div>
           ))
-        ) : (
+        ) : confirmed.length === 0 ? (
           <div style={{ padding: '20px 14px', textAlign: 'center' }}>
             <p style={{ fontSize: 13, color: KAI.text4 }}>すべて却下済みです</p>
           </div>
-        )}
+        ) : null}
 
         {/* 却下済みの折りたたみ */}
         {dismissed.length > 0 && (
@@ -223,6 +286,7 @@ export function FixedExpenseCard() {
                   item={item}
                   onDismiss={(id) => mutate({ id, dismissed: true })}
                   onRestore={(id) => mutate({ id, dismissed: false })}
+                  onConfirm={(id) => mutate({ id, confirmed: true })}
                   pendingId={pendingId}
                 />
               </div>
