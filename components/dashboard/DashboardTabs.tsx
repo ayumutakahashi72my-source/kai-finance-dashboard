@@ -1,12 +1,17 @@
 'use client'
 
 import { useState } from 'react'
+import dynamic from 'next/dynamic'
 import { AiSummaryCard } from '@/components/dashboard/AiSummaryCard'
 import { AiChatPanel } from '@/components/dashboard/AiChatPanel'
 import { NowTab } from '@/components/dashboard/NowTab'
-import { AnalyticsTab } from '@/components/dashboard/AnalyticsTab'
 import { CORAL, CORALG, TEXT3, BORDER } from './dashboard-utils'
 import type { Transaction } from '@/lib/types'
+
+const AnalyticsTab = dynamic(
+  () => import('@/components/dashboard/AnalyticsTab').then((m) => m.AnalyticsTab),
+  { ssr: false, loading: () => <div style={{ minHeight: 300 }} /> }
+)
 
 /* ─── Strategy tab ─── */
 function StrategyTab() {
