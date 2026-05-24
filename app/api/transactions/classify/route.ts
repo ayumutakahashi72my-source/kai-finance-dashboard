@@ -1,41 +1,33 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { requireAuth } from '@/lib/api-guard'
 import { classifyFreeForm } from '@/lib/ai-classifier'
 
 const CHUNK = 200
 const BAD_CATEGORY_NAMES = ['未分類', 'その他', '不明', 'unknown', 'other']
 
 export async function POST() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: '認証が必要です' }, { status: 401 })
-
-  const { data: membership } = await supabase
-    .from('household_members')
-    .select('household_id')
-    .eq('user_id', user.id)
-    .limit(1)
-    .single()
-  if (!membership) return NextResponse.json({ error: '世帯が見つかりません' }, { status: 400 })
+  const auth = await requireAuth()
+  if (!auth.ok) return auth.response
+  const { supabase, user, householdId } = auth
 
   // 「未分類」等の不正カテゴリIDを取得して、対象行の category_id を null にリセット
   const { data: badCats } = await supabase
     .from('categories')
     .select('id')
-    .eq('household_id', membership.household_id)
+    .eq('household_id', householdId)
     .in('name', BAD_CATEGORY_NAMES)
   if (badCats?.length) {
     const ids = badCats.map((c) => c.id)
     await supabase
       .from('transactions')
       .update({ category_id: null })
-      .eq('household_id', membership.household_id)
+      .eq('household_id', householdId)
       .in('category_id', ids)
     // RAGキャッシュも同時にクリア（そうしないと再分類してもすぐ戻る）
     await supabase
       .from('category_rag')
       .delete()
-      .eq('household_id', membership.household_id)
+      .eq('household_id', householdId)
       .in('category_id', ids)
   }
 
@@ -46,7 +38,7 @@ export async function POST() {
     const { data } = await supabase
       .from('transactions')
       .select('id, payee')
-      .eq('household_id', membership.household_id)
+      .eq('household_id', householdId)
       .is('category_id', null)
       .order('occurred_on', { ascending: false })
       .range(from, from + CHUNK - 1)
@@ -65,7 +57,7 @@ export async function POST() {
   for (let offset = 0; offset < allRows.length; offset += CHUNK) {
     const chunk = allRows.slice(offset, offset + CHUNK)
     const items = chunk.map((r, i) => ({ index: i, payee: r.payee, category_hint: '' }))
-    const aiMap = await classifyFreeForm(items, membership.household_id, supabase, user.id)
+    const aiMap = await classifyFreeForm(items, householdId, supabase, user.id)
 
     for (const [i, catId] of aiMap) {
       const row = chunk[i]

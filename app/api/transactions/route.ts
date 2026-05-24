@@ -1,19 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { requireAuth } from '@/lib/api-guard'
 
 // GET /api/transactions?month=2026-05
 export async function GET(req: NextRequest) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: '認証が必要です' }, { status: 401 })
-
-  const { data: membership } = await supabase
-    .from('household_members')
-    .select('household_id')
-    .eq('user_id', user.id)
-    .limit(1)
-    .single()
-  if (!membership) return NextResponse.json({ error: '世帯が見つかりません' }, { status: 400 })
+  const auth = await requireAuth()
+  if (!auth.ok) return auth.response
+  const { supabase, householdId } = auth
 
   const params = req.nextUrl.searchParams
   const month  = params.get('month')
@@ -27,7 +19,7 @@ export async function GET(req: NextRequest) {
   let query = supabase
     .from('transactions')
     .select('*, categories(name, color, icon, parent_id, parent:parent_id(name, color))')
-    .eq('household_id', membership.household_id)
+    .eq('household_id', householdId)
     .order('occurred_on', { ascending: false })
     .order('created_at', { ascending: false })
 
