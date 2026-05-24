@@ -29,7 +29,7 @@ export async function lookupStoreCache(
     .select('payee, hints, confidence, hit_count')
     .eq('household_id', householdId)
     .eq('store_key', storeKey)
-    .single()
+    .maybeSingle()
 
   if (!data) return null
 

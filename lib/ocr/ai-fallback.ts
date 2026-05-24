@@ -72,6 +72,7 @@ export async function applyAIFallback(
   const apiKey = process.env.ANTHROPIC_API_KEY
 
   if (!apiKey) {
+    console.warn('[ocr] ANTHROPIC_API_KEY not set — AI fallback disabled, returning low-confidence heuristic result')
     return { payee: partial.payee ?? '', amount: partial.amount ?? 0, occurred_on: partial.occurred_on ?? today, confidence: 0.1 }
   }
 
