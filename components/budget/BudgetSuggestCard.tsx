@@ -1,5 +1,3 @@
-'use client'
-
 interface Suggestion {
   category_name: string
   suggested_amount: number

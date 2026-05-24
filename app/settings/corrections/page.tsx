@@ -1,5 +1,3 @@
-'use client'
-
 import { Brain } from 'lucide-react'
 import { KAI } from '@/lib/kai-tokens'
 import { CorrectionHistory } from '@/components/settings/CorrectionHistory'
