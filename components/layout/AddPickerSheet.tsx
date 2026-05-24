@@ -1115,7 +1115,7 @@ function MfStep({ onBack, onDone }: { onBack: () => void; onDone: () => void }) 
                     background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.10)',
                     color: TEXT2, cursor: 'pointer', fontFamily: 'inherit',
                   }}>閉じる</button>
-                  <a href="/settings/mf" style={{
+                  <a href="/settings/integrations/mf" style={{
                     flex: 2, padding: '11px', borderRadius: 12, fontSize: 13, fontWeight: 700,
                     background: `linear-gradient(135deg, ${CORAL} 0%, ${BLUE} 100%)`,
                     color: '#0c0a14', textDecoration: 'none',

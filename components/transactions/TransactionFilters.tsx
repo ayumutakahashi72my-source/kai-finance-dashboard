@@ -40,19 +40,16 @@ export function TransactionFilters({ categories }: Props) {
   const search = useSearchParams()
   const initial = readFiltersFromUrl(search)
 
-  const [q, setQ] = useState(initial.q)
+  const [filters, setFilters] = useState<Omit<TransactionFilterValues, never>>({
+    q: initial.q, cat: initial.cat, from: initial.from,
+    to: initial.to, min: initial.min, max: initial.max,
+  })
+  const { q, cat, from, to, min, max } = filters
   const [showAdv, setShowAdv] = useState(false)
-  const [cat, setCat] = useState(initial.cat)
-  const [from, setFrom] = useState(initial.from)
-  const [to, setTo] = useState(initial.to)
-  const [min, setMin] = useState(initial.min)
-  const [max, setMax] = useState(initial.max)
 
-  // 親に状態同期させたいケースで URL を見て更新
+  // URL 変化時に一括更新（1回の setState で済む）
   useEffect(() => {
-    setQ(initial.q); setCat(initial.cat); setFrom(initial.from)
-    setTo(initial.to); setMin(initial.min); setMax(initial.max)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    setFilters(readFiltersFromUrl(search))
   }, [search])
 
   function applyToUrl(next: Partial<TransactionFilterValues>) {
@@ -66,7 +63,7 @@ export function TransactionFilters({ categories }: Props) {
   }
 
   function reset() {
-    setQ(''); setCat(''); setFrom(''); setTo(''); setMin(''); setMax('')
+    setFilters({ q: '', cat: '', from: '', to: '', min: '', max: '' })
     const sp = new URLSearchParams(search.toString())
     for (const k of ['q', 'cat', 'from', 'to', 'min', 'max']) sp.delete(k)
     router.push(`${pathname}?${sp.toString()}`)
@@ -97,7 +94,7 @@ export function TransactionFilters({ categories }: Props) {
     const next = selected
       ? catIds.filter((id) => !group.includes(id)).join(',')
       : [...catIds, ...group.filter((id) => !catIds.includes(id))].join(',')
-    setCat(next)
+    setFilters((f) => ({ ...f, cat: next }))
     applyToUrl({ cat: next })
   }
 
@@ -115,7 +112,7 @@ export function TransactionFilters({ categories }: Props) {
           <SearchIcon size={14} color={KAI.text4} />
           <input
             value={q}
-            onChange={(e) => setQ(e.target.value)}
+            onChange={(e) => setFilters((f) => ({ ...f, q: e.target.value }))}
             onKeyDown={(e) => { if (e.key === 'Enter') applyToUrl({ q }) }}
             onBlur={() => { if (q !== initial.q) applyToUrl({ q }) }}
             placeholder="店舗名で検索…"
@@ -127,7 +124,7 @@ export function TransactionFilters({ categories }: Props) {
           {q && (
             <button
               type="button"
-              onClick={() => { setQ(''); applyToUrl({ q: '' }) }}
+              onClick={() => { setFilters((f) => ({ ...f, q: '' })); applyToUrl({ q: '' }) }}
               style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: KAI.text4, display: 'flex' }}
             >
               <XIcon size={14} />
@@ -198,7 +195,7 @@ export function TransactionFilters({ categories }: Props) {
               <input
                 type="date"
                 value={from}
-                onChange={(e) => { setFrom(e.target.value); applyToUrl({ from: e.target.value }) }}
+                onChange={(e) => { setFilters((f) => ({ ...f, from: e.target.value })); applyToUrl({ from: e.target.value }) }}
                 style={{
                   width: '100%', padding: '6px 10px', borderRadius: 7,
                   background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.10)',
@@ -211,7 +208,7 @@ export function TransactionFilters({ categories }: Props) {
               <input
                 type="date"
                 value={to}
-                onChange={(e) => { setTo(e.target.value); applyToUrl({ to: e.target.value }) }}
+                onChange={(e) => { setFilters((f) => ({ ...f, to: e.target.value })); applyToUrl({ to: e.target.value }) }}
                 style={{
                   width: '100%', padding: '6px 10px', borderRadius: 7,
                   background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.10)',
@@ -228,7 +225,7 @@ export function TransactionFilters({ categories }: Props) {
               <input
                 value={min}
                 inputMode="numeric"
-                onChange={(e) => setMin(e.target.value.replace(/[^\d]/g, ''))}
+                onChange={(e) => setFilters((f) => ({ ...f, min: e.target.value.replace(/[^\d]/g, '') }))}
                 onBlur={() => applyToUrl({ min })}
                 placeholder="500"
                 style={{
@@ -244,7 +241,7 @@ export function TransactionFilters({ categories }: Props) {
               <input
                 value={max}
                 inputMode="numeric"
-                onChange={(e) => setMax(e.target.value.replace(/[^\d]/g, ''))}
+                onChange={(e) => setFilters((f) => ({ ...f, max: e.target.value.replace(/[^\d]/g, '') }))}
                 onBlur={() => applyToUrl({ max })}
                 placeholder="50000"
                 style={{

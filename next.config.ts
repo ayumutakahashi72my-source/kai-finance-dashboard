@@ -2,6 +2,11 @@ import type { NextConfig } from 'next'
 import path from 'path'
 
 const nextConfig: NextConfig = {
+  async redirects() {
+    return [
+      { source: '/settings/mf', destination: '/settings/integrations/mf', permanent: true },
+    ]
+  },
   turbopack: {
     root: path.resolve(__dirname),
   },
