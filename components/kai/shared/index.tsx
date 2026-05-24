@@ -271,7 +271,7 @@ export function KaiSidebar({ active = 'dashboard', accent = KAI.mint, accentSoft
   return (
     <aside style={{
       width: 220, flexShrink: 0, height: '100%',
-      background: KAI.bgSidebar,
+      background: 'rgba(8,8,14,.82)',
       borderRight: '1px solid rgba(255,255,255,.10)',
       display: 'flex', flexDirection: 'column',
       backdropFilter: 'blur(24px)',
