@@ -9,6 +9,7 @@ const DesktopTrendChart = dynamic(
   () => import('./_DesktopTrendChart').then((m) => m.DesktopTrendChart),
   { ssr: false, loading: () => <div style={{ height: 240 }} /> }
 )
+import { AnomalyBanner } from '@/components/dashboard/AnomalyBanner'
 import { GoalBanner } from '@/components/dashboard/GoalBanner'
 import { GoalProgressCard } from '@/components/dashboard/GoalProgressCard'
 import type { FinancialGoal } from '@/components/dashboard/GoalProgressCard'
@@ -420,7 +421,7 @@ function GoalSection({ transactions }: { transactions: Transaction[] }) {
 }
 
 /* ─── Desktop layout ─── */
-function DesktopNow({ transactions, allTransactions, streak }: {
+function DesktopNow({ transactions, allTransactions, month, streak }: {
   transactions: Transaction[]; allTransactions: Transaction[]; month: string; streak: number
 }) {
   const monthlyData = buildMonthlyData(allTransactions)
@@ -451,6 +452,7 @@ function DesktopNow({ transactions, allTransactions, streak }: {
         <DesktopCategoryCard transactions={transactions}/>
       </div>
 
+      <AnomalyBanner month={month} />
       <div style={{ display: 'grid', gridTemplateColumns: '7fr 5fr', gap: 12 }}>
         <DesktopRecentTx transactions={transactions}/>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -470,6 +472,7 @@ export function NowTab({ transactions, allTransactions, month, streak }: {
   return (
     <>
       <div className="lg:hidden space-y-3">
+        <AnomalyBanner month={month} />
         <CategoryRingHero transactions={transactions} />
         <GoalSection transactions={transactions} />
         <CategoryChips transactions={transactions} />

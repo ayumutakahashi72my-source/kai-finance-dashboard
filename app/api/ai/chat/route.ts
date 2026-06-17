@@ -4,6 +4,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { FALLBACK } from '@/lib/fallback-messages'
 import { trackCost } from '@/lib/cost-tracker'
 import { getEnvKey } from '@/lib/api-keys'
+import { embedText } from '@/lib/embedder'
 
 const SYSTEM_PROMPT =
   'あなたは日本語で応答する家計簿アシスタントです。ユーザーが提供する家計データをもとに、節約アドバイスや支出分析を行ってください。回答は簡潔に200字以内を目安にしてください。'
@@ -137,9 +138,28 @@ export async function POST(req: NextRequest) {
     pastMessages.shift()
   }
 
+  // Vector Memory: 類似 Q&A を検索してコンテキストに追加
+  let memoryContext = ''
+  if (process.env.VOYAGE_API_KEY) {
+    try {
+      const qEmbedding = await embedText(userMessage)
+      const { data: similar } = await supabase.rpc('search_insights', {
+        p_household_id: householdId,
+        p_embedding: qEmbedding,
+        p_limit: 3,
+      })
+      if (similar?.length) {
+        const lines = (similar as Array<{ question: string; answer: string; similarity: number }>)
+          .map((r) => `Q: ${r.question}\nA: ${r.answer}`)
+          .join('\n---\n')
+        memoryContext = `\n\n[過去の関連Q&A]\n${lines}`
+      }
+    } catch { /* Voyage API 失敗は無視 */ }
+  }
+
   // 現在のuserメッセージにコンテキストをインジェクション
   const context = await buildChatContext(supabase, householdId)
-  const userContent = `${context}\n\n${userMessage}`
+  const userContent = `${context}${memoryContext}\n\n${userMessage}`
 
   const messages: Anthropic.MessageParam[] = [
     ...pastMessages.map((m) => ({
@@ -185,6 +205,21 @@ export async function POST(req: NextRequest) {
     { household_id: householdId, year, month, role: 'user', content: userMessage },
     { household_id: householdId, year, month, role: 'assistant', content: assistantContent },
   ])
+
+  // Vector Memory: Q&A をベクトル化して保存（Voyage API がある場合のみ）
+  if (process.env.VOYAGE_API_KEY) {
+    void (async () => {
+      try {
+        const embedding = await embedText(userMessage)
+        await supabase.from('ai_insights_embeddings').insert({
+          household_id: householdId,
+          question: userMessage,
+          answer: assistantContent,
+          embedding,
+        })
+      } catch { /* 保存失敗はサイレントに無視 */ }
+    })()
+  }
 
   // セッションカウント＋コスト更新
   await supabase

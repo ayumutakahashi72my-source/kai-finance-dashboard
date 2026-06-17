@@ -5,6 +5,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 const MODEL_PRICING: Record<string, { input: number; output: number }> = {
   'claude-haiku-4-5-20251001': { input: 0.80,  output: 4.00  },
   'claude-sonnet-4-6':         { input: 3.00,  output: 15.00 },
+  'claude-opus-4-8':           { input: 15.00, output: 75.00 },
 }
 
 // Default fallback if model is unknown
@@ -17,6 +18,7 @@ export type CostFeature =
   | 'budget_suggest'
   | 'spending_pattern'
   | 'goal_budget'
+  | 'quarterly_insight'
 
 export interface CostLogEntry {
   household_id: string

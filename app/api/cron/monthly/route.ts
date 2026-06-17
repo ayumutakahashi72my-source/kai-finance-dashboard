@@ -12,7 +12,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { generateMonthlySummary } from '@/lib/monthly-summary'
 import { generateBudgetAdvice } from '@/lib/budget-advisor'
 import { sendPushToHousehold } from '@/lib/push-sender'
@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   const now = new Date()
   const curYear = now.getUTCFullYear()
@@ -201,6 +201,101 @@ export async function GET(req: NextRequest) {
       steps['fixed_detection'] = 'ok'
     } catch (err) {
       steps['fixed_detection'] = `error: ${err instanceof Error ? err.message : '不明'}`
+    }
+
+    // ⑧ 支出異常検知（前3ヶ月平均との乖離が ±30% 以上のカテゴリをflag）
+    try {
+      // 対象: 前月（スコア確定直後）
+      const targetMonth = `${prevYear}-${String(pMonth).padStart(2, '0')}-01`
+
+      // 当月カテゴリ別支出
+      const { data: txCur } = await supabase
+        .from('transactions')
+        .select('amount, categories(id, name)')
+        .eq('household_id', hid)
+        .gte('occurred_on', monthDate(prevYear, pMonth))
+        .lt('occurred_on', monthDate(curYear, curMonth))
+        .lt('amount', 0)
+
+      if (txCur?.length) {
+        // 前3ヶ月（前月を除く）の支出を集計
+        const refStart = new Date(prevYear, pMonth - 4, 1)
+        const refEnd   = new Date(prevYear, pMonth - 1, 1)
+        const refStartStr = refStart.toISOString().slice(0, 10)
+        const refEndStr   = refEnd.toISOString().slice(0, 10)
+
+        const { data: txRef } = await supabase
+          .from('transactions')
+          .select('amount, occurred_on, categories(id, name)')
+          .eq('household_id', hid)
+          .gte('occurred_on', refStartStr)
+          .lt('occurred_on', refEndStr)
+          .lt('amount', 0)
+
+        // カテゴリ別集計（current）
+        type CatStat = { id: string; name: string; amount: number }
+        const curMap = new Map<string, CatStat>()
+        for (const tx of txCur) {
+          const cat = tx.categories as unknown as { id: string; name: string } | null
+          if (!cat) continue
+          const s = curMap.get(cat.id) ?? { id: cat.id, name: cat.name, amount: 0 }
+          s.amount += Math.abs(tx.amount)
+          curMap.set(cat.id, s)
+        }
+
+        // カテゴリ別月次集計（reference 3ヶ月分）
+        // month → catId → amount のマップ（データがない月はエントリなし）
+        const refMonthMap = new Map<string, Map<string, number>>()
+        for (const tx of txRef ?? []) {
+          const cat = tx.categories as unknown as { id: string; name: string } | null
+          if (!cat) continue
+          const mo = (tx as { occurred_on: string }).occurred_on.slice(0, 7)
+          if (!refMonthMap.has(mo)) refMonthMap.set(mo, new Map())
+          const mmap = refMonthMap.get(mo)!
+          mmap.set(cat.id, (mmap.get(cat.id) ?? 0) + Math.abs(tx.amount))
+        }
+        const refMonths = [...refMonthMap.values()]
+        // 参照期間の「カレンダー上の月数」で割る（データがない月も0として扱う）
+        // refStart〜refEnd の期間は常に3ヶ月（世帯開設直後でも固定3で割る）
+        const REF_PERIOD_MONTHS = 3
+
+        // 乖離判定
+        const flags: Array<{
+          household_id: string; month: string
+          category_id: string; category_name: string
+          actual_amount: number; expected_amount: number
+          deviation_rate: number; anomaly_type: string
+        }> = []
+
+        for (const [catId, cur] of curMap) {
+          if (refMonths.length === 0) continue
+          // データがある月だけの合計を参照期間の月数（3）で割って平均を求める
+          const total = refMonths.reduce((s, m) => s + (m.get(catId) ?? 0), 0)
+          const avg = Math.round(total / REF_PERIOD_MONTHS)
+          if (avg === 0) continue  // 参照期間に実績なし → skip
+          const dev = (cur.amount - avg) / avg
+          if (Math.abs(dev) < 0.30) continue
+          flags.push({
+            household_id: hid,
+            month: targetMonth,
+            category_id: catId,
+            category_name: cur.name,
+            actual_amount: cur.amount,
+            expected_amount: avg,
+            deviation_rate: Math.round(dev * 10000) / 10000,
+            anomaly_type: dev > 0 ? 'spike' : 'drop',
+          })
+        }
+
+        if (flags.length) {
+          await supabase
+            .from('monthly_anomaly_flags')
+            .upsert(flags, { onConflict: 'household_id,month,category_id' })
+        }
+      }
+      steps['anomaly_detection'] = 'ok'
+    } catch (err) {
+      steps['anomaly_detection'] = `error: ${err instanceof Error ? err.message : '不明'}`
     }
 
     // ⑥ 90日超過の api_error_logs・notifications を削除

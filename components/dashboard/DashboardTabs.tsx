@@ -4,6 +4,7 @@ import { useState } from 'react'
 import dynamic from 'next/dynamic'
 import { AiSummaryCard } from '@/components/dashboard/AiSummaryCard'
 import { AiChatPanel } from '@/components/dashboard/AiChatPanel'
+import { QuarterlyInsightCard } from '@/components/dashboard/QuarterlyInsightCard'
 import { NowTab } from '@/components/dashboard/NowTab'
 import { CORAL, CORALG, TEXT3, BORDER } from './dashboard-utils'
 import type { Transaction } from '@/lib/types'
@@ -18,6 +19,7 @@ function StrategyTab() {
   return (
     <div className="space-y-3">
       <AiSummaryCard />
+      <QuarterlyInsightCard />
       <div className="kai-rise" style={{ animationDelay: '140ms' }}>
         <AiChatPanel />
       </div>
