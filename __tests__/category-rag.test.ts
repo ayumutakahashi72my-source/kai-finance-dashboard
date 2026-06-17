@@ -46,6 +46,30 @@ describe('normalizeKeyword', () => {
     expect(normalizeKeyword('マクドナルド3号店')).toBe('マクドナルド')
     expect(normalizeKeyword('ヤマト運輸渋谷支店')).toBe('ヤマト運輸渋谷')
   })
+
+  it('ドメイン区切り文字を除去する（amazon.co.jp）', () => {
+    // . は非単語文字 → 除去 → amazoncojp
+    expect(normalizeKeyword('amazon.co.jp')).toBe('amazoncojp')
+  })
+
+  it('全角英字と日本語の混在を正規化する（PayPay銀行）', () => {
+    // ＰａｙＰａｙ → NFKC → PayPay → toLowerCase → paypay
+    expect(normalizeKeyword('ＰａｙＰａｙ銀行')).toBe('paypay銀行')
+  })
+
+  it('末尾の数字を除去する（マツモトキヨシ1234）', () => {
+    expect(normalizeKeyword('マツモトキヨシ1234')).toBe('マツモトキヨシ')
+  })
+
+  it('末尾の全角・半角スペースを除去する', () => {
+    expect(normalizeKeyword('〇〇スーパー　　 ')).toBe('〇〇スーパー')
+  })
+
+  it('地名は残る（normalizeKeyword はチェーン統合しない）', () => {
+    // セブンイレブン渋谷店 と セブンイレブン新宿店 は別キーになる
+    // チェーン統合は canonicalizeMerchant の責務
+    expect(normalizeKeyword('セブンイレブン渋谷店')).not.toBe(normalizeKeyword('セブンイレブン新宿店'))
+  })
 })
 
 // ── RAGヒット判定 ─────────────────────────────────────────────────
@@ -221,5 +245,30 @@ describe('canonicalizeMerchant', () => {
       const normalized = normalizeKeyword(entry.text)
       expect(() => canonicalizeMerchant(normalized)).not.toThrow()
     }
+  })
+
+  it('amazon.co.jp がパイプライン経由で amazon に統合される', () => {
+    // normalizeKeyword → amazoncojp → canonicalizeMerchant(/^amazon/ match) → amazon
+    expect(canonicalizeMerchant(normalizeKeyword('amazon.co.jp'))).toBe('amazon')
+  })
+
+  it('チェーン店の地名バリエーションがパイプライン経由で同一キーになる', () => {
+    const key1 = canonicalizeMerchant(normalizeKeyword('セブンイレブン渋谷店'))
+    const key2 = canonicalizeMerchant(normalizeKeyword('セブンイレブン新宿店'))
+    expect(key1).toBe(key2)
+    expect(key1).toBe('セブンイレブン')
+  })
+
+  it('楽天モバイルと楽天市場はパイプライン後も区別される', () => {
+    const mobile  = canonicalizeMerchant(normalizeKeyword('楽天モバイル'))
+    const ichiba  = canonicalizeMerchant(normalizeKeyword('楽天市場'))
+    expect(mobile).toBe('楽天モバイル')
+    expect(ichiba).toBe('楽天')
+    expect(mobile).not.toBe(ichiba)
+  })
+
+  it('辞書未登録の店舗はパイプライン後もパススルーされる', () => {
+    const result = canonicalizeMerchant(normalizeKeyword('近所のパン屋'))
+    expect(result).toBe('近所のパン屋')
   })
 })

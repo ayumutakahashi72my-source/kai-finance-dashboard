@@ -48,11 +48,11 @@ export function LeaveHouseholdButton({ isOwner }: Props) {
         </div>
         <div style={{ flex: 1 }}>
           <p style={{ fontSize: 14, fontWeight: 500, color: KAI.danger }}>
-            {isOwner ? '世帯を解散する' : '世帯から退会する'}
+            {isOwner ? '世帯を削除する' : 'この世帯から脱退する'}
           </p>
           <p style={{ fontSize: 12, color: KAI.text4, marginTop: 1 }}>
             {isOwner
-              ? 'すべてのデータが削除されます'
+              ? '取引・カテゴリ・AI履歴がすべて削除されます'
               : 'この世帯のデータにアクセスできなくなります'}
           </p>
         </div>
@@ -81,7 +81,7 @@ export function LeaveHouseholdButton({ isOwner }: Props) {
             </div>
 
             <p style={{ fontSize: 16, fontWeight: 800, color: KAI.text1, textAlign: 'center', marginBottom: 8 }}>
-              {isOwner ? '世帯を解散しますか？' : '世帯から退会しますか？'}
+              {isOwner ? '世帯を削除しますか？' : 'この世帯から脱退しますか？'}
             </p>
             <p style={{ fontSize: 13, color: KAI.text4, textAlign: 'center', lineHeight: 1.7, marginBottom: 20 }}>
               {isOwner
@@ -125,8 +125,8 @@ export function LeaveHouseholdButton({ isOwner }: Props) {
                 }}
               >
                 {loading
-                  ? <><Loader2 size={14} className="animate-spin"/>{isOwner ? '解散中…' : '退会中…'}</>
-                  : (isOwner ? '解散する' : '退会する')
+                  ? <><Loader2 size={14} className="animate-spin"/>{isOwner ? '削除中…' : '脱退中…'}</>
+                  : (isOwner ? '削除する' : '脱退する')
                 }
               </button>
             </div>

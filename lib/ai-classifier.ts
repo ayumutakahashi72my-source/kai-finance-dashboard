@@ -6,6 +6,7 @@ import { embedTextsWithCache } from './embedder'
 import { classifyByKeyword } from './keyword-rules'
 import { writeClassificationLogs, type ClassificationLogEntry } from './classification-logger'
 import { trackCost, type TokenUsageAccum } from './cost-tracker'
+import { canonicalizeMerchant } from './merchant-canonical'
 
 const MAX_BATCH = 10
 const RAG_EXACT_THRESHOLD = 0.80   // exact キャッシュの直接採用ライン（LLM分類結果を再利用）
@@ -477,6 +478,8 @@ type RagUpsert = {
   category_id: string
   confidence: number
   embedding: number[] | null
+  hit_count: number
+  last_seen: string
 }
 
 type UserKnowledgeUpsert = {
@@ -570,6 +573,10 @@ export async function classifyTransactions(
     .eq('household_id', householdId)
     .in('payee_key', payeeKeysForCache)
 
+  // 既存 hit_count マップ（全件 — 閾値未満も含む）
+  const ragHitCountMap = new Map<string, number>()
+  for (const row of ragRows ?? []) ragHitCountMap.set(row.payee_key, row.hit_count ?? 1)
+
   const exactCacheMap = new Map<string, { category_id: string; confidence: number }>()
   for (const row of ragRows ?? []) {
     const conf = row.confidence ?? 0
@@ -606,6 +613,10 @@ export async function classifyTransactions(
     return { categoryIdMap }
   }
 
+  // ragUpserts はここから全ステージで使う（regex / vector / LLM 全て書き込む）
+  const ragUpserts: RagUpsert[] = []
+  const today = new Date().toISOString().slice(0, 10)
+
   // ② Regex rule（DB 不要 — in-memory キーワードマッチ、純粋な perf optimization）
   const remaining: ClassifyItem[] = []
   for (const item of itemsAfterExactCache) {
@@ -614,6 +625,18 @@ export async function classifyTransactions(
     const categoryId = categoryName ? categoryMap.get(categoryName) : undefined
     if (categoryId) {
       categoryIdMap.set(item.index, categoryId)
+      // exact_cache にない場合は RAG に書き込んでおく（次回から exact_cache でヒット）
+      if (!exactCacheMap.has(payeeKey)) {
+        ragUpserts.push({
+          household_id: householdId,
+          payee_key: payeeKey,
+          category_id: categoryId,
+          confidence: 1.0,
+          embedding: null,
+          hit_count: (ragHitCountMap.get(payeeKey) ?? 0) + 1,
+          last_seen: today,
+        })
+      }
       logs.push({
         household_id: householdId,
         payee: item.payee,
@@ -646,7 +669,6 @@ export async function classifyTransactions(
 
   const vecCandidates = await vectorSearchTopK(remaining, remainingEmbeddings, householdId, supabase)
 
-  const ragUpserts: RagUpsert[] = []
   const needsRerank: RerankInput[] = []
   const needsLLM: ClassifyItem[] = []
 
@@ -671,12 +693,15 @@ export async function classifyTransactions(
       // 高信頼度: 直接採用（confidence = similarity）
       categoryIdMap.set(item.index, best.category_id)
       const idx = remaining.indexOf(item)
+      const vdKey = normalizeKeyword(item.payee)
       ragUpserts.push({
         household_id: householdId,
-        payee_key: normalizeKeyword(item.payee),
+        payee_key: vdKey,
         category_id: best.category_id,
         confidence: best.similarity,
         embedding: remainingEmbeddings[idx] ?? null,
+        hit_count: (ragHitCountMap.get(vdKey) ?? 0) + 1,
+        last_seen: today,
       })
       logs.push({
         household_id: householdId,
@@ -727,12 +752,15 @@ export async function classifyTransactions(
         if (item) {
           const idx = remaining.indexOf(item)
           const bestSim = vecCandidates.get(item.index)?.[0]?.similarity
+          const rrKey = normalizeKeyword(item.payee)
           ragUpserts.push({
             household_id: householdId,
-            payee_key: normalizeKeyword(item.payee),
+            payee_key: rrKey,
             category_id: r.category_id,
             confidence: r.confidence,
             embedding: remainingEmbeddings[idx] ?? null,
+            hit_count: (ragHitCountMap.get(rrKey) ?? 0) + 1,
+            last_seen: today,
           })
           logs.push({
             household_id: householdId,
@@ -767,9 +795,19 @@ export async function classifyTransactions(
     }
   }
 
-  // ④ Full LLM Classification
-  for (let i = 0; i < needsLLM.length; i += MAX_BATCH) {
-    const batch = needsLLM.slice(i, i + MAX_BATCH)
+  // ④ Full LLM Classification（同一チェーン店は代表1件だけ LLM に投げて全件に展開）
+  // canonicalizeMerchant で地名バリエーションも同一キーにまとめる
+  const llmKeyToItems = new Map<string, ClassifyItem[]>()
+  for (const item of needsLLM) {
+    const k = canonicalizeMerchant(normalizeKeyword(item.payee))
+    if (!llmKeyToItems.has(k)) llmKeyToItems.set(k, [])
+    llmKeyToItems.get(k)!.push(item)
+  }
+  // 各グループの先頭のみ分類対象にする（重複排除）
+  const dedupedNeedsLLM = [...llmKeyToItems.values()].map((g) => g[0]!)
+
+  for (let i = 0; i < dedupedNeedsLLM.length; i += MAX_BATCH) {
+    const batch = dedupedNeedsLLM.slice(i, i + MAX_BATCH)
     try {
       const classified = await callHaiku(batch, categoryMap, client, hierarchyCategoryList, tokenAccum)
       const resolvedByLLM = new Set(classified.map((c) => c.index))
@@ -778,12 +816,15 @@ export async function classifyTransactions(
         const item = remaining.find((it) => it.index === c.index)
         if (item) {
           const idx = remaining.indexOf(item)
+          const llmKey = normalizeKeyword(item.payee)
           ragUpserts.push({
             household_id: householdId,
-            payee_key: normalizeKeyword(item.payee),
+            payee_key: llmKey,
             category_id: c.category_id,
             confidence: c.confidence,
             embedding: remainingEmbeddings[idx] ?? null,
+            hit_count: (ragHitCountMap.get(llmKey) ?? 0) + 1,
+            last_seen: today,
           })
           logs.push({
             household_id: householdId,
@@ -833,6 +874,29 @@ export async function classifyTransactions(
     }
   }
 
+  // 重複排除で省略したアイテムに代表の分類結果を展開
+  for (const [key, groupItems] of llmKeyToItems) {
+    if (groupItems.length <= 1) continue
+    const rep = groupItems[0]!
+    const repCategoryId = categoryIdMap.get(rep.index)
+    if (repCategoryId === undefined) continue
+    for (const dup of groupItems.slice(1)) {
+      categoryIdMap.set(dup.index, repCategoryId)
+      logs.push({
+        household_id: householdId,
+        payee: dup.payee,
+        payee_key: key,
+        category_hint: dup.category_hint,
+        category_id: repCategoryId,
+        category_name: idToName.get(repCategoryId),
+        method: 'exact_cache',   // 同バッチ内重複 = キャッシュ扱い
+        confidence: 1.0,
+        is_cache_hit: true,
+        latency_ms: 0,
+      })
+    }
+  }
+
   // ⑤ Forced selection — still-unresolved items get forced into an existing category
   const unresolvedInClassify = remaining.filter((it) => !categoryIdMap.has(it.index))
   if (unresolvedInClassify.length) {
@@ -846,12 +910,15 @@ export async function classifyTransactions(
         const item = remaining.find((it) => it.index === index)
         if (item) {
           const idx = remaining.indexOf(item)
+          const fKey = normalizeKeyword(item.payee)
           ragUpserts.push({
             household_id: householdId,
-            payee_key: normalizeKeyword(item.payee),
+            payee_key: fKey,
             category_id: catId,
             confidence: 0.7,
             embedding: remainingEmbeddings[idx] ?? null,
+            hit_count: (ragHitCountMap.get(fKey) ?? 0) + 1,
+            last_seen: today,
           })
           logs.push({
             household_id: householdId,
@@ -940,6 +1007,9 @@ export async function classifyFreeForm(
     .eq('household_id', householdId)
     .in('payee_key', payeeKeysForCache)
 
+  const ragHitCountMapFree = new Map<string, number>()
+  for (const row of ragRowsFree ?? []) ragHitCountMapFree.set(row.payee_key, row.hit_count ?? 1)
+
   const exactCacheMapFree = new Map<string, { category_id: string; confidence: number }>()
   for (const row of ragRowsFree ?? []) {
     const conf = row.confidence ?? 0
@@ -1016,7 +1086,8 @@ export async function classifyFreeForm(
   }
 
   const vecCandidates = await vectorSearchTopK(remaining, remainingEmbeddings, householdId, supabase)
-  const ragUpserts: RagUpsert[] = []
+  const ragUpsertsF: RagUpsert[] = []
+  const todayF = new Date().toISOString().slice(0, 10)
   const needsLLM: ClassifyItem[] = []
 
   for (const item of remaining) {
@@ -1028,17 +1099,20 @@ export async function classifyFreeForm(
     if (best && best.similarity >= RAG_DIRECT_THRESHOLD) {
       categoryIdMap.set(item.index, best.category_id)
       const idx = remaining.indexOf(item)
-      ragUpserts.push({
+      const fvdKey = normalizeKeyword(item.payee)
+      ragUpsertsF.push({
         household_id: householdId,
-        payee_key: normalizeKeyword(item.payee),
+        payee_key: fvdKey,
         category_id: best.category_id,
         confidence: best.similarity,
         embedding: remainingEmbeddings[idx] ?? null,
+        hit_count: (ragHitCountMapFree.get(fvdKey) ?? 0) + 1,
+        last_seen: todayF,
       })
       logs.push({
         household_id: householdId,
         payee: item.payee,
-        payee_key: normalizeKeyword(item.payee),
+        payee_key: fvdKey,
         category_hint: item.category_hint,
         category_id: best.category_id,
         category_name: existingIdToName.get(best.category_id),
@@ -1054,10 +1128,10 @@ export async function classifyFreeForm(
   }
 
   if (!needsLLM.length || !process.env.ANTHROPIC_API_KEY) {
-    if (ragUpserts.length) {
-      const { error: ragErr } = await supabase.from('category_rag').upsert(ragUpserts, { onConflict: 'household_id,payee_key' })
+    if (ragUpsertsF.length) {
+      const { error: ragErr } = await supabase.from('category_rag').upsert(ragUpsertsF, { onConflict: 'household_id,payee_key' })
       if (ragErr) console.error('[classifier] category_rag upsert failed:', ragErr.message)
-      if (userId) void syncUserKnowledge(ragUpserts, existingIdToName, userId, supabase)
+      if (userId) void syncUserKnowledge(ragUpsertsF, existingIdToName, userId, supabase)
     }
     void writeClassificationLogs(logs, supabase)
     return categoryIdMap
@@ -1086,17 +1160,20 @@ export async function classifyFreeForm(
         const item = needsLLM.find((it) => it.index === index)
         if (item) {
           const idx = remaining.indexOf(item)
-          ragUpserts.push({
+          const ffKey = normalizeKeyword(item.payee)
+          ragUpsertsF.push({
             household_id: householdId,
-            payee_key: normalizeKeyword(item.payee),
+            payee_key: ffKey,
             category_id: catId,
             confidence: 0.7,
             embedding: remainingEmbeddings[idx] ?? null,
+            hit_count: (ragHitCountMapFree.get(ffKey) ?? 0) + 1,
+            last_seen: todayF,
           })
           logs.push({
             household_id: householdId,
             payee: item.payee,
-            payee_key: normalizeKeyword(item.payee),
+            payee_key: ffKey,
             category_hint: item.category_hint,
             category_id: catId,
             category_name: categoryName,
@@ -1109,10 +1186,10 @@ export async function classifyFreeForm(
         }
       }
     } catch { /* force select 失敗はスキップ */ }
-    if (ragUpserts.length) {
-      const { error: ragErr } = await supabase.from('category_rag').upsert(ragUpserts, { onConflict: 'household_id,payee_key' })
+    if (ragUpsertsF.length) {
+      const { error: ragErr } = await supabase.from('category_rag').upsert(ragUpsertsF, { onConflict: 'household_id,payee_key' })
       if (ragErr) console.error('[classifier] category_rag upsert failed:', ragErr.message)
-      if (userId) void syncUserKnowledge(ragUpserts, existingIdToName, userId, supabase)
+      if (userId) void syncUserKnowledge(ragUpsertsF, existingIdToName, userId, supabase)
     }
     void writeClassificationLogs(logs, supabase)
     return categoryIdMap
@@ -1143,12 +1220,15 @@ export async function classifyFreeForm(
         latency_ms: Date.now() - startTime,
       })
       const idx = remaining.indexOf(item)
-      ragUpserts.push({
+      const ffKey2 = normalizeKeyword(item.payee)
+      ragUpsertsF.push({
         household_id: householdId,
-        payee_key: normalizeKeyword(item.payee),
+        payee_key: ffKey2,
         category_id: catId,
         confidence: 0.9,
         embedding: remainingEmbeddings[idx] ?? null,
+        hit_count: (ragHitCountMapFree.get(ffKey2) ?? 0) + 1,
+        last_seen: todayF,
       })
     }
   }
@@ -1168,17 +1248,20 @@ export async function classifyFreeForm(
         const item = needsLLM.find((it) => it.index === index)
         if (item) {
           const idx = remaining.indexOf(item)
-          ragUpserts.push({
+          const ffKey3 = normalizeKeyword(item.payee)
+          ragUpsertsF.push({
             household_id: householdId,
-            payee_key: normalizeKeyword(item.payee),
+            payee_key: ffKey3,
             category_id: catId,
             confidence: 0.7,
             embedding: remainingEmbeddings[idx] ?? null,
+            hit_count: (ragHitCountMapFree.get(ffKey3) ?? 0) + 1,
+            last_seen: todayF,
           })
           logs.push({
             household_id: householdId,
             payee: item.payee,
-            payee_key: normalizeKeyword(item.payee),
+            payee_key: ffKey3,
             category_hint: item.category_hint,
             category_id: catId,
             category_name: categoryName,
@@ -1221,10 +1304,10 @@ export async function classifyFreeForm(
     }
   }
 
-  if (ragUpserts.length) {
-    const { error: ragErr } = await supabase.from('category_rag').upsert(ragUpserts, { onConflict: 'household_id,payee_key' })
+  if (ragUpsertsF.length) {
+    const { error: ragErr } = await supabase.from('category_rag').upsert(ragUpsertsF, { onConflict: 'household_id,payee_key' })
     if (ragErr) console.error('[classifier] category_rag upsert failed:', ragErr.message)
-    if (userId) void syncUserKnowledge(ragUpserts, existingIdToName, userId, supabase)
+    if (userId) void syncUserKnowledge(ragUpsertsF, existingIdToName, userId, supabase)
   }
 
   if (tokenAccum.inputTokens > 0 || tokenAccum.outputTokens > 0) {

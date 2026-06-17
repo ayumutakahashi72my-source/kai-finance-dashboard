@@ -3,6 +3,14 @@
     {
       "path": "/api/cron/monthly",
       "schedule": "1 15 1 * *"
+    },
+    {
+      "path": "/api/cron/demo-reset",
+      "schedule": "0 18 * * *"
+    },
+    {
+      "path": "/api/cron/health-snapshot",
+      "schedule": "0 19 * * *"
     }
   ]
 }

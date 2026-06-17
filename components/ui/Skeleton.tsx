@@ -1,4 +1,4 @@
-type Variant = 'panel' | 'line-lg' | 'line-md' | 'line-sm' | 'block'
+type Variant = 'panel' | 'line-lg' | 'line-md' | 'line-sm' | 'block' | 'avatar'
 
 const SIZES: Record<Variant, string> = {
   panel:     'h-24 w-full rounded-[18px]',
@@ -6,6 +6,7 @@ const SIZES: Record<Variant, string> = {
   'line-md': 'h-4 w-full rounded-[6px]',
   'line-sm': 'h-3 w-1/2 rounded-[5px]',
   block:     'h-16 w-full rounded-[14px]',
+  avatar:    'h-8 w-8 rounded-full flex-shrink-0',
 }
 
 interface Props {

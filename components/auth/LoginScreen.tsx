@@ -21,12 +21,13 @@ import { BigKaiMark } from './BigKaiMark'
 
 interface LoginScreenProps {
   onGoogleSignIn?: () => void | Promise<void>
+  onDemoSignIn?: () => void | Promise<void>
   onTermsClick?: (kind: 'tos' | 'privacy' | 'cookie' | 'data') => void
 }
 
 const PEACH = '#f5d4b8'
 
-export function LoginScreen({ onGoogleSignIn, onTermsClick }: LoginScreenProps) {
+export function LoginScreen({ onGoogleSignIn, onDemoSignIn, onTermsClick }: LoginScreenProps) {
   return (
     <main
       style={{
@@ -110,6 +111,16 @@ export function LoginScreen({ onGoogleSignIn, onTermsClick }: LoginScreenProps) 
         <div style={{ animation: 'kai-splash-fade .9s .55s both ease-out' }}>
           <GoogleSignInButton onClick={onGoogleSignIn} />
         </div>
+        {onDemoSignIn && (
+          <div style={{ animation: 'kai-splash-fade .9s .75s both ease-out', display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ flex: 1, height: 1, background: 'rgba(240,240,245,.12)' }} />
+              <span style={{ fontSize: 11, color: 'rgba(240,240,245,.38)', letterSpacing: '.08em' }}>または</span>
+              <div style={{ flex: 1, height: 1, background: 'rgba(240,240,245,.12)' }} />
+            </div>
+            <DemoSignInButton onClick={onDemoSignIn} />
+          </div>
+        )}
       </div>
 
       {/* 下部: 利用規約 */}
@@ -200,6 +211,47 @@ function GoogleSignInButton({
     >
       <GoogleG size={18} />
       <span>{busy ? '接続中…' : 'Googleで続ける'}</span>
+    </button>
+  )
+}
+
+function DemoSignInButton({ onClick }: { onClick?: () => void | Promise<void> }) {
+  const [busy, setBusy] = React.useState(false)
+  return (
+    <button
+      type="button"
+      disabled={busy}
+      onClick={async () => {
+        if (!onClick || busy) return
+        setBusy(true)
+        try { await onClick() } finally { setBusy(false) }
+      }}
+      style={{
+        width: '100%',
+        padding: '0 16px',
+        height: 44,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        background: 'transparent',
+        color: 'rgba(240,240,245,.72)',
+        border: '1px solid rgba(240,240,245,.18)',
+        borderRadius: 99,
+        fontFamily: 'var(--font-sans), Inter, sans-serif',
+        fontSize: 13,
+        fontWeight: 500,
+        letterSpacing: '.01em',
+        cursor: busy ? 'wait' : 'pointer',
+        opacity: busy ? 0.6 : 1,
+        transition: 'opacity .15s, border-color .15s',
+      }}
+    >
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
+        <circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.2"/>
+        <path d="M7 4v3l2 1.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+      </svg>
+      <span>{busy ? '読み込み中…' : 'デモとして閲覧する'}</span>
     </button>
   )
 }

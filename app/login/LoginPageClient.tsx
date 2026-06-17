@@ -11,6 +11,8 @@ const LEGAL_ROUTES = {
   data:    '/legal/data',
 } as const
 
+const isDemoEnabled = !!process.env.NEXT_PUBLIC_DEMO_ENABLED
+
 export default function LoginPageClient() {
   const router = useRouter()
 
@@ -22,9 +24,25 @@ export default function LoginPageClient() {
     })
   }
 
+  async function handleDemoSignIn() {
+    const res = await fetch('/api/auth/demo', { method: 'POST' })
+    if (!res.ok) {
+      const { error } = await res.json().catch(() => ({ error: 'ログイン失敗' }))
+      alert(error)
+      return
+    }
+    window.location.href = '/'
+  }
+
   function handleTermsClick(kind: 'tos' | 'privacy' | 'cookie' | 'data') {
     router.push(LEGAL_ROUTES[kind])
   }
 
-  return <LoginScreen onGoogleSignIn={handleGoogleSignIn} onTermsClick={handleTermsClick} />
+  return (
+    <LoginScreen
+      onGoogleSignIn={handleGoogleSignIn}
+      onDemoSignIn={isDemoEnabled ? handleDemoSignIn : undefined}
+      onTermsClick={handleTermsClick}
+    />
+  )
 }

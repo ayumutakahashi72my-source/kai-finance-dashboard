@@ -13,21 +13,13 @@ import {
   Brain,
   BarChart2,
   Crown,
+  Wrench,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { LeaveHouseholdButton } from '@/components/settings/LeaveHouseholdButton'
 import { CleanupCardTransfersButton } from '@/components/settings/CleanupCardTransfersButton'
 import { FixCategoryColorsButton } from '@/components/settings/FixCategoryColorsButton'
-
-function MfIcon({ size = 18 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect width="36" height="36" rx="9" fill="#f5c000"/>
-      <text x="18" y="25" textAnchor="middle" fontFamily="Arial,sans-serif" fontWeight="800" fontSize="17" fill="#0a0a10" letterSpacing="-0.5">MF</text>
-    </svg>
-  )
-}
 
 function SettingsRow({
   icon: Icon,
@@ -47,47 +39,54 @@ function SettingsRow({
   return (
     <Link
       href={href}
-      className="flex items-center gap-3.5 px-5 py-4 transition-colors hover:bg-white/[0.04] active:bg-white/[0.06]"
+      className="flex items-center gap-3.5 px-4 py-3.5 transition-colors hover:bg-white/[0.04] active:bg-white/[0.06]"
     >
       <div
         className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px]"
         style={customIcon ? {} : {
           background: `color-mix(in srgb, ${accent} 11%, transparent)`,
-          border: `1px solid color-mix(in srgb, ${accent} 18%, transparent)`,
+          border: `1px solid color-mix(in srgb, ${accent} 22%, transparent)`,
         }}
       >
-        {customIcon ?? (Icon && <Icon className="size-[18px]" style={{ color: accent }} />)}
+        {customIcon ?? (Icon && <Icon className="size-[17px]" style={{ color: accent }} />)}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-[14px] font-medium leading-snug" style={{ color: '#e8e8f0' }}>
+        <p className="text-[13.5px] font-medium leading-snug" style={{ color: '#e8e8f0' }}>
           {title}
         </p>
         {description && (
-          <p className="mt-0.5 text-[12px] leading-snug" style={{ color: '#5e5e72' }}>
+          <p className="mt-0.5 text-[11.5px] leading-snug" style={{ color: '#5e5e72' }}>
             {description}
           </p>
         )}
       </div>
-      <ChevronRightIcon className="size-4 shrink-0" style={{ color: '#3a3a50' }} />
+      <ChevronRightIcon className="size-[15px] shrink-0" style={{ color: '#3a3a50' }} />
     </Link>
   )
 }
 
-function Divider() {
-  return <div style={{ borderTop: '1px solid rgba(255,255,255,0.055)', marginLeft: '68px' }} />
+function RowDivider() {
+  return <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', marginLeft: '64px' }} />
 }
 
-function Card({ children }: { children: React.ReactNode }) {
+function Section({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div
-      className="overflow-hidden rounded-[18px]"
-      style={{
-        background: 'rgba(20,22,32,0.75)',
-        backdropFilter: 'blur(24px) saturate(160%)',
-        border: '1px solid rgba(255,255,255,0.08)',
-      }}
-    >
-      {children}
+    <div>
+      <div className="mb-2 px-1">
+        <p style={{ fontSize: 11, color: '#7070a0', fontWeight: 700, letterSpacing: '.10em', textTransform: 'uppercase' }}>
+          {label}
+        </p>
+      </div>
+      <div
+        className="overflow-hidden rounded-[16px]"
+        style={{
+          background: 'rgba(18,20,30,0.80)',
+          backdropFilter: 'blur(24px) saturate(160%)',
+          border: '1px solid rgba(255,255,255,0.07)',
+        }}
+      >
+        {children}
+      </div>
     </div>
   )
 }
@@ -97,17 +96,23 @@ export default async function SettingsPage() {
   const { data: { user }, error } = await supabase.auth.getUser()
   if (error || !user) redirect('/login')
 
+  const isDemo  = user.email === process.env.DEMO_USER_EMAIL
+
   const displayName = user.user_metadata?.full_name ?? user.email ?? 'ユーザー'
-  const avatarUrl = user.user_metadata?.avatar_url as string | undefined
+  const avatarUrl   = user.user_metadata?.avatar_url as string | undefined
 
   const { data: member } = await supabase
     .from('household_members')
-    .select('is_admin, role')
+    .select('is_admin, role, household_id')
     .eq('user_id', user.id)
     .limit(1)
     .single()
   const isAdmin = !!member?.is_admin
   const isOwner = member?.role === 'owner'
+
+  const { data: household } = member?.household_id
+    ? await supabase.from('households').select('name').eq('id', member.household_id).single()
+    : { data: null }
 
   return (
     <div className="min-h-screen" style={{ background: '#0c0a14' }}>
@@ -116,7 +121,10 @@ export default async function SettingsPage() {
         className="pointer-events-none fixed inset-0"
         style={{
           zIndex: 0,
-          backgroundImage: `radial-gradient(ellipse 600px 400px at 80% 20%, rgba(251,148,119,.09), transparent 55%),radial-gradient(ellipse 500px 300px at 20% 80%, rgba(122,167,255,.06), transparent 55%)`,
+          backgroundImage: `
+            radial-gradient(ellipse 600px 400px at 80% 10%, rgba(251,148,119,.07), transparent 55%),
+            radial-gradient(ellipse 500px 300px at 10% 80%, rgba(122,167,255,.05), transparent 55%)
+          `,
         }}
       />
       <div
@@ -124,7 +132,7 @@ export default async function SettingsPage() {
         className="pointer-events-none fixed inset-0"
         style={{
           zIndex: 1,
-          backgroundImage: `linear-gradient(rgba(255,255,255,.012) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.012) 1px,transparent 1px)`,
+          backgroundImage: `linear-gradient(rgba(255,255,255,.011) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.011) 1px,transparent 1px)`,
           backgroundSize: '40px 40px',
         }}
       />
@@ -133,165 +141,180 @@ export default async function SettingsPage() {
 
       <div className="relative min-h-screen lg:pl-[220px]" style={{ zIndex: 2 }}>
         <header
-          className="sticky top-0 z-30 flex items-center justify-between px-6 py-[14px]"
+          className="sticky top-0 z-30 flex items-center justify-between px-5 py-[13px]"
           style={{
-            background: 'rgba(8,8,14,.55)',
+            background: 'rgba(8,8,14,.60)',
             backdropFilter: 'blur(24px)',
-            borderBottom: '1px solid rgba(255,255,255,0.10)',
+            borderBottom: '1px solid rgba(255,255,255,0.07)',
           }}
         >
-          <div className="lg:hidden">
-            <KaiSystemBrand size="sm"/>
-          </div>
-          <h1 className="hidden text-[17px] font-bold lg:block" style={{ color: '#f0f0f5' }}>
-            設定
-          </h1>
+          <div className="lg:hidden"><KaiSystemBrand size="sm"/></div>
+          <h1 className="hidden text-[16px] font-bold lg:block" style={{ color: '#f0f0f5' }}>設定</h1>
           <ProfileDropdown displayName={displayName} avatarUrl={avatarUrl} />
         </header>
 
-        <main className="mx-auto max-w-2xl space-y-4 px-4 py-5 pb-32 lg:pb-10">
-          {/* ユーザーカード — Direction C: gradient square avatar */}
-          <Card>
-            <div className="px-5 py-5">
-              <div className="flex items-center gap-4">
-                {/* gradient square avatar */}
-                <div style={{ padding: 1.5, borderRadius: 14, background: 'linear-gradient(135deg,#fb9477,#7aa7ff)', flexShrink: 0 }}>
-                  <div style={{ width: 52, height: 52, borderRadius: 12, background: '#0c0a14', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative' }}>
-                    {avatarUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={avatarUrl} alt={displayName} width={52} height={52} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    ) : (
-                      <span style={{ fontSize: 20, fontWeight: 800, background: 'linear-gradient(135deg,#fb9477,#7aa7ff)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                        {displayName.charAt(0).toUpperCase()}
-                      </span>
-                    )}
-                    {/* status dot */}
-                    <span style={{ position: 'absolute', bottom: 2, right: 2, width: 8, height: 8, borderRadius: '50%', background: '#4ade80', border: '2px solid #0c0a14', boxShadow: '0 0 6px rgba(74,222,128,.7)' }} />
-                  </div>
+        <main className="mx-auto max-w-xl space-y-5 px-4 py-5 pb-32 lg:pb-10">
+
+          {/* ── プロフィールカード ── */}
+          <div
+            className="overflow-hidden rounded-[18px] px-5 py-5"
+            style={{
+              background: 'linear-gradient(135deg, rgba(251,148,119,0.08) 0%, rgba(18,20,30,0.90) 60%)',
+              border: '1px solid rgba(251,148,119,0.15)',
+              backdropFilter: 'blur(24px)',
+            }}
+          >
+            <div className="flex items-center gap-4">
+              <div style={{ padding: 1.5, borderRadius: 15, background: 'linear-gradient(135deg,#fb9477,#7aa7ff)', flexShrink: 0 }}>
+                <div style={{ width: 54, height: 54, borderRadius: 13, background: '#0c0a14', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative' }}>
+                  {avatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={avatarUrl} alt={displayName} width={54} height={54} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <span style={{ fontSize: 22, fontWeight: 800, background: 'linear-gradient(135deg,#fb9477,#7aa7ff)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                      {displayName.charAt(0).toUpperCase()}
+                    </span>
+                  )}
+                  <span style={{ position: 'absolute', bottom: 2, right: 2, width: 9, height: 9, borderRadius: '50%', background: '#4ade80', border: '2px solid #0c0a14', boxShadow: '0 0 6px rgba(74,222,128,.7)' }} />
                 </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-semibold" style={{ color: '#f0f0f5', fontSize: 15 }}>{displayName}</p>
-                  <p className="mt-0.5 truncate" style={{ color: '#5e5e72', fontSize: 12 }}>{user.email}</p>
-                  <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
-                    <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 99, background: 'rgba(251,148,119,.10)', border: '1px solid rgba(251,148,119,.20)', color: '#fb9477', letterSpacing: '.04em' }}>
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-semibold" style={{ color: '#f0f0f5', fontSize: 15 }}>{displayName}</p>
+                <p className="mt-0.5 truncate" style={{ color: '#5e5e72', fontSize: 12 }}>{user.email}</p>
+                <div style={{ display: 'flex', gap: 5, marginTop: 7, flexWrap: 'wrap' }}>
+                  {isDemo ? (
+                    <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 99, background: 'rgba(251,148,119,.12)', border: '1px solid rgba(251,148,119,.28)', color: '#fb9477', letterSpacing: '.05em' }}>
+                      DEMO
+                    </span>
+                  ) : (
+                    <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 99, background: 'rgba(66,133,244,.12)', border: '1px solid rgba(66,133,244,.28)', color: '#7aa7ff', letterSpacing: '.05em' }}>
                       Google
                     </span>
-                    <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 99, background: 'rgba(122,167,255,.10)', border: '1px solid rgba(122,167,255,.20)', color: '#7aa7ff', letterSpacing: '.04em' }}>
-                      HH-072
+                  )}
+                  {household?.name && (
+                    <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 99, background: 'rgba(122,167,255,.10)', border: '1px solid rgba(122,167,255,.20)', color: '#7aa7ff', letterSpacing: '.05em' }}>
+                      {household.name}
                     </span>
-                  </div>
+                  )}
+                  {isAdmin && (
+                    <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 99, background: 'rgba(167,139,250,.10)', border: '1px solid rgba(167,139,250,.22)', color: '#a78bfa', letterSpacing: '.05em' }}>
+                      管理者
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
-          </Card>
+          </div>
 
-          {/* データ */}
-          <div>
-            <p style={{ fontSize: 11, color: '#5e5e72', fontWeight: 700, letterSpacing: '.10em', marginBottom: 8, paddingLeft: 4 }}>データ</p>
-            <Card>
-              <SettingsRow
-                icon={TagIcon}
-                title="カテゴリ管理"
-                description="支出カテゴリの追加・編集・削除"
-                href="/settings/categories"
-              />
-              <Divider />
-              <SettingsRow
-                icon={TargetIcon}
-                title="目標管理"
-                description="貯蓄目標・月次予算をAIが算出"
-                href="/settings/goals"
-                accent="#fb9477"
-              />
-              <Divider />
+          {/* ── データ ── */}
+          <Section label="データ">
+            <SettingsRow
+              icon={TagIcon}
+              title="カテゴリ管理"
+              description="支出カテゴリの追加・編集・削除"
+              href="/settings/categories"
+              accent="#fb9477"
+            />
+            <RowDivider />
+            <SettingsRow
+              icon={TargetIcon}
+              title="目標管理"
+              description="貯蓄目標・月次予算をAIが算出"
+              href="/settings/goals"
+              accent="#34d399"
+            />
+            <RowDivider />
+            <SettingsRow
+              customIcon={
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(122,167,255,.12)', border: '1px solid rgba(122,167,255,.22)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Brain size={16} strokeWidth={2} style={{ color: '#7aa7ff' }}/>
+                </div>
+              }
+              title="AI修正フィードバック"
+              description="カテゴリ修正の学習状況を確認"
+              href="/settings/corrections"
+              accent="#7aa7ff"
+            />
+          </Section>
+
+          {/* ── 通知 ── */}
+          <Section label="通知">
+            <SettingsRow
+              icon={BellIcon}
+              title="通知設定"
+              description="月次レポートのプッシュ通知"
+              href="/settings/notifications"
+              accent="#fbbf24"
+            />
+          </Section>
+
+          {/* ── 連携（デモ以外） ── */}
+          {!isDemo && (
+            <Section label="連携">
               <SettingsRow
                 customIcon={
-                  <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(122,167,255,.12)', border: '1px solid rgba(122,167,255,.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#7aa7ff' }}><Brain size={17} strokeWidth={2}/></div>
+                  <div style={{ width: 36, height: 36, borderRadius: 10, overflow: 'hidden', flexShrink: 0 }}>
+                    <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+                      <rect width="36" height="36" rx="9" fill="#f5c000"/>
+                      <text x="18" y="25" textAnchor="middle" fontFamily="Arial,sans-serif" fontWeight="800" fontSize="17" fill="#0a0a10" letterSpacing="-0.5">MF</text>
+                    </svg>
+                  </div>
                 }
-                title="AI修正フィードバック"
-                description="カテゴリ修正の学習状況を確認"
-                href="/settings/corrections"
-                accent="#7aa7ff"
-              />
-            </Card>
-          </div>
-
-          {/* 連携 */}
-          <div>
-            <p style={{ fontSize: 11, color: '#5e5e72', fontWeight: 700, letterSpacing: '.10em', marginBottom: 8, paddingLeft: 4 }}>連携</p>
-            <Card>
-              <SettingsRow
-                customIcon={<MfIcon size={36} />}
                 title="MoneyForward Me 連携"
-                description="手動で取引を取込"
+                description="毎朝6:00に全口座を自動取込"
                 href="/settings/integrations/mf"
               />
-            </Card>
-          </div>
-
-          {/* アプリ */}
-          <div>
-            <p style={{ fontSize: 11, color: '#5e5e72', fontWeight: 700, letterSpacing: '.10em', marginBottom: 8, paddingLeft: 4 }}>アプリ</p>
-            <Card>
-              <SettingsRow
-                icon={BellIcon}
-                title="通知設定"
-                description="月次レポートのプッシュ通知"
-                href="/settings/notifications"
-              />
-            </Card>
-          </div>
-
-          {/* 管理者セクション（管理者のみ表示） */}
-          {isAdmin && (
-            <div>
-              <p style={{ fontSize: 11, color: '#5e5e72', fontWeight: 700, letterSpacing: '.10em', marginBottom: 8, paddingLeft: 4 }}>管理者</p>
-              <Card>
-                <SettingsRow
-                  customIcon={
-                    <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(251,148,119,.12)', border: '1px solid rgba(251,148,119,.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fb9477' }}>
-                      <BarChart2 size={17} strokeWidth={2}/>
-                    </div>
-                  }
-                  title="AI 分析"
-                  description="分類精度・コスト・キャッシュヒット率"
-                  href="/admin/analytics"
-                  accent="#fb9477"
-                />
-                <Divider />
-                <SettingsRow
-                  customIcon={
-                    <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(251,148,119,.12)', border: '1px solid rgba(251,148,119,.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fb9477' }}>
-                      <Crown size={17} strokeWidth={2}/>
-                    </div>
-                  }
-                  title="メンバー権限管理"
-                  description="世帯メンバーの管理者権限を変更"
-                  href="/settings/admin/members"
-                  accent="#fb9477"
-                />
-              </Card>
-            </div>
+            </Section>
           )}
 
-          {/* データ修正・危険な操作 */}
-          {member && (
-            <div>
-              <p style={{ fontSize: 11, color: '#5e5e72', fontWeight: 700, letterSpacing: '.10em', marginBottom: 8, paddingLeft: 4 }}>危険な操作</p>
-              <Card>
-                <FixCategoryColorsButton />
-                <div style={{ borderTop: '1px solid rgba(255,255,255,0.055)' }} />
-                <CleanupCardTransfersButton />
-                <div style={{ borderTop: '1px solid rgba(255,255,255,0.055)' }} />
-                <LeaveHouseholdButton isOwner={isOwner} />
-              </Card>
-            </div>
+          {/* ── 管理者（isAdmin または デモ） ── */}
+          {(isAdmin || isDemo) && (
+            <Section label="管理者">
+              <SettingsRow
+                customIcon={
+                  <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(251,148,119,.12)', border: '1px solid rgba(251,148,119,.22)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <BarChart2 size={16} strokeWidth={2} style={{ color: '#fb9477' }}/>
+                  </div>
+                }
+                title="AI 分析"
+                description="分類精度・コスト・キャッシュヒット率"
+                href="/admin/analytics"
+                accent="#fb9477"
+              />
+              <RowDivider />
+              <SettingsRow
+                customIcon={
+                  <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(167,139,250,.12)', border: '1px solid rgba(167,139,250,.22)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Crown size={16} strokeWidth={2} style={{ color: '#a78bfa' }}/>
+                  </div>
+                }
+                title="メンバー権限管理"
+                description="世帯メンバーの管理者権限を変更"
+                href="/settings/admin/members"
+                accent="#a78bfa"
+              />
+            </Section>
+          )}
+
+          {/* ── メンテナンス（isAdmin のみ） ── */}
+          {isAdmin && (
+            <Section label="メンテナンス">
+              <FixCategoryColorsButton />
+              <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }} />
+              <CleanupCardTransfersButton />
+              {!isDemo && (
+                <>
+                  <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }} />
+                  <LeaveHouseholdButton isOwner={isOwner} />
+                </>
+              )}
+            </Section>
           )}
 
           {/* ビルド情報 */}
-          <div style={{ padding: '12px 4px', display: 'flex', justifyContent: 'center' }}>
-            <p style={{ fontSize: 11, color: '#3e3e55', fontFamily: 'var(--font-mono),monospace', letterSpacing: '.08em' }}>
-              kai v2.4 · build 20260515 · HH-072
+          <div style={{ padding: '8px 4px', display: 'flex', justifyContent: 'center' }}>
+            <p style={{ fontSize: 11, color: '#2e2e45', fontFamily: 'var(--font-mono),monospace', letterSpacing: '.08em' }}>
+              kai v2.4 · build 20260515
             </p>
           </div>
         </main>

@@ -8,6 +8,7 @@ import { CORAL, BLUE, VIOLET, AMBER, TEXT1, TEXT3, TEXT4, BG, OcrPrefill } from 
 import { ManualEntryTab } from './tabs/ManualEntryTab'
 import { CsvImportTab } from './tabs/CsvImportTab'
 import { MfSyncTab } from './tabs/MfSyncTab'
+import { useIsDemo } from '@/lib/hooks/use-is-demo'
 
 type Step = 'picker' | 'manual' | 'csv' | 'mf' | 'receipt'
 
@@ -33,8 +34,8 @@ function SheetChrome({ onBackdropClick, children }: { onBackdropClick: () => voi
 }
 
 // ── Picker step ───────────────────────────────────────────────────────────────
-function PickerStep({ onPick, onClose }: { onPick: (s: Step) => void; onClose: () => void }) {
-  const OPTIONS = [
+function PickerStep({ onPick, onClose, isDemo }: { onPick: (s: Step) => void; onClose: () => void; isDemo: boolean }) {
+  const ALL_OPTIONS = [
     {
       key: 'manual' as Step, accent: CORAL,
       icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={CORAL} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>,
@@ -56,6 +57,9 @@ function PickerStep({ onPick, onClose }: { onPick: (s: Step) => void; onClose: (
       title: 'MoneyForward Me 連携', desc: '毎朝6:00に自動で全口座を取込', tag: '自動',
     },
   ]
+  const OPTIONS = isDemo
+    ? ALL_OPTIONS.filter((o) => o.key !== 'receipt' && o.key !== 'mf')
+    : ALL_OPTIONS
 
   return (
     <>
@@ -100,6 +104,7 @@ interface Props {
 
 export function AddPickerSheet({ open, onClose, onDone }: Props) {
   const router = useRouter()
+  const isDemo = useIsDemo()
   const [step, setStep] = useState<Step>('picker')
   const [ocrPrefill, setOcrPrefill] = useState<OcrPrefill | undefined>()
 
@@ -138,7 +143,7 @@ export function AddPickerSheet({ open, onClose, onDone }: Props) {
 
   return (
     <SheetChrome onBackdropClick={handleClose}>
-      {step === 'picker'  && <PickerStep onPick={setStep} onClose={handleClose}/>}
+      {step === 'picker'  && <PickerStep onPick={setStep} onClose={handleClose} isDemo={isDemo}/>}
       {step === 'receipt' && <ReceiptCapture onResult={handleOcrResult} onCancel={() => setStep('picker')}/>}
       {step === 'manual'  && <ManualEntryTab onBack={() => { setStep('picker'); setOcrPrefill(undefined) }} onDone={handleDone} prefill={ocrPrefill}/>}
       {step === 'csv'     && <CsvImportTab   onBack={() => setStep('picker')} onDone={handleImportDone}/>}

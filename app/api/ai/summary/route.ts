@@ -80,18 +80,6 @@ export async function POST() {
   const year = now.getFullYear()
   const month = now.getMonth() + 1
 
-  const { data: existing } = await supabase
-    .from('monthly_summaries')
-    .select('id')
-    .eq('household_id', householdId)
-    .eq('year', year)
-    .eq('month', month)
-    .maybeSingle()
-
-  if (existing) {
-    return NextResponse.json({ error: '今月分のサマリーはすでに生成済みです' }, { status: 409 })
-  }
-
   let content: string
   try {
     content = await generateMonthlySummary(supabase, householdId, year, month)
@@ -105,12 +93,10 @@ export async function POST() {
     return NextResponse.json({ error: FALLBACK.budget }, { status: 500 })
   }
 
-  const { error: dbError } = await supabase.from('monthly_summaries').insert({
-    household_id: householdId,
-    year,
-    month,
-    content,
-  })
+  const { error: dbError } = await supabase.from('monthly_summaries').upsert(
+    { household_id: householdId, year, month, content, created_at: new Date().toISOString() },
+    { onConflict: 'household_id,year,month' }
+  )
 
   if (dbError) {
     return NextResponse.json({ error: `保存失敗: ${dbError.message}` }, { status: 500 })
