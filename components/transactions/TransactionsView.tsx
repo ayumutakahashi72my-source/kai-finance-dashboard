@@ -6,10 +6,12 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { KAI } from '@/lib/kai-tokens'
 import { useCountUp } from '@/components/kai/hooks'
 import { getCategoryIcon } from '@/lib/category-icons'
+import { Icon } from '@/components/kai/shared'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { TransactionFilters, readFiltersFromUrl, isFilterActive } from '@/components/transactions/TransactionFilters'
 import { EditDialog, DeleteConfirmDialog } from '@/components/transactions/TransactionList'
 import { DuplicateChecker } from '@/components/transactions/DuplicateChecker'
+import { CalendarView } from '@/components/calendar/CalendarView'
 import type { Transaction, Category } from '@/lib/types'
 
 /* ─── helpers ─────────────────────────────────────────────────────── */
@@ -150,6 +152,7 @@ export function TransactionsView({ month }: { month: string }) {
   const searchParams = useSearchParams()
   const filters = readFiltersFromUrl(searchParams)
   const hasFilter = isFilterActive(filters)
+  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list')
   const [classifying,    setClassifying]    = useState(false)
   const [classifyResult, setClassifyResult] = useState<{ classified: number; total: number } | null>(null)
 
@@ -288,6 +291,106 @@ export function TransactionsView({ month }: { month: string }) {
           </div>
         </>
       )}
+
+      {/* ── ビュー切替トグル ── */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span style={{ fontSize: 18, fontWeight: 700, color: '#f0f0f5' }} className="lg:hidden">収支</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <button
+          type="button"
+          aria-label="CSVエクスポート"
+          onClick={async () => {
+            const sp = new URLSearchParams()
+            if (filters.from || filters.to) {
+              if (filters.from) sp.set('from', filters.from)
+              if (filters.to) sp.set('to', filters.to)
+            } else {
+              sp.set('month', month)
+            }
+            if (filters.q) sp.set('q', filters.q)
+            if (filters.cat) sp.set('cat', filters.cat)
+            const res = await fetch(`/api/transactions/export?${sp.toString()}`)
+            if (!res.ok) return
+            const blob = await res.blob()
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = `kai_transactions_${month}.csv`
+            document.body.appendChild(a)
+            a.click()
+            document.body.removeChild(a)
+            URL.revokeObjectURL(url)
+          }}
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            width: 34, height: 34, borderRadius: 10,
+            background: 'rgba(255,255,255,0.05)',
+            border: '1px solid rgba(255,255,255,0.10)',
+            cursor: 'pointer', color: '#8b8ba0',
+            transition: 'all .18s',
+          }}
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <path d="M7 10l5 5 5-5"/>
+            <path d="M12 15V3"/>
+          </svg>
+        </button>
+        <div style={{
+          display: 'flex',
+          background: 'rgba(255,255,255,0.05)',
+          border: '1px solid rgba(255,255,255,0.10)',
+          borderRadius: 10, padding: 2,
+        }}>
+          <button
+            onClick={() => setViewMode('list')}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 5,
+              padding: '6px 10px', borderRadius: 8,
+              background: viewMode === 'list' ? 'rgba(20,22,32,0.88)' : 'none',
+              border: viewMode === 'list' ? '1px solid rgba(255,255,255,0.10)' : 'none',
+              fontSize: 11, fontWeight: viewMode === 'list' ? 600 : 400,
+              color: viewMode === 'list' ? '#f0f0f5' : '#8b8ba0',
+              cursor: 'pointer', fontFamily: 'inherit',
+              transition: 'all .18s',
+            }}
+          >
+            <Icon name="list" size={13} />リスト
+          </button>
+          <button
+            onClick={() => setViewMode('calendar')}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 5,
+              padding: '6px 10px', borderRadius: 8,
+              background: viewMode === 'calendar' ? 'rgba(20,22,32,0.88)' : 'none',
+              border: viewMode === 'calendar' ? '1px solid rgba(255,255,255,0.10)' : 'none',
+              fontSize: 11, fontWeight: viewMode === 'calendar' ? 600 : 400,
+              color: viewMode === 'calendar' ? '#f0f0f5' : '#8b8ba0',
+              cursor: 'pointer', fontFamily: 'inherit',
+              transition: 'all .18s',
+            }}
+          >
+            <Icon name="calendar" size={13} />カレンダー
+          </button>
+        </div>
+        </div>
+      </div>
+
+      {/* ── カレンダービュー ── */}
+      {viewMode === 'calendar' && (
+        <div style={{
+          background: 'rgba(20,22,32,0.66)',
+          backdropFilter: 'blur(24px) saturate(160%)',
+          border: '1px solid rgba(255,255,255,0.10)',
+          borderRadius: 18, padding: 16,
+          animation: 'kai-rise .4s ease-out both',
+        }}>
+          <CalendarView transactions={transactions} categories={allCats} month={month} />
+        </div>
+      )}
+
+      {/* ── リストビュー ── */}
+      {viewMode === 'list' && <>
 
       {/* ── 0. 重複チェック + 検索・フィルタ ── */}
       <DuplicateChecker />
@@ -454,7 +557,7 @@ export function TransactionsView({ month }: { month: string }) {
         )}
       </section>
 
-
+      </>}
     </div>
   )
 }
