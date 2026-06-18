@@ -32,6 +32,7 @@ export type IconName =
   | 'link' | 'pie' | 'msg' | 'arrow' | 'arrowUp' | 'arrowDown' | 'arrowRight'
   | 'refresh' | 'tag' | 'search' | 'settings' | 'coffee' | 'cart'
   | 'home' | 'user' | 'check' | 'train' | 'bag' | 'bank' | 'lock' | 'camera'
+  | 'list' | 'barChart'
 
 interface IconProps {
   name: IconName
@@ -68,6 +69,8 @@ export function Icon({ name, size = 18, stroke = 1.8 }: IconProps) {
     bank:     (<g><path d="M3 21h18"/><path d="M5 21V9l7-5 7 5v12"/><path d="M9 21v-7M15 21v-7M12 21v-7"/></g>),
     lock:     (<g><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></g>),
     camera:   (<g><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0-2-2h-3z"/><circle cx="12" cy="13" r="3"/></g>),
+    list:     (<g><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></g>),
+    barChart: (<g><line x1="6" y1="20" x2="6" y2="14"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="18" y1="20" x2="18" y2="10"/></g>),
   }
 
   return (
