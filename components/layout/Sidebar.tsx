@@ -12,10 +12,10 @@ const CORAL = KAI.coral
 const CORAL_SOFT = 'rgba(251,148,119,0.10)'
 
 const NAV: { href: string; icon: import('@/components/kai/shared').IconName; label: string }[] = [
-  { href: '/',         icon: 'grid',     label: 'ダッシュボード' },
-  { href: '/transactions', icon: 'pie', label: '収支' },
-  { href: '/calendar', icon: 'calendar', label: 'カレンダー' },
-  { href: '/summary',  icon: 'msg',      label: 'AIサマリー' },
+  { href: '/',             icon: 'grid',     label: 'ダッシュボード' },
+  { href: '/transactions', icon: 'list',     label: '収支' },
+  { href: '/analytics',    icon: 'barChart', label: '分析' },
+  { href: '/summary',      icon: 'sparkle',  label: 'AI' },
 ]
 
 export function Sidebar() {
@@ -92,6 +92,24 @@ export function Sidebar() {
           <Icon name="plus" size={18} stroke={2.4}/>
           取り込む
         </button>
+      </div>
+
+      {/* Settings */}
+      <div style={{ padding: '0 10px 6px' }}>
+        <Link
+          href="/settings"
+          style={{
+            display: 'flex', alignItems: 'center', gap: 12,
+            padding: '10px 14px', borderRadius: 11,
+            fontSize: 14, fontWeight: 500, textDecoration: 'none',
+            color: pathname.startsWith('/settings') ? CORAL : KAI.text2,
+            background: pathname.startsWith('/settings') ? CORAL_SOFT : 'transparent',
+            animation: 'kai-rise .5s 250ms both ease-out',
+          }}
+        >
+          <Icon name="settings" size={18}/>
+          設定
+        </Link>
       </div>
 
       {/* Footer — household badge + theme toggle */}

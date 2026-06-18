@@ -12,12 +12,18 @@ import {
   TargetIcon,
   Brain,
   BarChart2,
-  Crown,
-  Wrench,
+  HomeIcon,
+  UsersIcon,
+
+  InfoIcon,
+  AlertTriangleIcon,
+  ZapIcon,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { LeaveHouseholdButton } from '@/components/settings/LeaveHouseholdButton'
+import { LogoutButton } from '@/components/settings/LogoutButton'
+import { ExportButton } from '@/components/settings/ExportButton'
 import { CleanupCardTransfersButton } from '@/components/settings/CleanupCardTransfersButton'
 import { FixCategoryColorsButton } from '@/components/settings/FixCategoryColorsButton'
 
@@ -28,6 +34,9 @@ function SettingsRow({
   description,
   href,
   accent = '#fb9477',
+  value,
+  titleColor,
+  trailing,
 }: {
   icon?: LucideIcon
   customIcon?: ReactNode
@@ -35,6 +44,9 @@ function SettingsRow({
   description?: string
   href: string
   accent?: string
+  value?: string
+  titleColor?: string
+  trailing?: ReactNode
 }) {
   return (
     <Link
@@ -51,7 +63,7 @@ function SettingsRow({
         {customIcon ?? (Icon && <Icon className="size-[17px]" style={{ color: accent }} />)}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-[13.5px] font-medium leading-snug" style={{ color: '#e8e8f0' }}>
+        <p className="text-[13.5px] font-medium leading-snug" style={{ color: titleColor ?? '#e8e8f0' }}>
           {title}
         </p>
         {description && (
@@ -60,7 +72,12 @@ function SettingsRow({
           </p>
         )}
       </div>
-      <ChevronRightIcon className="size-[15px] shrink-0" style={{ color: '#3a3a50' }} />
+      {value && (
+        <span style={{ fontSize: 11.5, color: '#8b8ba0', fontFamily: 'var(--font-mono),monospace', flexShrink: 0 }}>
+          {value}
+        </span>
+      )}
+      {trailing ?? <ChevronRightIcon className="size-[15px] shrink-0" style={{ color: '#3a3a50' }} />}
     </Link>
   )
 }
@@ -69,20 +86,20 @@ function RowDivider() {
   return <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', marginLeft: '64px' }} />
 }
 
-function Section({ label, children }: { label: string; children: ReactNode }) {
+function Section({ label, children, labelColor, bg, borderColor }: { label: string; children: ReactNode; labelColor?: string; bg?: string; borderColor?: string }) {
   return (
     <div>
       <div className="mb-2 px-1">
-        <p style={{ fontSize: 11, color: '#7070a0', fontWeight: 700, letterSpacing: '.10em', textTransform: 'uppercase' }}>
+        <p style={{ fontSize: 11, color: labelColor ?? '#7070a0', fontWeight: 700, letterSpacing: '.10em', textTransform: 'uppercase' }}>
           {label}
         </p>
       </div>
       <div
         className="overflow-hidden rounded-[16px]"
         style={{
-          background: 'rgba(18,20,30,0.80)',
+          background: bg ?? 'rgba(18,20,30,0.80)',
           backdropFilter: 'blur(24px) saturate(160%)',
-          border: '1px solid rgba(255,255,255,0.07)',
+          border: `1px solid ${borderColor ?? 'rgba(255,255,255,0.07)'}`,
         }}
       >
         {children}
@@ -206,45 +223,30 @@ export default async function SettingsPage() {
             </div>
           </div>
 
-          {/* ── データ ── */}
-          <Section label="データ">
+          {/* ── 世帯 ── */}
+          <Section label="世帯">
             <SettingsRow
-              icon={TagIcon}
-              title="カテゴリ管理"
-              description="支出カテゴリの追加・編集・削除"
-              href="/settings/categories"
+              icon={HomeIcon}
+              title="世帯管理"
+              description={household?.name ? `${household.name} · メンバー招待` : '世帯を作成'}
+              href="/settings/admin/members"
               accent="#fb9477"
             />
             <RowDivider />
             <SettingsRow
-              icon={TargetIcon}
-              title="目標管理"
-              description="貯蓄目標・月次予算をAIが算出"
-              href="/settings/goals"
-              accent="#34d399"
+              icon={UsersIcon}
+              title="メンバー権限管理"
+              description="世帯メンバーの役割を変更"
+              href="/settings/admin/members"
+              accent="#7aa7ff"
             />
             <RowDivider />
             <SettingsRow
-              customIcon={
-                <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(122,167,255,.12)', border: '1px solid rgba(122,167,255,.22)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Brain size={16} strokeWidth={2} style={{ color: '#7aa7ff' }}/>
-                </div>
-              }
-              title="AI修正フィードバック"
-              description="カテゴリ修正の学習状況を確認"
-              href="/settings/corrections"
-              accent="#7aa7ff"
-            />
-          </Section>
-
-          {/* ── 通知 ── */}
-          <Section label="通知">
-            <SettingsRow
-              icon={BellIcon}
-              title="通知設定"
-              description="月次レポートのプッシュ通知"
-              href="/settings/notifications"
-              accent="#fbbf24"
+              icon={TargetIcon}
+              title="貯蓄目標"
+              description="マイホーム頭金 · 月¥80,000"
+              href="/settings/goals"
+              accent="#4ade80"
             />
           </Section>
 
@@ -260,41 +262,127 @@ export default async function SettingsPage() {
                     </svg>
                   </div>
                 }
-                title="MoneyForward Me 連携"
+                title="Money Forward 連携"
                 description="毎朝6:00に全口座を自動取込"
                 href="/settings/integrations/mf"
               />
             </Section>
           )}
 
-          {/* ── 管理者（isAdmin または デモ） ── */}
-          {(isAdmin || isDemo) && (
-            <Section label="管理者">
-              <SettingsRow
-                customIcon={
-                  <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(251,148,119,.12)', border: '1px solid rgba(251,148,119,.22)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <BarChart2 size={16} strokeWidth={2} style={{ color: '#fb9477' }}/>
-                  </div>
-                }
-                title="AI 分析"
-                description="分類精度・コスト・キャッシュヒット率"
-                href="/admin/analytics"
-                accent="#fb9477"
-              />
-              <RowDivider />
-              <SettingsRow
-                customIcon={
-                  <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(167,139,250,.12)', border: '1px solid rgba(167,139,250,.22)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Crown size={16} strokeWidth={2} style={{ color: '#a78bfa' }}/>
-                  </div>
-                }
-                title="メンバー権限管理"
-                description="世帯メンバーの管理者権限を変更"
-                href="/settings/admin/members"
-                accent="#a78bfa"
-              />
-            </Section>
-          )}
+          {/* ── 通知 ── */}
+          <Section label="通知">
+            <SettingsRow
+              icon={BellIcon}
+              title="プッシュ通知"
+              description="月次レポート・異常検知"
+              href="/settings/notifications"
+              accent="#fbbf24"
+            />
+            <RowDivider />
+            <SettingsRow
+              icon={AlertTriangleIcon}
+              title="予算超過アラート"
+              description="カテゴリ予算の90%到達時"
+              href="/settings/notifications"
+              accent="#fb7185"
+            />
+          </Section>
+
+          {/* ── AI設定 ── */}
+          <Section
+            label="AI設定"
+            labelColor="#a78bfa"
+            bg="linear-gradient(180deg, rgba(167,139,250,0.06), rgba(20,22,32,0.88))"
+            borderColor="rgba(167,139,250,0.20)"
+          >
+            {(isAdmin || isDemo) && (
+              <>
+                <SettingsRow
+                  customIcon={
+                    <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(167,139,250,.16)', border: '1px solid rgba(167,139,250,.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <BarChart2 size={16} strokeWidth={1.9} style={{ color: '#a78bfa' }}/>
+                    </div>
+                  }
+                  title="AI運用分析"
+                  titleColor="#a78bfa"
+                  description="キャッシュ率・分類精度・コスト"
+                  href="/admin/analytics"
+                  accent="#a78bfa"
+                  value="86%"
+                />
+                <RowDivider />
+              </>
+            )}
+            <SettingsRow
+              icon={TagIcon}
+              title="カテゴリ管理"
+              description="支出カテゴリの追加・編集・削除"
+              href="/settings/categories"
+              accent="#5eead4"
+            />
+            <RowDivider />
+            <SettingsRow
+              customIcon={
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(251,148,119,.12)', border: '1px solid rgba(251,148,119,.22)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Brain size={16} strokeWidth={2} style={{ color: '#fb9477' }}/>
+                </div>
+              }
+              title="分類修正フィードバック"
+              description="あなたの修正がRAGに学習されます"
+              href="/settings/corrections"
+              accent="#fb9477"
+            />
+            <RowDivider />
+            <div className="flex items-center gap-3.5 px-4 py-3.5">
+              <div
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px]"
+                style={{ background: 'rgba(34,211,238,.12)', border: '1px solid rgba(34,211,238,.22)' }}
+              >
+                <ZapIcon className="size-[17px]" style={{ color: '#22d3ee' }} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[13.5px] font-medium leading-snug" style={{ color: '#e8e8f0' }}>
+                  レシート自動分類
+                </p>
+                <p className="mt-0.5 text-[11.5px] leading-snug" style={{ color: '#5e5e72' }}>
+                  OCR後にAIで自動カテゴリ付け（常時有効）
+                </p>
+              </div>
+              <div style={{ width: 44, height: 25, borderRadius: 13, background: '#4ade80', position: 'relative', flexShrink: 0 }}>
+                <div style={{ position: 'absolute', top: 2.5, left: 21.5, width: 20, height: 20, borderRadius: '50%', background: '#0c0a14' }} />
+              </div>
+            </div>
+          </Section>
+
+          {/* ── 表示 ── */}
+          <Section label="表示">
+            <div className="flex items-center gap-3.5 px-4 py-3.5">
+              <div
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px]"
+                style={{ background: 'rgba(255,255,255,.05)' }}
+              >
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#c8c8d8" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/>
+                </svg>
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[13.5px] font-medium leading-snug" style={{ color: '#e8e8f0' }}>テーマ</p>
+              </div>
+              <span style={{ fontSize: 11.5, color: '#8b8ba0', fontFamily: 'var(--font-mono),monospace' }}>ダーク</span>
+            </div>
+          </Section>
+
+          {/* ── データ・その他 ── */}
+          <Section label="データ・その他">
+            <ExportButton />
+            <RowDivider />
+            <SettingsRow
+              icon={InfoIcon}
+              title="プライバシー・データ取扱い"
+              href="/legal/privacy"
+              accent="#c8c8d8"
+            />
+          </Section>
 
           {/* ── メンテナンス（isAdmin のみ） ── */}
           {isAdmin && (
@@ -311,10 +399,15 @@ export default async function SettingsPage() {
             </Section>
           )}
 
+          {/* ── ログアウト ── */}
+          <div style={{ padding: '4px 0' }}>
+            <LogoutButton />
+          </div>
+
           {/* ビルド情報 */}
           <div style={{ padding: '8px 4px', display: 'flex', justifyContent: 'center' }}>
             <p style={{ fontSize: 11, color: '#2e2e45', fontFamily: 'var(--font-mono),monospace', letterSpacing: '.08em' }}>
-              kai v2.4 · build 20260515
+              KAI v2.4.0 · Build 2026.06
             </p>
           </div>
         </main>
