@@ -80,7 +80,7 @@ export async function POST() {
   }
 
   const { error: dbError } = await supabase.from('monthly_summaries').upsert(
-    { household_id: householdId, year, month, content, created_at: new Date().toISOString() },
+    { household_id: householdId, year, month, content, created_at: jstNow().toISOString() },
     { onConflict: 'household_id,year,month' }
   )
 

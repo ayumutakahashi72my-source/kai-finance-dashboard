@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { requireAuth } from '@/lib/api-guard'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
 async function snapshotKnowledge(
   householdId: string,
   userIds: string[],
-  supabase: Awaited<ReturnType<typeof createClient>>
+  supabase: SupabaseClient
 ): Promise<void> {
   const { data: ragRows } = await supabase
     .from('category_rag')
@@ -35,20 +36,19 @@ async function snapshotKnowledge(
 }
 
 export async function DELETE() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: '認証が必要です' }, { status: 401 })
+  const auth = await requireAuth()
+  if (!auth.ok) return auth.response
 
-  const { data: member } = await supabase
+  const { supabase, householdId: household_id, user } = auth
+
+  const { data: memberInfo } = await supabase
     .from('household_members')
-    .select('household_id, role')
+    .select('role')
     .eq('user_id', user.id)
-    .limit(1)
+    .eq('household_id', household_id)
     .single()
 
-  if (!member) return NextResponse.json({ error: '世帯が見つかりません' }, { status: 400 })
-
-  const { household_id, role } = member
+  const role = memberInfo?.role
 
   if (role === 'owner') {
     const { count } = await supabase

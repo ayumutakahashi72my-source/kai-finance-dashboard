@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo, useEffect } from 'react'
+import { todayJST } from '@/lib/jst'
 import type { Transaction, Category } from '@/lib/types'
 
 interface DayData {
@@ -298,7 +299,7 @@ export function CalendarView({ transactions, categories, month }: Props) {
   }
   if (week.length > 0) weeks.push([...week, ...Array(7 - week.length).fill(null)])
 
-  const today = new Date().toISOString().slice(0, 10)
+  const today = todayJST()
 
   return (
     <>

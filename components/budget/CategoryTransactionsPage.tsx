@@ -219,7 +219,7 @@ export function CategoryTransactionsPage({ catName, color, month, initialTxs, ca
   /* クライアント側で再取得（編集・削除後のリフレッシュ用） */
   const { data: txRes } = useQuery<{ data: Transaction[] }>({
     queryKey: ['transactions', month],
-    queryFn:  () => fetch(`/api/transactions?month=${month}`).then((r) => r.json()),
+    queryFn:  () => fetch(`/api/transactions?month=${month}`).then((r) => { if (!r.ok) throw new Error('取得に失敗しました'); return r.json() }),
     initialData: { data: initialTxs },
   })
 

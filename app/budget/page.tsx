@@ -10,11 +10,7 @@ import { CashflowCard } from '@/components/budget/CashflowCard'
 import { SavingsRateTracker } from '@/components/budget/SavingsRateTracker'
 import { FixedExpenseCard } from '@/components/budget/FixedExpenseCard'
 import { getHousehold } from '@/app/actions/households'
-
-function currentMonthStr() {
-  const d = new Date()
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
-}
+import { jstMonthStr } from '@/lib/jst'
 
 export default async function BudgetPage({
   searchParams,
@@ -29,7 +25,7 @@ export default async function BudgetPage({
   if (!household) redirect('/')
 
   const { month: rawMonth } = await searchParams
-  const month = rawMonth ?? currentMonthStr()
+  const month = rawMonth ?? jstMonthStr()
 
   const displayName = user.user_metadata?.full_name ?? user.email ?? 'ユーザー'
   const avatarUrl = user.user_metadata?.avatar_url as string | undefined

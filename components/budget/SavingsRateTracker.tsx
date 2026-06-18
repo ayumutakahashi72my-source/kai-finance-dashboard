@@ -66,7 +66,7 @@ function RateBar({ data }: { data: MonthData[] }) {
 export function SavingsRateTracker({ currentMonth }: { currentMonth: string }) {
   const { data, isLoading } = useQuery<{ data: MonthData[] }>({
     queryKey: ['cashflow', currentMonth],
-    queryFn: () => fetch('/api/cashflow?months=6').then((r) => r.json()),
+    queryFn: () => fetch('/api/cashflow?months=6').then((r) => { if (!r.ok) throw new Error('取得に失敗しました'); return r.json() }),
   })
 
   if (isLoading) {

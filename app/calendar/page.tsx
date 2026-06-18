@@ -9,12 +9,8 @@ import { CalendarView } from '@/components/calendar/CalendarView'
 import { getTransactions } from '@/app/actions/transactions'
 import { getCategories } from '@/app/actions/categories'
 import { getHousehold } from '@/app/actions/households'
+import { jstMonthStr } from '@/lib/jst'
 import type { Transaction, Category } from '@/lib/types'
-
-function currentMonthStr() {
-  const d = new Date()
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
-}
 
 export default async function CalendarPage({
   searchParams,
@@ -29,7 +25,7 @@ export default async function CalendarPage({
   if (!household) redirect('/')
 
   const { month: rawMonth } = await searchParams
-  const month = rawMonth ?? currentMonthStr()
+  const month = rawMonth ?? jstMonthStr()
   const [y, m] = month.split('-')
 
   const displayName = user.user_metadata?.full_name ?? user.email ?? 'ユーザー'

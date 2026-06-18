@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { requireAuth } from '@/lib/api-guard'
+import { todayJST } from '@/lib/jst'
 import { recalculateScore } from '@/lib/score-calculator'
 import { normalizeKeyword, logCorrection } from '@/lib/ai-classifier'
 import { z } from 'zod'
@@ -12,30 +13,15 @@ const UpdateSchema = z.object({
   is_fixed: z.boolean().optional(),
 })
 
-async function getHouseholdId(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  userId: string
-) {
-  const { data } = await supabase
-    .from('household_members')
-    .select('household_id')
-    .eq('user_id', userId)
-    .limit(1)
-    .single()
-  return data?.household_id ?? null
-}
-
 // PATCH /api/transactions/[id]
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: '認証が必要です' }, { status: 401 })
+  const auth = await requireAuth()
+  if (!auth.ok) return auth.response
 
-  const householdId = await getHouseholdId(supabase, user.id)
-  if (!householdId) return NextResponse.json({ error: '世帯が見つかりません' }, { status: 400 })
+  const { supabase, householdId, user } = auth
 
   const { id } = await params
   let body: unknown
@@ -91,7 +77,7 @@ export async function PATCH(
             category_id: parsed.data.category_id,
             confidence: 1.0,
             hit_count: 1,
-            last_seen: new Date().toISOString().slice(0, 10),
+            last_seen: todayJST(),
           },
           { onConflict: 'household_id,payee_key' }
         )
@@ -111,12 +97,10 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: '認証が必要です' }, { status: 401 })
+  const auth = await requireAuth()
+  if (!auth.ok) return auth.response
 
-  const householdId = await getHouseholdId(supabase, user.id)
-  if (!householdId) return NextResponse.json({ error: '世帯が見つかりません' }, { status: 400 })
+  const { supabase, householdId } = auth
 
   const { id } = await params
 

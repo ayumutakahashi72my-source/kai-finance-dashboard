@@ -3,12 +3,8 @@ import { redirect } from 'next/navigation'
 import { getTransactions } from '@/app/actions/transactions'
 import { getCategories } from '@/app/actions/categories'
 import { CategoryTransactionsPage } from '@/components/budget/CategoryTransactionsPage'
+import { jstMonthStr } from '@/lib/jst'
 import type { Transaction, Category } from '@/lib/types'
-
-function currentMonthStr() {
-  const d = new Date()
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
-}
 
 export default async function BudgetCategoryPage({
   params,
@@ -24,7 +20,7 @@ export default async function BudgetCategoryPage({
   const { name } = await params
   const { month: rawMonth } = await searchParams
   const catName = decodeURIComponent(name)
-  const month = rawMonth ?? currentMonthStr()
+  const month = rawMonth ?? jstMonthStr()
 
   const [transactions, categories] = await Promise.all([
     getTransactions(month) as Promise<Transaction[]>,
