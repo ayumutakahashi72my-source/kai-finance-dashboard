@@ -35,6 +35,7 @@ export function DuplicateChecker() {
     setLoading(true)
     try {
       const res = await fetch('/api/transactions/duplicates')
+      if (!res.ok) { setGroups([]); return }
       const data = await res.json() as { groups: DupGroup[] }
       setGroups(data.groups ?? [])
     } finally {
@@ -45,7 +46,8 @@ export function DuplicateChecker() {
   async function handleDelete(id: string) {
     setDeletingId(id)
     try {
-      await fetch(`/api/transactions/${id}`, { method: 'DELETE' })
+      const res = await fetch(`/api/transactions/${id}`, { method: 'DELETE' })
+      if (!res.ok) return
       setGroups((prev) => {
         if (!prev) return prev
         return prev

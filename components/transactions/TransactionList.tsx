@@ -1,8 +1,8 @@
 'use client'
 
-import { useOptimistic, useState } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { TrendingUp, Pencil, Trash2, CheckSquare, Square, Pin, PinOff } from 'lucide-react'
+import { TrendingUp, CheckSquare, Square } from 'lucide-react'
 import { getCategoryIcon } from '@/lib/category-icons'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -20,15 +20,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { TransactionContextMenu } from '@/components/transactions/TransactionContextMenu'
+import { KAI } from '@/lib/kai-tokens'
 import type { Transaction, Category } from '@/lib/types'
 import { DEFAULT_CATEGORY_COLORS } from '@/lib/types'
 import { sortedCategoryOptions } from '@/lib/utils'
+import { jstNow } from '@/lib/jst'
 
 function categoryColor(tx: Transaction): string {
   if (tx.categories?.color) return tx.categories.color
   if (tx.categories?.parent?.color) return tx.categories.parent.color
-  if (tx.categories?.name) return DEFAULT_CATEGORY_COLORS[tx.categories.name] ?? '#8b8ba0'
-  return tx.amount >= 0 ? '#4ade80' : '#fb7185'
+  if (tx.categories?.name) return DEFAULT_CATEGORY_COLORS[tx.categories.name] ?? KAI.text3
+  return tx.amount >= 0 ? KAI.success : KAI.danger
 }
 
 function categoryLabel(tx: Transaction): string {
@@ -52,8 +55,8 @@ function groupByDate(transactions: Transaction[]) {
 
 function formatDateLabel(dateStr: string): string {
   const d = new Date(dateStr + 'T00:00:00')
-  const now = new Date()
-  const todayD = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const now = jstNow()
+  const todayD = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
   const diff = Math.floor((todayD.getTime() - d.getTime()) / 86400000)
   const dows = ['日', '月', '火', '水', '木', '金', '土']
   const dow = dows[d.getDay()]
@@ -266,13 +269,21 @@ export function DeleteConfirmDialog({
   onDeleted: () => void
 }) {
   const [deleting, setDeleting] = useState(false)
+  const [error, setError] = useState('')
 
   async function handleDelete() {
     setDeleting(true)
+    setError('')
     try {
-      await fetch(`/api/transactions/${tx.id}`, { method: 'DELETE' })
+      const res = await fetch(`/api/transactions/${tx.id}`, { method: 'DELETE' })
+      if (!res.ok) {
+        setError('削除に失敗しました')
+        return
+      }
       onDeleted()
       onClose()
+    } catch {
+      setError('通信エラーが発生しました')
     } finally {
       setDeleting(false)
     }
@@ -287,6 +298,11 @@ export function DeleteConfirmDialog({
         <p className="text-[14px] text-[#c4c4d0]">
           「{tx.payee}」(¥{Math.abs(tx.amount).toLocaleString()}) を削除しますか？この操作は取り消せません。
         </p>
+        {error && (
+          <p className="rounded-lg border border-[#fb7185]/20 bg-[#fb7185]/5 px-3 py-2 text-xs text-[#fb7185]">
+            {error}
+          </p>
+        )}
         <DialogFooter className="border-white/10 bg-transparent -mx-4 -mb-4 px-4 pb-4 pt-2 gap-2">
           <Button
             type="button"
@@ -315,7 +331,6 @@ export function TransactionList({ initial, categories, uncategorizedCount = 0 }:
 
   const [editingTx, setEditingTx] = useState<Transaction | null>(null)
   const [deletingTx, setDeletingTx] = useState<Transaction | null>(null)
-  const [actionMenuId, setActionMenuId] = useState<string | null>(null)
   const [menuPos, setMenuPos]   = useState<{ top: number; right: number } | null>(null)
   const [menuTx, setMenuTx]     = useState<Transaction | null>(null)
 
@@ -343,11 +358,12 @@ export function TransactionList({ initial, categories, uncategorizedCount = 0 }:
     if (!selectedIds.size) return
     setBulkDeleting(true)
     try {
-      await fetch('/api/transactions/bulk-delete', {
+      const res = await fetch('/api/transactions/bulk-delete', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ids: [...selectedIds] }),
       })
+      if (!res.ok) return
       exitSelectMode()
       router.refresh()
     } finally {
@@ -355,15 +371,10 @@ export function TransactionList({ initial, categories, uncategorizedCount = 0 }:
     }
   }
 
-  const [optimisticItems] = useOptimistic(
-    initial,
-    (state: Transaction[], newItem: Transaction) => [newItem, ...state]
-  )
-
-  const groups = groupByDate(optimisticItems)
+  const groups = groupByDate(initial)
   const BAD_NAMES = ['未分類', 'その他', '不明']
   const hasUncategorized = uncategorizedCount > 0
-    || optimisticItems.some((t) => !t.category_id || BAD_NAMES.includes(t.categories?.name ?? ''))
+    || initial.some((t) => !t.category_id || BAD_NAMES.includes(t.categories?.name ?? ''))
   const [classifying, setClassifying] = useState(false)
   const [classifyResult, setClassifyResult] = useState<{ classified: number; total: number } | null>(null)
 
@@ -372,6 +383,7 @@ export function TransactionList({ initial, categories, uncategorizedCount = 0 }:
     setClassifyResult(null)
     try {
       const res = await fetch('/api/transactions/classify', { method: 'POST' })
+      if (!res.ok) return
       const data = await res.json() as { classified: number; total: number }
       setClassifyResult(data)
       router.refresh()
@@ -382,52 +394,15 @@ export function TransactionList({ initial, categories, uncategorizedCount = 0 }:
 
   return (
     <div>
-      {/* ⋯ メニュー（fixed で overflow:hidden の外に描画） */}
-      {actionMenuId && menuPos && menuTx && (
-        <>
-          <div className="fixed inset-0 z-40" onClick={() => setActionMenuId(null)} />
-          <div
-            className="fixed z-50 min-w-[120px] overflow-hidden rounded-[12px]"
-            style={{
-              top: menuPos.top, right: menuPos.right,
-              background: 'rgba(20,22,32,0.98)',
-              border: '1px solid rgba(255,255,255,0.12)',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
-            }}
-          >
-            <button
-              onClick={() => { setActionMenuId(null); setEditingTx(menuTx) }}
-              className="flex w-full items-center gap-2 px-4 py-3 text-[14px] text-[#c4c4d0] transition-colors hover:bg-white/5"
-            >
-              <Pencil className="size-3.5" /> 編集
-            </button>
-            <div className="h-px bg-white/5" />
-            <button
-              onClick={async () => {
-                setActionMenuId(null)
-                await fetch(`/api/transactions/${menuTx.id}`, {
-                  method: 'PATCH',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ is_fixed: !menuTx.is_fixed }),
-                })
-                router.refresh()
-              }}
-              className="flex w-full items-center gap-2 px-4 py-3 text-[14px] text-[#a78bfa] transition-colors hover:bg-[#a78bfa]/10"
-            >
-              {menuTx.is_fixed
-                ? <><PinOff className="size-3.5" /> 固定費を解除</>
-                : <><Pin className="size-3.5" /> 固定費にする</>
-              }
-            </button>
-            <div className="h-px bg-white/5" />
-            <button
-              onClick={() => { setActionMenuId(null); setDeletingTx(menuTx) }}
-              className="flex w-full items-center gap-2 px-4 py-3 text-[14px] text-[#fb7185] transition-colors hover:bg-[#fb7185]/10"
-            >
-              <Trash2 className="size-3.5" /> 削除
-            </button>
-          </div>
-        </>
+      {/* コンテキストメニュー */}
+      {menuPos && menuTx && (
+        <TransactionContextMenu
+          tx={menuTx}
+          position={menuPos}
+          onClose={() => { setMenuTx(null); setMenuPos(null) }}
+          onEdit={(tx) => { setMenuTx(null); setMenuPos(null); setEditingTx(tx) }}
+          onDelete={(tx) => { setMenuTx(null); setMenuPos(null); setDeletingTx(tx) }}
+        />
       )}
 
       {/* 編集ダイアログ */}
@@ -512,7 +487,7 @@ export function TransactionList({ initial, categories, uncategorizedCount = 0 }:
       </div>
 
       {/* Date-grouped list */}
-      {optimisticItems.length === 0 ? (
+      {initial.length === 0 ? (
         <div
           className="rounded-[18px] px-4 py-8 text-center text-sm text-[#5e5e72]"
           style={{ background: 'rgba(20,22,32,0.66)', border: '1px solid rgba(255,255,255,0.10)' }}
@@ -530,7 +505,7 @@ export function TransactionList({ initial, categories, uncategorizedCount = 0 }:
                 </p>
                 <p
                   className="mono text-[12px] font-semibold"
-                  style={{ color: dayTotal >= 0 ? '#4ade80' : '#8b8ba0' }}
+                  style={{ color: dayTotal >= 0 ? KAI.success : KAI.text3 }}
                 >
                   {dayTotal >= 0 ? '+' : ''}¥{Math.abs(dayTotal).toLocaleString()}
                 </p>
@@ -542,7 +517,6 @@ export function TransactionList({ initial, categories, uncategorizedCount = 0 }:
               >
                 {txs.map((tx, i) => {
                   const color = categoryColor(tx)
-                  const isMenuOpen = actionMenuId === tx.id
                   const isSelected = selectedIds.has(tx.id)
                   return (
                     <div
@@ -551,7 +525,6 @@ export function TransactionList({ initial, categories, uncategorizedCount = 0 }:
                       style={{ borderBottom: i < txs.length - 1 ? '1px solid rgba(255,255,255,0.07)' : 'none' }}
                       onClick={selectMode ? () => toggleSelect(tx.id) : undefined}
                     >
-                      {/* チェックボックス（選択モード時） */}
                       {selectMode && (
                         <div className="shrink-0 text-[#fb7185]">
                           {isSelected
@@ -563,9 +536,9 @@ export function TransactionList({ initial, categories, uncategorizedCount = 0 }:
                       <div
                         className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px] text-[15px]"
                         style={{
-                          background: tx.amount >= 0 ? 'rgba(74,222,128,0.10)' : 'rgba(255,255,255,0.04)',
-                          border: `1px solid ${tx.amount >= 0 ? 'rgba(74,222,128,0.25)' : 'rgba(255,255,255,0.10)'}`,
-                          color: tx.amount >= 0 ? '#4ade80' : color,
+                          background: tx.amount >= 0 ? `${KAI.success}1a` : 'rgba(255,255,255,0.04)',
+                          border: `1px solid ${tx.amount >= 0 ? `${KAI.success}40` : 'rgba(255,255,255,0.10)'}`,
+                          color: tx.amount >= 0 ? KAI.success : color,
                         }}
                       >
                         {tx.amount >= 0
@@ -590,21 +563,18 @@ export function TransactionList({ initial, categories, uncategorizedCount = 0 }:
                       </div>
                       <span
                         className="mono text-[15px] font-semibold"
-                        style={{ color: tx.amount >= 0 ? '#4ade80' : '#f0f0f5' }}
+                        style={{ color: tx.amount >= 0 ? KAI.success : KAI.text1 }}
                       >
                         {tx.amount >= 0 ? '+' : ''}¥{Math.abs(tx.amount).toLocaleString()}
                       </span>
 
-                      {/* アクションメニュー（選択モード時は非表示） */}
                       {!selectMode && (
                         <div className="ml-1">
                           <button
                             onClick={(e) => {
-                              if (isMenuOpen) { setActionMenuId(null); return }
                               const rect = e.currentTarget.getBoundingClientRect()
                               setMenuPos({ top: rect.bottom + 6, right: window.innerWidth - rect.right })
                               setMenuTx(tx)
-                              setActionMenuId(tx.id)
                             }}
                             className="flex h-9 w-9 items-center justify-center rounded-full text-[#5e5e72] transition-colors hover:bg-white/5 hover:text-[#8b8ba0]"
                             aria-label="アクション"

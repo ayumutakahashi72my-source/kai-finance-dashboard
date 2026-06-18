@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/Skeleton'
 import { TransactionFilters, readFiltersFromUrl, isFilterActive } from '@/components/transactions/TransactionFilters'
 import { EditDialog, DeleteConfirmDialog } from '@/components/transactions/TransactionList'
 import { DuplicateChecker } from '@/components/transactions/DuplicateChecker'
+import { TransactionContextMenu } from '@/components/transactions/TransactionContextMenu'
 import type { Transaction, Category } from '@/lib/types'
 
 /* ─── helpers ─────────────────────────────────────────────────────── */
@@ -24,6 +25,15 @@ const CAT_COLORS = [
   KAI.amber, KAI.mintExtra,
 ]
 
+async function safeFetch<T>(url: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(url, init)
+  if (!res.ok) {
+    const text = await res.text().catch(() => '')
+    throw new Error(`HTTP ${res.status}: ${text}`)
+  }
+  return res.json()
+}
+
 /* ─── BalanceBar: 収入・支出を1本に ──────────────────────────────── */
 
 function BalanceBar({ totalIncome, totalExpense }: { totalIncome: number; totalExpense: number }) {
@@ -35,43 +45,39 @@ function BalanceBar({ totalIncome, totalExpense }: { totalIncome: number; totalE
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      {/* 1本の積み上げ横棒 */}
       <div style={{
         width: '100%', height: 20, borderRadius: 99,
         background: 'rgba(255,255,255,.04)',
         overflow: 'hidden', display: 'flex',
       }}>
-        {/* 収入（左・緑） */}
         <div style={{
           width: `${animatedInc}%`, height: '100%',
-          background: 'linear-gradient(90deg, #4ade80, #22c55e)',
+          background: `linear-gradient(90deg, ${KAI.success}, #22c55e)`,
           borderRadius: totalExpense === 0 ? 99 : '99px 0 0 99px',
           borderRight: totalExpense > 0 ? '2px solid rgba(12,10,20,.5)' : 'none',
           transition: 'width 0s',
         }}/>
-        {/* 支出（右・赤） */}
         <div style={{
           width: `${animatedExp}%`, height: '100%',
-          background: 'linear-gradient(90deg, #f87171, #fb7185)',
+          background: `linear-gradient(90deg, #f87171, ${KAI.danger})`,
           borderRadius: totalIncome === 0 ? 99 : '0 99px 99px 0',
         }}/>
       </div>
 
-      {/* ラベル行 */}
       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ width: 8, height: 8, borderRadius: 2, background: '#4ade80', display: 'inline-block', flexShrink: 0 }}/>
+          <span style={{ width: 8, height: 8, borderRadius: 2, background: KAI.success, display: 'inline-block', flexShrink: 0 }}/>
           <span style={{ fontSize: 11, color: KAI.text3, fontWeight: 600 }}>収入</span>
-          <span style={{ fontSize: 13, fontWeight: 800, color: '#4ade80', ...MONO, letterSpacing: '-.01em' }}>
+          <span style={{ fontSize: 13, fontWeight: 800, color: KAI.success, ...MONO, letterSpacing: '-.01em' }}>
             ¥{totalIncome.toLocaleString('ja-JP')}
           </span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ fontSize: 13, fontWeight: 800, color: '#fb7185', ...MONO, letterSpacing: '-.01em' }}>
+          <span style={{ fontSize: 13, fontWeight: 800, color: KAI.danger, ...MONO, letterSpacing: '-.01em' }}>
             ¥{totalExpense.toLocaleString('ja-JP')}
           </span>
           <span style={{ fontSize: 11, color: KAI.text3, fontWeight: 600 }}>支出</span>
-          <span style={{ width: 8, height: 8, borderRadius: 2, background: '#fb7185', display: 'inline-block', flexShrink: 0 }}/>
+          <span style={{ width: 8, height: 8, borderRadius: 2, background: KAI.danger, display: 'inline-block', flexShrink: 0 }}/>
         </div>
       </div>
     </div>
@@ -97,7 +103,6 @@ function CategoryBar({
   const animatedPct = useCountUp(pct, { duration: 1100, delay: 200 + idx * 55 })
   return (
     <div style={{ padding: '11px 14px', animation: `kai-rise .4s ${.15 + idx * .04}s ease-out both` }}>
-      {/* 上段: アイコン・名前・金額・管理ボタン */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 7 }}>
         <div style={{
           width: 26, height: 26, borderRadius: 8, flexShrink: 0,
@@ -125,7 +130,6 @@ function CategoryBar({
         >管理 ›</button>
       </div>
 
-      {/* 横棒グラフ */}
       <div style={{ height: 6, borderRadius: 99, background: 'rgba(255,255,255,.05)', overflow: 'hidden' }}>
         <div style={{
           height: '100%', width: `${Math.min(100, animatedPct)}%`,
@@ -152,6 +156,7 @@ export function TransactionsView({ month }: { month: string }) {
   const hasFilter = isFilterActive(filters)
   const [classifying,    setClassifying]    = useState(false)
   const [classifyResult, setClassifyResult] = useState<{ classified: number; total: number } | null>(null)
+  const [classifyError,  setClassifyError]  = useState<string | null>(null)
 
   // 編集・削除
   const [editingTx,   setEditingTx]   = useState<Transaction | null>(null)
@@ -163,11 +168,16 @@ export function TransactionsView({ month }: { month: string }) {
   async function handleClassify() {
     setClassifying(true)
     setClassifyResult(null)
+    setClassifyError(null)
     try {
-      const res  = await fetch('/api/transactions/classify', { method: 'POST' })
-      const data = await res.json() as { classified: number; total: number }
+      const data = await safeFetch<{ classified: number; total: number }>(
+        '/api/transactions/classify',
+        { method: 'POST' }
+      )
       setClassifyResult(data)
       qc.invalidateQueries({ queryKey: ['transactions'] })
+    } catch (err) {
+      setClassifyError(err instanceof Error ? err.message : '分類に失敗しました')
     } finally {
       setClassifying(false)
     }
@@ -191,11 +201,11 @@ export function TransactionsView({ month }: { month: string }) {
 
   const { data: txRes, isLoading } = useQuery<{ data: Transaction[] }>({
     queryKey: ['transactions', month, filters.q, filters.cat, filters.from, filters.to, filters.min, filters.max],
-    queryFn:  () => fetch(apiUrl).then((r) => r.json()),
+    queryFn:  () => safeFetch(apiUrl),
   })
   const { data: catRes } = useQuery<{ data: Category[] }>({
     queryKey: ['categories'],
-    queryFn:  () => fetch('/api/categories').then((r) => r.json()),
+    queryFn:  () => safeFetch('/api/categories'),
   })
 
   const transactions = txRes?.data ?? []
@@ -263,30 +273,15 @@ export function TransactionsView({ month }: { month: string }) {
         />
       )}
 
-      {/* ── ⋯ メニュー ── */}
+      {/* ── コンテキストメニュー ── */}
       {menuId && menuPos && menuTx && (
-        <>
-          <div style={{ position: 'fixed', inset: 0, zIndex: 40 }} onClick={() => setMenuId(null)} />
-          <div style={{
-            position: 'fixed', zIndex: 50,
-            top: menuPos.top, right: menuPos.right,
-            minWidth: 120, borderRadius: 12,
-            background: 'rgba(20,22,32,0.98)',
-            border: '1px solid rgba(255,255,255,0.12)',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
-            overflow: 'hidden',
-          }}>
-            <button
-              onClick={() => { setMenuId(null); setEditingTx(menuTx) }}
-              style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '10px 14px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: KAI.text2, fontFamily: 'inherit' }}
-            >✏ 編集</button>
-            <div style={{ height: 1, background: 'rgba(255,255,255,0.06)' }} />
-            <button
-              onClick={() => { setMenuId(null); setDeletingTx(menuTx) }}
-              style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '10px 14px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: KAI.danger, fontFamily: 'inherit' }}
-            >🗑 削除</button>
-          </div>
-        </>
+        <TransactionContextMenu
+          tx={menuTx}
+          position={menuPos}
+          onClose={() => setMenuId(null)}
+          onEdit={(tx) => { setMenuId(null); setEditingTx(tx) }}
+          onDelete={(tx) => { setMenuId(null); setDeletingTx(tx) }}
+        />
       )}
 
       {/* ── 0. 重複チェック + 検索・フィルタ ── */}
@@ -345,6 +340,7 @@ export function TransactionsView({ month }: { month: string }) {
                 </span>
                 <button
                   onClick={(e) => { if (menuId === t.id) { setMenuId(null) } else { openMenu(e, t) } }}
+                  aria-label="アクション"
                   style={{ background: 'none', border: 'none', cursor: 'pointer', color: KAI.text4, fontSize: 16, padding: '0 2px', lineHeight: 1, flexShrink: 0 }}
                 >⋯</button>
               </div>
@@ -394,36 +390,41 @@ export function TransactionsView({ month }: { month: string }) {
           {(() => {
             const BAD = ['未分類', 'その他', '不明']
             const uncategorized = transactions.filter((t) => !t.category_id || BAD.includes(t.categories?.name ?? '')).length
-            if (uncategorized === 0 && !classifyResult) return null
+            if (uncategorized === 0 && !classifyResult && !classifyError) return null
             return (
-              <button
-                type="button"
-                onClick={handleClassify}
-                disabled={classifying}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 5,
-                  padding: '7px 12px', borderRadius: 10, border: 'none', cursor: classifying ? 'not-allowed' : 'pointer',
-                  background: classifyResult ? 'rgba(74,222,128,.12)' : 'rgba(251,191,36,.12)',
-                  color: classifyResult ? '#4ade80' : '#fbbf24',
-                  fontSize: 12, fontWeight: 600, fontFamily: 'inherit',
-                  opacity: classifying ? 0.6 : 1,
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {classifying ? (
-                  <>
-                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#fbbf24', animation: 'kai-blink 1s steps(2) infinite', display: 'inline-block' }}/>
-                    分類中…
-                  </>
-                ) : classifyResult ? (
-                  `✓ ${classifyResult.classified}件分類済`
-                ) : (
-                  <>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 6v6l4 2"/><path d="M22 2 12 12"/></svg>
-                    未分類 {uncategorized}件をAI自動分類
-                  </>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+                <button
+                  type="button"
+                  onClick={handleClassify}
+                  disabled={classifying}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 5,
+                    padding: '7px 12px', borderRadius: 10, border: 'none', cursor: classifying ? 'not-allowed' : 'pointer',
+                    background: classifyResult ? 'rgba(74,222,128,.12)' : 'rgba(251,191,36,.12)',
+                    color: classifyResult ? KAI.success : KAI.warning,
+                    fontSize: 12, fontWeight: 600, fontFamily: 'inherit',
+                    opacity: classifying ? 0.6 : 1,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {classifying ? (
+                    <>
+                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: KAI.warning, animation: 'kai-blink 1s steps(2) infinite', display: 'inline-block' }}/>
+                      分類中…
+                    </>
+                  ) : classifyResult ? (
+                    `✓ ${classifyResult.classified}件分類済`
+                  ) : (
+                    <>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 6v6l4 2"/><path d="M22 2 12 12"/></svg>
+                      未分類 {uncategorized}件をAI自動分類
+                    </>
+                  )}
+                </button>
+                {classifyError && (
+                  <span style={{ fontSize: 10, color: KAI.danger }}>{classifyError}</span>
                 )}
-              </button>
+              </div>
             )
           })()}
         </div>
