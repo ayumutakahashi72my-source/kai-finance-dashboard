@@ -209,7 +209,7 @@ export function BudgetDashboard({ month: monthProp }: { month?: string } = {}) {
   })
   const { data: prevTxRes } = useQuery<{ data: Transaction[] }>({
     queryKey: ['transactions', prev],
-    queryFn:  () => fetch(`/api/transactions?month=${prev}`).then((r) => r.json()),
+    queryFn:  () => fetch(`/api/transactions?month=${prev}`).then((r) => { if (!r.ok) throw new Error('取得に失敗しました'); return r.json() }),
   })
   const { data: catRes } = useQuery<{ data: Category[] }>({
     queryKey: ['categories'],

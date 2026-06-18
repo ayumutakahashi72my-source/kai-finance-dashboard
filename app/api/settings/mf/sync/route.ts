@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireAuth } from '@/lib/api-guard'
 import { createClient } from '@/lib/supabase/server'
 import { mfLogin, fetchMfTransactions, MfOtpRequiredError, type MfLoginStep } from '@/lib/moneyforward-client'
 import { mfBrowserSubmitOtp, type MfBrowserLoginStep } from '@/lib/mf-browser'
@@ -59,17 +60,11 @@ function toPlaywrightStorage(cookieState: Record<string, string>): string {
 }
 
 export async function POST(req: NextRequest) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: '認証が必要です' }, { status: 401 })
+  const auth = await requireAuth()
+  if (!auth.ok) return auth.response
 
-  const { data: household } = await supabase
-    .from('households')
-    .select('id')
-    .eq('owner_id', user.id)
-    .limit(1)
-    .single()
-  if (!household) return NextResponse.json({ error: '世帯が見つかりません' }, { status: 404 })
+  const { supabase, user, householdId: household_id } = auth
+  const household = { id: household_id }
 
   const { data: mfSetting } = await supabase
     .from('user_settings')

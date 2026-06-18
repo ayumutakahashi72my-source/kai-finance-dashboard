@@ -8,10 +8,7 @@ import { ProfileDropdown } from '@/components/layout/ProfileDropdown'
 import { TransactionsView } from '@/components/transactions/TransactionsView'
 import { getHousehold } from '@/app/actions/households'
 
-function currentMonthStr() {
-  const d = new Date()
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
-}
+import { jstMonthStr } from '@/lib/jst'
 
 export default async function TransactionsPage({
   searchParams,
@@ -26,7 +23,7 @@ export default async function TransactionsPage({
   if (!household) redirect('/')
 
   const { month: rawMonth } = await searchParams
-  const month = rawMonth ?? currentMonthStr()
+  const month = rawMonth ?? jstMonthStr()
 
   const displayName = user.user_metadata?.full_name ?? user.email ?? 'ユーザー'
   const avatarUrl   = user.user_metadata?.avatar_url as string | undefined

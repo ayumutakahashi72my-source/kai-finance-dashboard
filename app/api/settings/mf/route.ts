@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { requireAuth } from '@/lib/api-guard'
 
 // GET: MF設定の取得（パスワードはマスク）
 export async function GET() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: '認証が必要です' }, { status: 401 })
+  const auth = await requireAuth()
+  if (!auth.ok) return auth.response
+
+  const { supabase, user } = auth
 
   const { data } = await supabase
     .from('user_settings')
@@ -22,11 +23,18 @@ export async function GET() {
 
 // PUT: MF認証情報を保存（1ユーザー1件 upsert）
 export async function PUT(req: NextRequest) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: '認証が必要です' }, { status: 401 })
+  const auth = await requireAuth()
+  if (!auth.ok) return auth.response
 
-  const body = (await req.json()) as { mf_email?: string; mf_password?: string }
+  const { supabase, user } = auth
+
+  let body: { mf_email?: string; mf_password?: string }
+  try {
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ error: '不正なリクエストです' }, { status: 400 })
+  }
+
   if (!body.mf_email || !body.mf_password) {
     return NextResponse.json({ error: 'メールアドレスとパスワードは必須です' }, { status: 400 })
   }
@@ -50,9 +58,10 @@ export async function PUT(req: NextRequest) {
 
 // DELETE: MF設定を削除
 export async function DELETE() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: '認証が必要です' }, { status: 401 })
+  const auth = await requireAuth()
+  if (!auth.ok) return auth.response
+
+  const { supabase, user } = auth
 
   const { error } = await supabase
     .from('user_settings')

@@ -34,8 +34,11 @@ export async function GET(req: NextRequest) {
     query = query.limit(100)
   }
 
-  // payee 部分一致（ILIKE）
-  if (q) query = query.ilike('payee', `%${q}%`)
+  // payee 部分一致（ILIKE）— ワイルドカード文字をエスケープ
+  if (q) {
+    const escaped = q.replace(/%/g, '\\%').replace(/_/g, '\\_')
+    query = query.ilike('payee', `%${escaped}%`)
+  }
 
   // カテゴリ ID（複数カンマ区切り）
   if (cat) {
