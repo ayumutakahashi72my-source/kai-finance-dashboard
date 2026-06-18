@@ -1,0 +1,337 @@
+<!-- @dsCard group="Screens" -->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8"/>
+<title>KAI — 予算ダッシュボード</title>
+<style>
+  :root {
+    --bg:#0c0a14;--card:rgba(20,22,32,0.88);--border:rgba(255,255,255,0.10);
+    --coral:#fb9477;--blue:#7aa7ff;--violet:#a78bfa;--mint:#5eead4;
+    --t1:#f0f0f5;--t2:#c8c8d8;--t3:#8b8ba0;--t4:#5e5e72;
+    --up:#4ade80;--down:#fb7185;--amber:#fbbf24;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:#090910;font-family:'Inter',system-ui,sans-serif;display:flex;justify-content:center;padding:40px;gap:32px;flex-wrap:wrap;}
+  .phone{width:390px;background:var(--bg);border-radius:44px;border:1px solid var(--border);box-shadow:0 24px 72px rgba(0,0,0,.6);overflow:hidden;position:relative;}
+  .panel{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px 16px;}
+  .mono{font-family:'JetBrains Mono',ui-monospace,monospace;}
+  .label{font-size:9px;font-weight:700;letter-spacing:.12em;color:var(--t3);text-transform:uppercase;}
+</style>
+</head>
+<body>
+
+<!-- SCREEN: 予算ダッシュボード（モバイル）-->
+<div class="phone" style="height:812px;">
+  <div style="position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 300px 200px at 20% 8%,rgba(251,148,119,.08),transparent 55%);z-index:0;"></div>
+  <div style="position:relative;z-index:1;height:100%;display:flex;flex-direction:column;">
+    <div style="padding:20px 20px 14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div style="font-size:20px;font-weight:700;color:var(--t1);">予算</div>
+        <div style="font-size:11px;color:var(--t3);font-family:'JetBrains Mono',monospace;">2026年6月 · 残り13日</div>
+      </div>
+    </div>
+
+    <div style="flex:1;overflow-y:auto;padding:0 16px 100px;display:flex;flex-direction:column;gap:10px;">
+
+      <!-- Budget Ring Hero -->
+      <div class="panel" style="display:flex;flex-direction:column;align-items:center;padding:20px 16px;">
+        <span class="label" style="margin-bottom:14px;">今月の予算達成率</span>
+        <!-- Ring -->
+        <div style="position:relative;width:160px;height:160px;margin-bottom:14px;">
+          <svg width="160" height="160" viewBox="0 0 160 160">
+            <circle cx="80" cy="80" r="67" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="14"/>
+            <circle cx="80" cy="80" r="67" fill="none" stroke="url(#rg1)" stroke-width="14" stroke-linecap="round" transform="rotate(-90 80 80)" stroke-dasharray="420.97" stroke-dashoffset="109"/>
+            <defs><linearGradient id="rg1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fb9477"/><stop offset="1" stop-color="#7aa7ff"/></linearGradient></defs>
+          </svg>
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+            <div style="font-size:9px;color:var(--t3);font-weight:700;letter-spacing:.1em;">達成率</div>
+            <div style="font-size:32px;font-weight:800;color:var(--coral);font-family:'JetBrains Mono',monospace;line-height:1.1;">74%</div>
+            <div style="font-size:10px;color:var(--t4);margin-top:2px;">B</div>
+          </div>
+        </div>
+        <!-- KPI row -->
+        <div style="display:flex;gap:8px;width:100%;">
+          <div style="flex:1;text-align:center;background:rgba(255,255,255,.03);border-radius:10px;padding:8px;">
+            <div style="font-size:9px;color:var(--t3);font-weight:700;letter-spacing:.08em;margin-bottom:3px;">支出</div>
+            <div style="font-size:14px;font-weight:700;color:var(--down);font-family:'JetBrains Mono',monospace;">¥234,820</div>
+          </div>
+          <div style="flex:1;text-align:center;background:rgba(255,255,255,.03);border-radius:10px;padding:8px;">
+            <div style="font-size:9px;color:var(--t3);font-weight:700;letter-spacing:.08em;margin-bottom:3px;">予算</div>
+            <div style="font-size:14px;font-weight:700;color:var(--t1);font-family:'JetBrains Mono',monospace;">¥280,000</div>
+          </div>
+          <div style="flex:1;text-align:center;background:rgba(255,255,255,.03);border-radius:10px;padding:8px;">
+            <div style="font-size:9px;color:var(--t3);font-weight:700;letter-spacing:.08em;margin-bottom:3px;">貯蓄率</div>
+            <div style="font-size:14px;font-weight:700;color:var(--up);font-family:'JetBrains Mono',monospace;">29%</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Budget Suggest Card -->
+      <div class="panel" style="background:linear-gradient(135deg,rgba(167,139,250,.10),rgba(20,22,32,.82));border-color:rgba(167,139,250,.25);">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--violet)" stroke-width="2"><path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5z"/></svg>
+          <span class="label" style="color:var(--violet);">AI予算提案</span>
+          <span style="margin-left:auto;font-size:9px;color:var(--t4);font-family:'JetBrains Mono',monospace;">Haiku 4.5</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,.03);border-radius:10px;padding:8px 12px;">
+            <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:16px;">🍜</span><span style="font-size:13px;color:var(--t1);">外食費</span></div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:11px;color:var(--t3);font-family:'JetBrains Mono',monospace;text-decoration:line-through;">¥40,000</span>
+              <span style="font-size:13px;font-weight:700;color:var(--violet);font-family:'JetBrains Mono',monospace;">¥35,000</span>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,.03);border-radius:10px;padding:8px 12px;">
+            <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:16px;">🚃</span><span style="font-size:13px;color:var(--t1);">交通費</span></div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:11px;color:var(--t3);font-family:'JetBrains Mono',monospace;text-decoration:line-through;">¥25,000</span>
+              <span style="font-size:13px;font-weight:700;color:var(--violet);font-family:'JetBrains Mono',monospace;">¥22,000</span>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,.03);border-radius:10px;padding:8px 12px;">
+            <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:16px;">🛒</span><span style="font-size:13px;color:var(--t1);">日用品</span></div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:13px;font-weight:700;color:var(--violet);font-family:'JetBrains Mono',monospace;">¥20,000</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Spending Pattern Card -->
+      <div class="panel">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px;">
+          <span class="label">支出クセ分析</span>
+          <span style="font-size:9px;color:var(--t4);font-family:'JetBrains Mono',monospace;">3ヶ月分析</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+              <span style="font-size:12px;color:var(--t2);">外食費</span>
+              <span style="font-size:12px;color:var(--t2);font-family:'JetBrains Mono',monospace;">¥32,400 <span style="color:var(--down);font-size:10px;">+47%</span></span>
+            </div>
+            <div style="height:4px;border-radius:99px;background:rgba(255,255,255,.05);overflow:hidden;">
+              <div style="width:81%;height:100%;background:var(--down);border-radius:99px;box-shadow:0 0 6px rgba(251,113,133,.4);"></div>
+            </div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+              <span style="font-size:12px;color:var(--t2);">交通費</span>
+              <span style="font-size:12px;color:var(--t2);font-family:'JetBrains Mono',monospace;">¥20,800 <span style="color:var(--up);font-size:10px;">−8%</span></span>
+            </div>
+            <div style="height:4px;border-radius:99px;background:rgba(255,255,255,.05);overflow:hidden;">
+              <div style="width:52%;height:100%;background:var(--blue);border-radius:99px;"></div>
+            </div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+              <span style="font-size:12px;color:var(--t2);">日用品</span>
+              <span style="font-size:12px;color:var(--t2);font-family:'JetBrains Mono',monospace;">¥17,200 <span style="color:var(--t3);font-size:10px;">±2%</span></span>
+            </div>
+            <div style="height:4px;border-radius:99px;background:rgba(255,255,255,.05);overflow:hidden;">
+              <div style="width:43%;height:100%;background:var(--violet);border-radius:99px;"></div>
+            </div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+              <span style="font-size:12px;color:var(--t2);">サブスク</span>
+              <span style="font-size:12px;color:var(--t2);font-family:'JetBrains Mono',monospace;">¥13,200 <span style="color:var(--t3);font-size:10px;">±0%</span></span>
+            </div>
+            <div style="height:4px;border-radius:99px;background:rgba(255,255,255,.05);overflow:hidden;">
+              <div style="width:33%;height:100%;background:var(--mint);border-radius:99px;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Fixed Expense Card -->
+      <div class="panel">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;">
+          <span class="label">固定費候補</span>
+          <span style="font-size:9px;color:var(--t4);">Cron自動検出</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.03);border-radius:10px;padding:8px 12px;">
+            <span style="font-size:16px;">📱</span>
+            <div style="flex:1;">
+              <div style="font-size:12px;color:var(--t1);font-weight:500;">Netflix</div>
+              <div style="font-size:10px;color:var(--t3);">3ヶ月連続 · 毎月1,490円</div>
+            </div>
+            <div style="display:flex;gap:6px;">
+              <button style="padding:4px 10px;border-radius:6px;background:rgba(74,222,128,.12);border:1px solid rgba(74,222,128,.3);color:var(--up);font-size:10px;font-weight:600;cursor:pointer;">承認</button>
+              <button style="padding:4px 10px;border-radius:6px;background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--t3);font-size:10px;cursor:pointer;">無視</button>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.03);border-radius:10px;padding:8px 12px;">
+            <span style="font-size:16px;">🎵</span>
+            <div style="flex:1;">
+              <div style="font-size:12px;color:var(--t1);font-weight:500;">Spotify</div>
+              <div style="font-size:10px;color:var(--t3);">4ヶ月連続 · 毎月980円</div>
+            </div>
+            <div style="display:flex;gap:6px;">
+              <button style="padding:4px 10px;border-radius:6px;background:rgba(74,222,128,.12);border:1px solid rgba(74,222,128,.3);color:var(--up);font-size:10px;font-weight:600;cursor:pointer;">承認</button>
+              <button style="padding:4px 10px;border-radius:6px;background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--t3);font-size:10px;cursor:pointer;">無視</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Savings Rate Tracker -->
+      <div class="panel" style="background:linear-gradient(135deg,rgba(74,222,128,.08),rgba(20,22,32,.88));border-color:rgba(74,222,128,.2);">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;">
+          <span class="label" style="color:var(--up);">貯蓄率トレンド</span>
+          <span style="font-size:9px;color:var(--t4);font-family:'JetBrains Mono',monospace;">6ヶ月</span>
+        </div>
+        <!-- Sparkline bars -->
+        <div style="display:flex;align-items:flex-end;gap:6px;height:48px;margin-bottom:8px;">
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;">
+            <div style="width:100%;height:28px;border-radius:4px 4px 0 0;background:rgba(74,222,128,.25);"></div>
+            <span style="font-size:8px;color:var(--t4);">1月</span>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;">
+            <div style="width:100%;height:22px;border-radius:4px 4px 0 0;background:rgba(74,222,128,.25);"></div>
+            <span style="font-size:8px;color:var(--t4);">2月</span>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;">
+            <div style="width:100%;height:34px;border-radius:4px 4px 0 0;background:rgba(74,222,128,.25);"></div>
+            <span style="font-size:8px;color:var(--t4);">3月</span>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;">
+            <div style="width:100%;height:26px;border-radius:4px 4px 0 0;background:rgba(74,222,128,.25);"></div>
+            <span style="font-size:8px;color:var(--t4);">4月</span>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;">
+            <div style="width:100%;height:30px;border-radius:4px 4px 0 0;background:rgba(74,222,128,.25);"></div>
+            <span style="font-size:8px;color:var(--t4);">5月</span>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;">
+            <div style="width:100%;height:38px;border-radius:4px 4px 0 0;background:rgba(74,222,128,.55);box-shadow:0 0 8px rgba(74,222,128,.35);"></div>
+            <span style="font-size:8px;color:var(--up);font-weight:700;">6月</span>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;">
+          <span style="font-size:12px;color:var(--t2);">今月の貯蓄率</span>
+          <span style="font-size:18px;font-weight:700;color:var(--up);font-family:'JetBrains Mono',monospace;">29%</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN: カレンダー -->
+<div class="phone" style="height:812px;">
+  <div style="position:relative;z-index:1;height:100%;display:flex;flex-direction:column;">
+    <div style="padding:20px 20px 14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <div style="font-size:20px;font-weight:700;color:var(--t1);">カレンダー</div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+          <span style="font-size:13px;font-weight:600;color:var(--t1);">2026年6月</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+        </div>
+      </div>
+      <!-- Day headers -->
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);text-align:center;margin-bottom:8px;">
+        <span style="font-size:10px;color:var(--down);font-weight:700;">日</span>
+        <span style="font-size:10px;color:var(--t4);font-weight:700;">月</span>
+        <span style="font-size:10px;color:var(--t4);font-weight:700;">火</span>
+        <span style="font-size:10px;color:var(--t4);font-weight:700;">水</span>
+        <span style="font-size:10px;color:var(--t4);font-weight:700;">木</span>
+        <span style="font-size:10px;color:var(--t4);font-weight:700;">金</span>
+        <span style="font-size:10px;color:var(--blue);font-weight:700;">土</span>
+      </div>
+      <!-- Calendar grid -->
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;">
+        <!-- Empty cells for start -->
+        <div></div>
+        <div></div>
+        <!-- Day 1 -->
+        <div style="display:flex;flex-direction:column;align-items:center;padding:4px 2px;">
+          <span style="font-size:12px;color:var(--t2);">1</span>
+          <div style="display:flex;gap:1px;margin-top:2px;">
+            <div style="width:4px;height:4px;border-radius:50%;background:var(--down);"></div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;padding:4px 2px;">
+          <span style="font-size:12px;color:var(--t2);">2</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;padding:4px 2px;">
+          <span style="font-size:12px;color:var(--t2);">3</span>
+          <div style="display:flex;gap:1px;margin-top:2px;">
+            <div style="width:4px;height:4px;border-radius:50%;background:var(--down);"></div>
+            <div style="width:4px;height:4px;border-radius:50%;background:var(--down);"></div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;padding:4px 2px;">
+          <span style="font-size:12px;color:var(--t2);">4</span>
+          <div style="display:flex;gap:1px;margin-top:2px;">
+            <div style="width:4px;height:4px;border-radius:50%;background:var(--down);"></div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;padding:4px 2px;">
+          <span style="font-size:12px;color:var(--blue);">5</span>
+          <div style="display:flex;gap:1px;margin-top:2px;">
+            <div style="width:4px;height:4px;border-radius:50%;background:var(--up);"></div>
+          </div>
+        </div>
+        <!-- Row 2 -->
+        <div style="display:flex;flex-direction:column;align-items:center;padding:4px 2px;"><span style="font-size:12px;color:var(--down);">6</span></div>
+        <div style="display:flex;flex-direction:column;align-items:center;padding:4px 2px;"><span style="font-size:12px;color:var(--t2);">7</span><div style="display:flex;gap:1px;margin-top:2px;"><div style="width:4px;height:4px;border-radius:50%;background:var(--down);"></div></div></div>
+        <div style="display:flex;flex-direction:column;align-items:center;padding:4px 2px;"><span style="font-size:12px;color:var(--t2);">8</span></div>
+        <div style="display:flex;flex-direction:column;align-items:center;padding:4px 2px;"><span style="font-size:12px;color:var(--t2);">9</span><div style="display:flex;gap:1px;margin-top:2px;"><div style="width:4px;height:4px;border-radius:50%;background:var(--down);"></div><div style="width:4px;height:4px;border-radius:50%;background:var(--down);"></div></div></div>
+        <div style="display:flex;flex-direction:column;align-items:center;padding:4px 2px;"><span style="font-size:12px;color:var(--t2);">10</span><div style="display:flex;gap:1px;margin-top:2px;"><div style="width:4px;height:4px;border-radius:50%;background:var(--down);"></div></div></div>
+        <div style="display:flex;flex-direction:column;align-items:center;padding:4px 2px;"><span style="font-size:12px;color:var(--t2);">11</span></div>
+        <div style="display:flex;flex-direction:column;align-items:center;padding:4px 2px;"><span style="font-size:12px;color:var(--blue);">12</span><div style="display:flex;gap:1px;margin-top:2px;"><div style="width:4px;height:4px;border-radius:50%;background:var(--down);"></div></div></div>
+        <!-- Row 3 -->
+        <div style="display:flex;flex-direction:column;align-items:center;padding:4px 2px;"><span style="font-size:12px;color:var(--down);">13</span><div style="display:flex;gap:1px;margin-top:2px;"><div style="width:4px;height:4px;border-radius:50%;background:var(--down);"></div><div style="width:4px;height:4px;border-radius:50%;background:var(--down);"></div></div></div>
+        <div style="display:flex;flex-direction:column;align-items:center;padding:4px 2px;"><span style="font-size:12px;color:var(--t2);">14</span></div>
+        <div style="display:flex;flex-direction:column;align-items:center;padding:4px 2px;"><span style="font-size:12px;color:var(--t2);">15</span><div style="display:flex;gap:1px;margin-top:2px;"><div style="width:4px;height:4px;border-radius:50%;background:var(--down);"></div></div></div>
+        <div style="display:flex;flex-direction:column;align-items:center;padding:4px 2px;"><span style="font-size:12px;color:var(--t2);">16</span><div style="display:flex;gap:1px;margin-top:2px;"><div style="width:4px;height:4px;border-radius:50%;background:var(--down);"></div><div style="width:4px;height:4px;border-radius:50%;background:var(--down);"></div></div></div>
+        <!-- Today: 17 highlighted -->
+        <div style="display:flex;flex-direction:column;align-items:center;padding:4px 2px;">
+          <span style="font-size:12px;color:#0c0a14;font-weight:700;background:var(--coral);width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;">17</span>
+          <div style="display:flex;gap:1px;margin-top:2px;"><div style="width:4px;height:4px;border-radius:50%;background:var(--down);"></div><div style="width:4px;height:4px;border-radius:50%;background:var(--up);"></div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;padding:4px 2px;"><span style="font-size:12px;color:var(--t2);">18</span></div>
+        <div style="display:flex;flex-direction:column;align-items:center;padding:4px 2px;"><span style="font-size:12px;color:var(--blue);">19</span></div>
+        <!-- Row 4-5 -->
+        <div style="display:flex;flex-direction:column;align-items:center;padding:4px 2px;"><span style="font-size:12px;color:var(--t4);">20</span></div>
+        <div style="display:flex;flex-direction:column;align-items:center;padding:4px 2px;"><span style="font-size:12px;color:var(--t4);">21</span></div>
+        <div style="display:flex;flex-direction:column;align-items:center;padding:4px 2px;"><span style="font-size:12px;color:var(--t4);">22</span></div>
+        <div style="display:flex;flex-direction:column;align-items:center;padding:4px 2px;"><span style="font-size:12px;color:var(--t4);">23</span></div>
+        <div style="display:flex;flex-direction:column;align-items:center;padding:4px 2px;"><span style="font-size:12px;color:var(--t4);">24</span></div>
+        <div style="display:flex;flex-direction:column;align-items:center;padding:4px 2px;"><span style="font-size:12px;color:var(--t4);">25</span></div>
+        <div style="display:flex;flex-direction:column;align-items:center;padding:4px 2px;"><span style="font-size:12px;color:var(--t4);">26</span></div>
+        <div style="display:flex;flex-direction:column;align-items:center;padding:4px 2px;"><span style="font-size:12px;color:var(--t4);">27</span></div>
+        <div style="display:flex;flex-direction:column;align-items:center;padding:4px 2px;"><span style="font-size:12px;color:var(--t4);">28</span></div>
+        <div style="display:flex;flex-direction:column;align-items:center;padding:4px 2px;"><span style="font-size:12px;color:var(--t4);">29</span></div>
+        <div style="display:flex;flex-direction:column;align-items:center;padding:4px 2px;"><span style="font-size:12px;color:var(--t4);">30</span></div>
+      </div>
+    </div>
+
+    <!-- Bottom sheet for selected day -->
+    <div style="flex:1;display:flex;align-items:flex-end;padding:0 16px 100px;">
+      <div style="width:100%;background:rgba(20,22,32,.96);border:1px solid var(--border);border-radius:20px;padding:14px 16px;">
+        <div style="font-size:13px;font-weight:700;color:var(--t1);margin-bottom:10px;">6月17日の取引</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:16px;">🍜</span><span style="font-size:12px;color:var(--t2);">サイゼリヤ</span></div>
+            <span style="font-size:13px;font-weight:700;color:var(--down);font-family:'JetBrains Mono',monospace;">−¥1,240</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:16px;">🚃</span><span style="font-size:12px;color:var(--t2);">Suica チャージ</span></div>
+            <span style="font-size:13px;font-weight:700;color:var(--down);font-family:'JetBrains Mono',monospace;">−¥5,000</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:16px;">💴</span><span style="font-size:12px;color:var(--t2);">給与振込</span></div>
+            <span style="font-size:13px;font-weight:700;color:var(--up);font-family:'JetBrains Mono',monospace;">+¥330,000</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

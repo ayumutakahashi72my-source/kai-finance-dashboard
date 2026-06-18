@@ -1,0 +1,304 @@
+<!-- @dsCard group="Screens" -->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8"/>
+<title>KAI — AI機能（チャット・サマリー・四半期分析）</title>
+<style>
+  :root{--bg:#0c0a14;--card:rgba(20,22,32,0.88);--border:rgba(255,255,255,0.10);
+    --coral:#fb9477;--blue:#7aa7ff;--violet:#a78bfa;--mint:#5eead4;
+    --t1:#f0f0f5;--t2:#c8c8d8;--t3:#8b8ba0;--t4:#5e5e72;
+    --up:#4ade80;--down:#fb7185;--amber:#fbbf24;}
+  *{box-sizing:border-box;}
+  body{margin:0;background:#090910;font-family:'Inter',system-ui,sans-serif;display:flex;justify-content:center;padding:40px;gap:32px;flex-wrap:wrap;}
+  .phone{width:390px;background:var(--bg);border-radius:44px;border:1px solid var(--border);box-shadow:0 24px 72px rgba(0,0,0,.6);overflow:hidden;position:relative;}
+  .panel{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px 16px;}
+  .label{font-size:9px;font-weight:700;letter-spacing:.12em;color:var(--t3);text-transform:uppercase;}
+</style>
+</head>
+<body>
+
+<!-- SCREEN: AIチャット -->
+<div class="phone" style="height:812px;">
+  <div style="position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 320px 220px at 80% 8%,rgba(167,139,250,.10),transparent 55%);z-index:0;"></div>
+  <div style="position:relative;z-index:1;height:100%;display:flex;flex-direction:column;">
+    <!-- Header -->
+    <div style="padding:20px 20px 14px;border-bottom:1px solid var(--border);">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:36px;height:36px;border-radius:12px;background:linear-gradient(135deg,rgba(167,139,250,.3),rgba(122,167,255,.3));border:1px solid rgba(167,139,250,.4);display:flex;align-items:center;justify-content:center;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--violet)" stroke-width="1.8"><path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5z"/></svg>
+        </div>
+        <div>
+          <div style="font-size:15px;font-weight:700;color:var(--t1);">KAI AI アシスタント</div>
+          <div style="font-size:10px;color:var(--violet);display:flex;align-items:center;gap:4px;">
+            <span style="width:6px;height:6px;border-radius:50%;background:var(--up);display:inline-block;"></span>
+            Sonnet 4.6 · 取引履歴を参照中
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chat messages -->
+    <div style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:14px;">
+
+      <!-- AI message 1 -->
+      <div style="display:flex;gap:10px;align-items:flex-start;">
+        <div style="width:28px;height:28px;border-radius:9px;background:linear-gradient(135deg,rgba(167,139,250,.3),rgba(122,167,255,.3));border:1px solid rgba(167,139,250,.4);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--violet)" stroke-width="2"><path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5z"/></svg>
+        </div>
+        <div style="background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.2);border-radius:4px 14px 14px 14px;padding:10px 12px;max-width:80%;">
+          <p style="margin:0;font-size:13px;color:var(--t2);line-height:1.6;">こんにちは！6月の家計データを分析しました。今月は外食費が前月比 <span style="color:var(--down);font-weight:700;">+47%</span> と急増しています。具体的に見てみましょうか？</p>
+        </div>
+      </div>
+
+      <!-- User message -->
+      <div style="display:flex;justify-content:flex-end;">
+        <div style="background:rgba(251,148,119,.12);border:1px solid rgba(251,148,119,.25);border-radius:14px 4px 14px 14px;padding:10px 12px;max-width:80%;">
+          <p style="margin:0;font-size:13px;color:var(--t1);">外食費を減らすにはどうすればいいですか？</p>
+        </div>
+      </div>
+
+      <!-- AI message 2 -->
+      <div style="display:flex;gap:10px;align-items:flex-start;">
+        <div style="width:28px;height:28px;border-radius:9px;background:linear-gradient(135deg,rgba(167,139,250,.3),rgba(122,167,255,.3));border:1px solid rgba(167,139,250,.4);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--violet)" stroke-width="2"><path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5z"/></svg>
+        </div>
+        <div style="background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.2);border-radius:4px 14px 14px 14px;padding:10px 12px;max-width:85%;">
+          <p style="margin:0;font-size:13px;color:var(--t2);line-height:1.6;">あなたのデータを見ると、特に <span style="color:var(--coral);font-weight:600;">平日のランチ</span> が多い傾向があります（サイゼリヤ・松屋など7件）。</p>
+          <div style="margin-top:8px;display:flex;flex-direction:column;gap:4px;">
+            <div style="font-size:12px;color:var(--t2);display:flex;align-items:flex-start;gap:6px;"><span style="color:var(--violet);flex-shrink:0;">①</span>弁当持参で月〜水の3日だけでも自炊にすると約¥12,000節約可能</div>
+            <div style="font-size:12px;color:var(--t2);display:flex;align-items:flex-start;gap:6px;"><span style="color:var(--violet);flex-shrink:0;">②</span>¥35,000/月の予算上限をKAIに設定（超えたら通知）</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- User message 2 -->
+      <div style="display:flex;justify-content:flex-end;">
+        <div style="background:rgba(251,148,119,.12);border:1px solid rgba(251,148,119,.25);border-radius:14px 4px 14px 14px;padding:10px 12px;max-width:80%;">
+          <p style="margin:0;font-size:13px;color:var(--t1);">先月と今月を比較して</p>
+        </div>
+      </div>
+
+      <!-- AI typing indicator -->
+      <div style="display:flex;gap:10px;align-items:flex-start;">
+        <div style="width:28px;height:28px;border-radius:9px;background:linear-gradient(135deg,rgba(167,139,250,.3),rgba(122,167,255,.3));border:1px solid rgba(167,139,250,.4);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--violet)" stroke-width="2"><path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5z"/></svg>
+        </div>
+        <div style="background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.2);border-radius:4px 14px 14px 14px;padding:12px 16px;">
+          <div style="display:flex;gap:4px;align-items:center;">
+            <div style="width:6px;height:6px;border-radius:50%;background:var(--violet);opacity:.8;"></div>
+            <div style="width:6px;height:6px;border-radius:50%;background:var(--violet);opacity:.5;"></div>
+            <div style="width:6px;height:6px;border-radius:50%;background:var(--violet);opacity:.3;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chat input -->
+    <div style="padding:12px 16px 32px;border-top:1px solid var(--border);">
+      <div style="display:flex;gap:8px;align-items:center;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:10px 14px;">
+        <input type="text" placeholder="家計について質問する..." style="flex:1;background:none;border:none;outline:none;font-size:14px;color:var(--t1);font-family:'Inter',system-ui,sans-serif;" value="先月と今月を比較して"/>
+        <button style="width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--violet),var(--blue));border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0c0a14" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN: 月次サマリー -->
+<div class="phone" style="height:812px;">
+  <div style="position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 280px 200px at 60% 10%,rgba(94,234,212,.07),transparent 55%);z-index:0;"></div>
+  <div style="position:relative;z-index:1;height:100%;display:flex;flex-direction:column;">
+    <div style="padding:20px 20px 14px;">
+      <div style="font-size:20px;font-weight:700;color:var(--t1);margin-bottom:4px;">AI分析</div>
+      <div style="font-size:12px;color:var(--t3);">Claudeによる家計インサイト</div>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding:0 16px 100px;display:flex;flex-direction:column;gap:10px;">
+
+      <!-- Monthly Summary Card -->
+      <div class="panel" style="background:linear-gradient(135deg,rgba(94,234,212,.08),rgba(20,22,32,.88));border-color:rgba(94,234,212,.2);">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--mint)" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <span class="label" style="color:var(--mint);">5月の月次サマリー</span>
+          </div>
+          <span style="font-size:9px;color:var(--t4);font-family:'JetBrains Mono',monospace;">Sonnet 4.6</span>
+        </div>
+        <p style="font-size:13px;color:var(--t2);line-height:1.75;margin:0;">
+          5月は収入¥330,000に対し支出¥234,820（貯蓄率29%）と健全なペースを維持できました。<br/><br/>
+          <strong style="color:var(--t1);">良かった点：</strong>交通費が前月比8%減少。定期券へ切り替えた効果が出ています。<br/><br/>
+          <strong style="color:var(--amber);">注意点：</strong>外食費が月予算¥40,000に対し¥47,230（118%）と超過。特にランチの頻度が増えています。<br/><br/>
+          <strong style="color:var(--violet);">来月の提案：</strong>弁当持参を週2〜3回取り入れると¥8,000〜12,000の削減が見込めます。
+        </p>
+        <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.06);display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:10px;color:var(--t4);">2026年6月1日生成</span>
+          <button style="font-size:11px;color:var(--mint);background:none;border:none;cursor:pointer;">全文 →</button>
+        </div>
+      </div>
+
+      <!-- Quarterly Insight Card -->
+      <div class="panel" style="background:linear-gradient(135deg,rgba(167,139,250,.10),rgba(20,22,32,.88));border-color:rgba(167,139,250,.25);">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--violet)" stroke-width="2"><path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5z"/><path d="M19 14l.6 1.8 1.8.6-1.8.6-.6 1.8-.6-1.8-1.8-.6 1.8-.6z"/></svg>
+            <span class="label" style="color:var(--violet);">四半期深層分析 · Q1 2026</span>
+          </div>
+          <span style="font-size:9px;color:var(--t4);font-family:'JetBrains Mono',monospace;">Opus 4.8</span>
+        </div>
+        <!-- Score badges -->
+        <div style="display:flex;gap:6px;margin-bottom:12px;">
+          <div style="background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.25);border-radius:8px;padding:5px 10px;text-align:center;flex:1;">
+            <div style="font-size:9px;color:var(--t4);font-weight:700;letter-spacing:.08em;margin-bottom:2px;">平均貯蓄率</div>
+            <div style="font-size:16px;font-weight:800;color:var(--up);font-family:'JetBrains Mono',monospace;">26%</div>
+          </div>
+          <div style="background:rgba(251,148,119,.1);border:1px solid rgba(251,148,119,.25);border-radius:8px;padding:5px 10px;text-align:center;flex:1;">
+            <div style="font-size:9px;color:var(--t4);font-weight:700;letter-spacing:.08em;margin-bottom:2px;">支出変化</div>
+            <div style="font-size:16px;font-weight:800;color:var(--up);font-family:'JetBrains Mono',monospace;">−8%</div>
+          </div>
+          <div style="background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.25);border-radius:8px;padding:5px 10px;text-align:center;flex:1;">
+            <div style="font-size:9px;color:var(--t4);font-weight:700;letter-spacing:.08em;margin-bottom:2px;">スコア</div>
+            <div style="font-size:16px;font-weight:800;color:var(--violet);font-family:'JetBrains Mono',monospace;">B+</div>
+          </div>
+        </div>
+        <p style="font-size:13px;color:var(--t2);line-height:1.7;margin:0;">第1四半期（1〜3月）の家計は堅調でした。交通費の最適化により全体支出が前期比-8%を達成。次四半期は食費予算の見直しと固定費削減が優先課題です...</p>
+        <button style="margin-top:10px;font-size:11px;color:var(--violet);background:none;border:1px solid rgba(167,139,250,.3);border-radius:8px;padding:5px 12px;cursor:pointer;">全文を読む（798字）→</button>
+      </div>
+
+      <!-- AI Classification stats -->
+      <div class="panel">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;">
+          <span class="label">AI分類パイプライン</span>
+          <span style="font-size:9px;color:var(--t4);">今月の統計</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div style="width:8px;height:8px;border-radius:2px;background:var(--up);"></div>
+              <span style="font-size:12px;color:var(--t2);">キーワードルール（コスト¥0）</span>
+            </div>
+            <span style="font-size:12px;font-weight:700;color:var(--up);font-family:'JetBrains Mono',monospace;">42%</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div style="width:8px;height:8px;border-radius:2px;background:var(--blue);"></div>
+              <span style="font-size:12px;color:var(--t2);">RAGキャッシュヒット</span>
+            </div>
+            <span style="font-size:12px;font-weight:700;color:var(--blue);font-family:'JetBrains Mono',monospace;">38%</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div style="width:8px;height:8px;border-radius:2px;background:var(--violet);"></div>
+              <span style="font-size:12px;color:var(--t2);">Haiku呼び出し</span>
+            </div>
+            <span style="font-size:12px;font-weight:700;color:var(--violet);font-family:'JetBrains Mono',monospace;">20%</span>
+          </div>
+        </div>
+        <!-- RAG hit bar -->
+        <div style="margin-top:10px;height:8px;border-radius:99px;overflow:hidden;display:flex;gap:1px;">
+          <div style="width:42%;height:100%;background:var(--up);"></div>
+          <div style="width:38%;height:100%;background:var(--blue);"></div>
+          <div style="width:20%;height:100%;background:var(--violet);"></div>
+        </div>
+        <div style="margin-top:6px;font-size:10px;color:var(--t4);">Haiku削減率 <span style="color:var(--up);font-weight:700;">80%</span> · 今月コスト <span style="font-family:'JetBrains Mono',monospace;">¥48</span></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN: 設定 -->
+<div class="phone" style="height:812px;">
+  <div style="position:relative;z-index:1;height:100%;display:flex;flex-direction:column;">
+    <div style="padding:20px 20px 14px;">
+      <div style="font-size:20px;font-weight:700;color:var(--t1);">設定</div>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding:0 16px 40px;display:flex;flex-direction:column;gap:6px;">
+
+      <!-- Profile section -->
+      <div class="panel" style="display:flex;align-items:center;gap:12px;margin-bottom:4px;">
+        <div style="width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,var(--coral),var(--blue));display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:#0c0a14;">A</div>
+        <div>
+          <div style="font-size:15px;font-weight:600;color:var(--t1);">Ayumu Takahashi</div>
+          <div style="font-size:11px;color:var(--t3);">ayu.nao72@gmail.com</div>
+        </div>
+        <svg style="margin-left:auto;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+      </div>
+
+      <!-- Household section -->
+      <div style="font-size:10px;color:var(--t4);font-weight:700;letter-spacing:.12em;padding:8px 4px 4px;">世帯</div>
+      <div class="panel" style="padding:0;overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.04);">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--coral)" stroke-width="1.8"><path d="M3 12L12 3l9 9"/><path d="M5 10v10h14V10"/></svg>
+          <span style="font-size:13px;color:var(--t1);flex:1;">世帯管理</span>
+          <span style="font-size:11px;color:var(--t3);">高橋家</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--t4)" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+          <span style="font-size:13px;color:var(--t1);flex:1;">メンバー管理</span>
+          <span style="font-size:11px;color:var(--t3);">2名</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--t4)" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+        </div>
+      </div>
+
+      <!-- MF integration -->
+      <div style="font-size:10px;color:var(--t4);font-weight:700;letter-spacing:.12em;padding:8px 4px 4px;">連携</div>
+      <div class="panel" style="padding:0;overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.04);">
+          <div style="width:28px;height:28px;border-radius:8px;background:rgba(74,222,128,.12);border:1px solid rgba(74,222,128,.25);display:flex;align-items:center;justify-content:center;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--up)" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          </div>
+          <div style="flex:1;">
+            <div style="font-size:13px;color:var(--t1);">Money Forward 連携</div>
+            <div style="font-size:10px;color:var(--up);">接続済み · 最終同期 1時間前</div>
+          </div>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--t4)" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;">
+          <div style="width:28px;height:28px;border-radius:8px;background:rgba(122,167,255,.12);border:1px solid rgba(122,167,255,.25);display:flex;align-items:center;justify-content:center;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/></svg>
+          </div>
+          <div style="flex:1;">
+            <div style="font-size:13px;color:var(--t1);">プッシュ通知</div>
+            <div style="font-size:10px;color:var(--t3);">月次レポート · 異常検知</div>
+          </div>
+          <!-- Toggle -->
+          <div style="width:44px;height:24px;border-radius:12px;background:var(--up);position:relative;cursor:pointer;">
+            <div style="position:absolute;right:2px;top:2px;width:20px;height:20px;border-radius:50%;background:#0c0a14;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI & Categories -->
+      <div style="font-size:10px;color:var(--t4);font-weight:700;letter-spacing:.12em;padding:8px 4px 4px;">AI設定</div>
+      <div class="panel" style="padding:0;overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.04);">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--violet)" stroke-width="1.8"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/></svg>
+          <span style="font-size:13px;color:var(--t1);flex:1;">カテゴリ管理</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--t4)" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.04);">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--coral)" stroke-width="1.8"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
+          <span style="font-size:13px;color:var(--t1);flex:1;">分類修正履歴</span>
+          <span style="font-size:11px;color:var(--t3);">24件</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--t4)" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--mint)" stroke-width="1.8"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+          <span style="font-size:13px;color:var(--t1);flex:1;">AIコスト管理</span>
+          <span style="font-size:11px;color:var(--t3);">¥48/月</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--t4)" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+        </div>
+      </div>
+
+      <!-- Logout -->
+      <div style="padding:8px 0;">
+        <button style="width:100%;padding:14px;background:rgba(251,113,133,.08);border:1px solid rgba(251,113,133,.2);border-radius:14px;color:var(--down);font-size:14px;font-weight:600;cursor:pointer;">ログアウト</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
