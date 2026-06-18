@@ -13,12 +13,12 @@ const BLUE  = KAI.blue
 import type { IconName } from '@/components/kai/shared'
 
 const LEFT_NAV: { href: string; icon: IconName; label: string }[] = [
-  { href: '/',         icon: 'grid',     label: 'ホーム' },
-  { href: '/calendar', icon: 'calendar', label: 'カレンダー' },
+  { href: '/',             icon: 'grid',     label: 'ホーム' },
+  { href: '/transactions', icon: 'list',     label: '収支' },
 ]
 const RIGHT_NAV: { href: string; icon: IconName; label: string }[] = [
-  { href: '/transactions', icon: 'pie', label: '収支' },
-  { href: '/summary',      icon: 'msg', label: 'AI' },
+  { href: '/analytics', icon: 'barChart', label: '分析' },
+  { href: '/summary',   icon: 'sparkle',  label: 'AI' },
 ]
 
 export function BottomBar() {
@@ -95,7 +95,7 @@ export function BottomBar() {
               borderColor: '#0a0a10',
               color: '#0a0a10',
               boxShadow: `0 8px 24px ${CORAL}55`,
-              animation: 'kai-pulse-coral 2.4s ease-in-out infinite',
+              transition: 'transform .15s, box-shadow .15s',
             }}
           >
             <Icon name="plus" size={22} stroke={2.4}/>

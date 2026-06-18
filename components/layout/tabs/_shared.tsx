@@ -1,20 +1,22 @@
 'use client'
 
-// Design tokens (inline to avoid 'use client' boundary issues with KAI shared)
-export const CORAL  = '#fb9477'
-export const BLUE   = '#7aa7ff'
-export const VIOLET = '#a78bfa'
-export const GREEN  = '#4ade80'
-export const RED    = '#fb7185'
-export const AMBER  = '#fbbf24'
-export const TEXT1  = '#f0f0f5'
-export const TEXT2  = '#c4c4d0'
-export const TEXT3  = '#8b8ba0'
-export const TEXT4  = '#5e5e72'
-export const TEXT5  = '#3e3e55'
-export const BG     = 'rgba(18,16,28,0.97)'
+import { todayJST } from '@/lib/jst'
+import { KAI } from '@/lib/kai-tokens'
 
-export const today = () => new Date().toISOString().split('T')[0]
+export const CORAL  = KAI.coral
+export const BLUE   = KAI.blue
+export const VIOLET = KAI.violet
+export const GREEN  = KAI.success
+export const RED    = KAI.danger
+export const AMBER  = KAI.warning
+export const TEXT1  = KAI.text1
+export const TEXT2  = KAI.text2
+export const TEXT3  = KAI.text3
+export const TEXT4  = KAI.text4
+export const TEXT5  = KAI.text5
+export const BG     = KAI.bg
+
+export const today = () => todayJST()
 
 export interface ImportResult {
   inserted: number

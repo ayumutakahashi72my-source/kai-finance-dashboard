@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { ReceiptCapture } from '@/components/transactions/ReceiptCapture'
 import type { OcrResult } from '@/lib/ocr'
@@ -14,6 +14,33 @@ type Step = 'picker' | 'manual' | 'csv' | 'mf' | 'receipt'
 
 // ── Sheet chrome ──────────────────────────────────────────────────────────────
 function SheetChrome({ onBackdropClick, children }: { onBackdropClick: () => void; children: React.ReactNode }) {
+  const sheetRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const el = sheetRef.current
+    if (!el) return
+    const focusable = el.querySelectorAll<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')
+    if (focusable.length > 0) focusable[0].focus()
+
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') { onBackdropClick(); return }
+      if (e.key !== 'Tab') return
+      const items = el!.querySelectorAll<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')
+      if (items.length === 0) return
+      const first = items[0]
+      const last = items[items.length - 1]
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault()
+        last.focus()
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault()
+        first.focus()
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [onBackdropClick])
+
   return (
     <>
       <div
@@ -22,9 +49,10 @@ function SheetChrome({ onBackdropClick, children }: { onBackdropClick: () => voi
         style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)', animation: 'kai-rise 0.18s ease-out both' }}
       />
       <div
+        ref={sheetRef}
         style={{ position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 51, background: BG, backdropFilter: 'blur(28px) saturate(160%)', WebkitBackdropFilter: 'blur(28px) saturate(160%)', border: '1px solid rgba(255,255,255,0.12)', borderBottomWidth: 0, borderRadius: '24px 24px 0 0', padding: '20px 20px 48px', animation: 'kai-sheet-up 0.22s cubic-bezier(.16,1,.3,1) both', boxShadow: '0 -16px 48px rgba(0,0,0,0.6)', maxHeight: '92dvh', overflowY: 'auto' }}
         role="dialog"
-        aria-modal
+        aria-modal="true"
       >
         <div style={{ width: 36, height: 4, borderRadius: 99, background: 'rgba(255,255,255,.15)', margin: '0 auto 20px' }} />
         {children}

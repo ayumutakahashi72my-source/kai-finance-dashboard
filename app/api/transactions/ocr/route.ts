@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/api-guard'
 import { extractReceiptBlocks, structureReceiptData } from '@/lib/ocr'
+import { todayJST } from '@/lib/jst'
 
 export const maxDuration = 45
 
@@ -33,8 +34,8 @@ export async function POST(request: NextRequest) {
       error: msg,
       payee: '',
       amount: 0,
-      occurred_on: new Date().toISOString().split('T')[0],
+      occurred_on: todayJST(),
       confidence: 0,
-    })
+    }, { status: 500 })
   }
 }

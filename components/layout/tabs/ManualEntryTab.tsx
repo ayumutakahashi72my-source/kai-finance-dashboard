@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { getCategories } from '@/app/actions/categories'
 import { createTransaction } from '@/app/actions/transactions'
 import type { Category } from '@/lib/types'
+import { NumPad } from '@/components/ui/NumPad'
 import {
   CORAL, VIOLET, GREEN, RED, AMBER,
   TEXT1, TEXT2, TEXT3, TEXT4, TEXT5,
@@ -34,7 +35,9 @@ export function ManualEntryTab({ onBack, onDone, prefill }: {
   const [saving, setSaving]     = useState(false)
   const [error, setError]       = useState('')
   const [done, setDone]         = useState(false)
+  const [numpadOpen, setNumpadOpen] = useState(!prefill?.amount)
   const classifyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const memoRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     getCategories().then((cats) => setCategories(cats as Category[]))
@@ -61,6 +64,7 @@ export function ManualEntryTab({ onBack, onDone, prefill }: {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ payee: trimmed }),
         })
+        if (!res.ok) throw new Error(`classify: ${res.status}`)
         const data = await res.json() as { category_id: string | null }
         if (data.category_id) {
           setAiSuggestId(data.category_id)
@@ -76,6 +80,11 @@ export function ManualEntryTab({ onBack, onDone, prefill }: {
   const amountFormatted = amountNumber > 0 ? amountNumber.toLocaleString('ja-JP') : '0'
   const now             = new Date()
   const timeStr         = `${now.getMonth() + 1}/${now.getDate()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`
+
+  const handleNumpadDone = useCallback(() => {
+    setNumpadOpen(false)
+    setTimeout(() => memoRef.current?.focus(), 80)
+  }, [])
 
   function handleCatClick(id: string) { setCatId(id); setUserOverrode(true) }
 
@@ -155,22 +164,25 @@ export function ManualEntryTab({ onBack, onDone, prefill }: {
         </div>
       </div>
 
-      <div style={{ background: 'rgba(255,255,255,.02)', border: '1px solid rgba(255,255,255,.07)', borderRadius: 18, padding: '18px', textAlign: 'center', animation: 'kai-rise .5s .10s ease-out both', position: 'relative' }}>
-        <div style={{ fontSize: 10, color: TEXT3, letterSpacing: '.14em', fontWeight: 700, marginBottom: 6, textTransform: 'uppercase' }}>金額</div>
-        <label style={{ display: 'inline-flex', alignItems: 'baseline', gap: 4, fontFamily: 'var(--font-mono),monospace', fontWeight: 800, background: `linear-gradient(135deg, #f0f0f5 0%, ${CORAL} 80%)`, WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent', letterSpacing: '-.04em', cursor: 'text', userSelect: 'none' }}>
-          <span style={{ fontSize: 24, color: TEXT4, WebkitTextFillColor: TEXT4 }}>¥</span>
-          <span style={{ fontSize: 46, lineHeight: 1 }}>{amountFormatted}</span>
-          <span aria-hidden style={{ display: 'inline-block', width: 2, height: 34, background: CORAL, marginLeft: 1, animation: 'kai-blink 1s steps(2) infinite', WebkitTextFillColor: CORAL }}/>
-          <input
-            inputMode="numeric"
-            autoFocus
-            value={amount}
-            onChange={e => setAmount(e.target.value.replace(/\D/g, ''))}
-            aria-label="金額"
-            style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'text', border: 'none', background: 'transparent' }}
-          />
-        </label>
-        <div style={{ marginTop: 6, fontSize: 11, color: TEXT4 }}>数字キーで入力 · 後でメモを追加できます</div>
+      <div style={{ background: 'rgba(255,255,255,.02)', border: '1px solid rgba(255,255,255,.07)', borderRadius: 18, padding: '14px 18px', animation: 'kai-rise .5s .10s ease-out both' }}>
+        {numpadOpen ? (
+          <NumPad value={amount} onChange={setAmount} onDone={handleNumpadDone} />
+        ) : (
+          <button
+            type="button"
+            onClick={() => setNumpadOpen(true)}
+            style={{
+              width: '100%', background: 'none', border: 'none', cursor: 'pointer',
+              textAlign: 'center', padding: '8px 0',
+            }}
+          >
+            <div style={{ fontSize: 10, color: TEXT3, letterSpacing: '.14em', fontWeight: 700, marginBottom: 6, textTransform: 'uppercase' }}>金額</div>
+            <span style={{ fontFamily: 'var(--font-mono),monospace', fontWeight: 800, fontSize: 36, letterSpacing: '-.04em', color: TEXT1 }}>
+              <span style={{ fontSize: 18, color: TEXT4 }}>¥</span>{amountFormatted}
+            </span>
+            <div style={{ marginTop: 4, fontSize: 11, color: TEXT4 }}>タップして変更</div>
+          </button>
+        )}
       </div>
 
       {categories.length > 0 && (
@@ -217,7 +229,7 @@ export function ManualEntryTab({ onBack, onDone, prefill }: {
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, animation: 'kai-rise .5s .30s ease-out both' }}>
         <FieldCell label="支払先・メモ">
-          <input type="text" maxLength={100} value={memo} onChange={e => setMemo(e.target.value)} placeholder="例：成城石井" className="kai-input" style={{ padding: '4px 0', border: 'none', background: 'transparent', fontSize: 13 }}/>
+          <input ref={memoRef} type="text" maxLength={100} value={memo} onChange={e => setMemo(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') handleSave() }} placeholder="例：成城石井" className="kai-input" style={{ padding: '4px 0', border: 'none', background: 'transparent', fontSize: 13 }}/>
         </FieldCell>
         <FieldCell label="日付" mono>
           <input type="date" value={occurredOn} onChange={e => setDate(e.target.value)} className="kai-input" style={{ padding: '4px 0', border: 'none', background: 'transparent', fontSize: 12, colorScheme: 'dark' }}/>

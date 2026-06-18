@@ -109,7 +109,7 @@ export function ReceiptAnalyzingV2({ image, onDone, onError, onCancel }: Props) 
 
   // Canvas 前処理 → /api/transactions/ocr
   React.useEffect(() => {
-    let cancelled = false
+    const ac = new AbortController()
     ;(async () => {
       try {
         const blob = await preprocessImage(image)
@@ -118,21 +118,22 @@ export function ReceiptAnalyzingV2({ image, onDone, onError, onCancel }: Props) 
         const res = await fetch('/api/transactions/ocr', {
           method: 'POST',
           body: formData,
+          signal: ac.signal,
         })
         if (!res.ok) {
-          if (!cancelled) onError(`HTTP ${res.status}`)
+          if (!ac.signal.aborted) onError(`HTTP ${res.status}`)
           return
         }
         const json = await res.json() as OcrResult & { error?: string }
-        if (cancelled) return
+        if (ac.signal.aborted) return
         pendingResult.current = json
         setHasResult(true)
       } catch (err) {
-        if (cancelled) return
+        if (ac.signal.aborted) return
         onError(err instanceof Error ? err.message : 'network_error')
       }
     })()
-    return () => { cancelled = true }
+    return () => { ac.abort() }
   }, [image, onError])
 
   return (

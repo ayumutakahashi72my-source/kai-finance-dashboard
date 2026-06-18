@@ -3,16 +3,13 @@
 import { useRef, useState } from 'react'
 import { ReceiptAnalyzingV2 } from '@/components/transactions/ReceiptAnalyzingV2'
 import type { OcrResult } from '@/lib/ocr'
+import { todayJST } from '@/lib/jst'
+import { CORAL, TEXT1, TEXT3, TEXT4 } from '@/components/layout/tabs/_shared'
 
 interface Props {
   onResult: (data: OcrResult) => void
   onCancel: () => void
 }
-
-const CORAL = '#fb9477'
-const TEXT1 = '#f0f0f5'
-const TEXT3 = '#8b8ba0'
-const TEXT4 = '#5e5e72'
 
 export function ReceiptCapture({ onResult, onCancel }: Props) {
   const inputRef = useRef<HTMLInputElement>(null)
@@ -33,7 +30,7 @@ export function ReceiptCapture({ onResult, onCancel }: Props) {
         }}
         onError={() => {
           setSelectedFile(null)
-          onResult({ payee: '', amount: 0, occurred_on: new Date().toISOString().split('T')[0], confidence: 0 })
+          onResult({ payee: '', amount: 0, occurred_on: todayJST(), confidence: 0 })
         }}
         onCancel={() => setSelectedFile(null)}
       />

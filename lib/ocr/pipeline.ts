@@ -93,7 +93,7 @@ export async function structureReceiptData({
     return {
       payee:       cached.payee,
       amount:      amountResult.amount,
-      occurred_on: dateResult.date,
+      occurred_on: dateResult.date || today,
       confidence:  Math.max(cached.confidence, amountResult.confidence),
       timings,
     }
@@ -150,7 +150,7 @@ export async function structureReceiptData({
       payee:       merchantResult.merchant,
       amount:      amountResult.amount,
       occurred_on: dateResult.date,
-      confidence:  (merchantResult.confidence + amountResult.confidence + (dateResult.confidence || 0.5)) / 3,
+      confidence:  (merchantResult.confidence + amountResult.confidence + (dateResult.date ? dateResult.confidence : 0.3)) / 3,
     }
   }
 
