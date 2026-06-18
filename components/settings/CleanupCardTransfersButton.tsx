@@ -14,6 +14,7 @@ export function CleanupCardTransfersButton() {
     setPhase('loading')
     try {
       const res = await fetch('/api/transactions/cleanup-card-transfers')
+      if (!res.ok) throw new Error('確認に失敗しました')
       const data = await res.json() as { count: number }
       setPreviewCount(data.count)
       setPhase('confirm')

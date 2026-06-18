@@ -66,6 +66,7 @@ export function MfSyncLogs() {
   async function load() {
     setLoading(true)
     const res = await fetch('/api/settings/mf/logs')
+    if (!res.ok) { setLogs([]); setLoading(false); return }
     const data = await res.json() as { logs: SyncLog[] }
     setLogs(data.logs ?? [])
     setLoading(false)

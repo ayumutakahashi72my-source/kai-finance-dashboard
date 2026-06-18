@@ -6,6 +6,8 @@ import Link from 'next/link'
 import { ChevronLeft, ShieldCheck, ShieldOff, Crown, UserPlus, Copy, Check } from 'lucide-react'
 import { KAI } from '@/lib/kai-tokens'
 import { Skeleton } from '@/components/ui/Skeleton'
+import { Sidebar } from '@/components/layout/Sidebar'
+import { BottomBar } from '@/components/layout/BottomBar'
 
 interface Member {
   id:           string
@@ -84,6 +86,10 @@ export default function AdminMembersPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#0c0a14', color: KAI.text1 }}>
+      <div aria-hidden className="pointer-events-none fixed inset-0" style={{ zIndex: 0, backgroundImage: `radial-gradient(ellipse 600px 400px at 80% 20%, rgba(251,148,119,.09), transparent 55%),radial-gradient(ellipse 500px 300px at 20% 80%, rgba(122,167,255,.06), transparent 55%)` }}/>
+      <div aria-hidden className="pointer-events-none fixed inset-0" style={{ zIndex: 1, backgroundImage: `linear-gradient(rgba(255,255,255,.012) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.012) 1px,transparent 1px)`, backgroundSize: '40px 40px' }}/>
+      <Sidebar/>
+      <div className="relative min-h-screen lg:pl-[220px]" style={{ zIndex: 2 }}>
       <div style={{ maxWidth: 640, margin: '0 auto', padding: '32px 20px 80px' }}>
 
         {/* ヘッダー */}
@@ -273,6 +279,8 @@ export default function AdminMembersPage() {
           最初の管理者はデータベースで直接 <code style={{ ...MONO, fontSize: 10, background: 'rgba(255,255,255,.06)', padding: '1px 5px', borderRadius: 4 }}>is_admin = true</code> に設定してください。
         </p>
       </div>
+      </div>
+      <BottomBar/>
     </div>
   )
 }

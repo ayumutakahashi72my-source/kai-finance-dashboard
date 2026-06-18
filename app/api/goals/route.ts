@@ -32,7 +32,10 @@ export async function POST(req: NextRequest) {
 
   const { supabase, householdId } = auth
 
-  const body = await req.json()
+  let body: unknown
+  try { body = await req.json() } catch {
+    return NextResponse.json({ error: 'リクエスト本文が不正です' }, { status: 400 })
+  }
   const parsed = CreateSchema.safeParse(body)
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 })

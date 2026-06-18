@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { requireAuth } from '@/lib/api-guard'
+import { jstNow } from '@/lib/jst'
 import { mfLogin, fetchMfTransactions, MfOtpRequiredError, type MfLoginStep } from '@/lib/moneyforward-client'
 import { mfBrowserSubmitOtp, type MfBrowserLoginStep } from '@/lib/mf-browser'
 import { buildSourceHash } from '@/lib/csv-parser'
 
 export const maxDuration = 60
 
-type SupabaseClient = Awaited<ReturnType<typeof createClient>>
+import type { SupabaseClient } from '@supabase/supabase-js'
 type TraceStep = MfLoginStep | MfBrowserLoginStep
 
 async function writeLog(
@@ -59,17 +60,10 @@ function toPlaywrightStorage(cookieState: Record<string, string>): string {
 }
 
 export async function POST(req: NextRequest) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: '認証が必要です' }, { status: 401 })
+  const auth = await requireAuth()
+  if (!auth.ok) return auth.response
 
-  const { data: household } = await supabase
-    .from('households')
-    .select('id')
-    .eq('owner_id', user.id)
-    .limit(1)
-    .single()
-  if (!household) return NextResponse.json({ error: '世帯が見つかりません' }, { status: 404 })
+  const { supabase, user, householdId } = auth
 
   const { data: mfSetting } = await supabase
     .from('user_settings')
@@ -82,17 +76,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'MF設定が未登録です。設定画面でIDとパスワードを登録してください。' }, { status: 400 })
   }
 
-  const body = await req.json().catch(() => ({})) as {
-    year?: number
-    month?: number
-    otp_code?: string
-    otp_url?: string
-    otp_storage_state?: string  // Playwright storageState JSON（HTTP loginのcookieState変換済み）
-    session_cookie?: string
+  let body: { year?: number; month?: number; otp_code?: string; otp_url?: string; otp_storage_state?: string; session_cookie?: string }
+  try { body = await req.json() } catch {
+    body = {}
   }
-  const now = new Date()
-  const year = body.year ?? now.getFullYear()
-  const month = body.month ?? now.getMonth() + 1
+  const now = jstNow()
+  const year = body.year ?? now.getUTCFullYear()
+  const month = body.month ?? now.getUTCMonth() + 1
 
   const trace: TraceStep[] = []
   let session: string
@@ -114,7 +104,7 @@ export async function POST(req: NextRequest) {
       )
     } catch (err) {
       const error_msg = err instanceof Error ? err.message : '不明なエラー'
-      await writeLog(supabase, household.id, {
+      await writeLog(supabase, householdId, {
         triggered_by: 'manual',
         status: 'error', step: 'otp_browser',
         year, month, error_msg, steps_detail: otpTrace,
@@ -140,7 +130,7 @@ export async function POST(req: NextRequest) {
         })
       }
       const error_msg = err instanceof Error ? err.message : '不明なエラー'
-      await writeLog(supabase, household.id, {
+      await writeLog(supabase, householdId, {
         triggered_by: 'manual',
         status: 'error', step: 'login',
         year, month, error_msg, steps_detail: loginTrace,
@@ -156,7 +146,7 @@ export async function POST(req: NextRequest) {
     txList = await fetchMfTransactions(session, year, month, fetchTrace)
   } catch (err) {
     const error_msg = err instanceof Error ? err.message : '不明なエラー'
-    await writeLog(supabase, household.id, {
+    await writeLog(supabase, householdId, {
       triggered_by: 'manual',
       status: 'error', step: 'fetch_transactions',
       year, month, error_msg, steps_detail: [...trace, ...fetchTrace],
@@ -165,7 +155,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (!txList.length) {
-    await writeLog(supabase, household.id, {
+    await writeLog(supabase, householdId, {
       triggered_by: 'manual',
       status: 'success', step: 'completed',
       inserted: 0, skipped: 0, year, month, steps_detail: [...trace, ...fetchTrace],
@@ -175,7 +165,7 @@ export async function POST(req: NextRequest) {
 
   // Step 3: DB 保存
   const records = txList.map((t) => ({
-    household_id: household.id,
+    household_id: householdId,
     occurred_on: t.occurred_on,
     payee: t.payee,
     amount: t.amount,
@@ -193,7 +183,7 @@ export async function POST(req: NextRequest) {
     .select('id')
 
   if (dbError) {
-    await writeLog(supabase, household.id, {
+    await writeLog(supabase, householdId, {
       triggered_by: 'manual',
       status: 'error', step: 'db_upsert',
       year, month, error_msg: dbError.message, steps_detail: [...trace, ...fetchTrace],
@@ -203,7 +193,7 @@ export async function POST(req: NextRequest) {
 
   const insertedCount = inserted?.length ?? 0
   const skippedCount = records.length - insertedCount
-  await writeLog(supabase, household.id, {
+  await writeLog(supabase, householdId, {
     triggered_by: 'manual',
     status: 'success', step: 'completed',
     inserted: insertedCount, skipped: skippedCount,

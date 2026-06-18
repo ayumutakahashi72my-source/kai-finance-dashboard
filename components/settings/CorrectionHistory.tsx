@@ -58,7 +58,7 @@ function StatusBadge({ entry }: { entry: CorrectionEntry }) {
 export function CorrectionHistory() {
   const { data, isLoading, isError } = useQuery<{ data: CorrectionEntry[] }>({
     queryKey: ['correction_history'],
-    queryFn: () => fetch('/api/feedback').then((r) => r.json()),
+    queryFn: async () => { const r = await fetch('/api/feedback'); if (!r.ok) throw new Error('取得に失敗しました'); return r.json() },
     staleTime: 30_000,
   })
 

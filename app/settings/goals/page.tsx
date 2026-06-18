@@ -5,6 +5,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import Link from 'next/link'
 import { ChevronLeftIcon, PlusIcon, SparklesIcon, Trash2Icon, PencilIcon, CheckIcon, XIcon, Target } from 'lucide-react'
 import { KAI, yen } from '@/lib/kai-tokens'
+import { Sidebar } from '@/components/layout/Sidebar'
+import { BottomBar } from '@/components/layout/BottomBar'
 import type { FinancialGoal } from '@/components/dashboard/GoalProgressCard'
 
 const panel = {
@@ -531,7 +533,7 @@ export default function GoalsPage() {
 
   const { data, isLoading } = useQuery<{ goals: FinancialGoal[] }>({
     queryKey: ['goals'],
-    queryFn: () => fetch('/api/goals').then((r) => r.json()),
+    queryFn: async () => { const r = await fetch('/api/goals'); if (!r.ok) throw new Error('取得に失敗しました'); return r.json() },
   })
 
   const goals = data?.goals ?? []
@@ -539,8 +541,9 @@ export default function GoalsPage() {
   return (
     <div className="min-h-screen" style={{ background: '#0c0a14' }}>
       <div aria-hidden className="pointer-events-none fixed inset-0" style={{ zIndex: 0, backgroundImage: `radial-gradient(ellipse 600px 400px at 80% 20%, rgba(251,148,119,.09), transparent 55%),radial-gradient(ellipse 500px 300px at 20% 80%, rgba(122,167,255,.06), transparent 55%)` }} />
-
-      <div className="relative min-h-screen" style={{ zIndex: 2 }}>
+      <div aria-hidden className="pointer-events-none fixed inset-0" style={{ zIndex: 1, backgroundImage: `linear-gradient(rgba(255,255,255,.012) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.012) 1px,transparent 1px)`, backgroundSize: '40px 40px' }}/>
+      <Sidebar/>
+      <div className="relative min-h-screen lg:pl-[220px]" style={{ zIndex: 2 }}>
         {/* header */}
         <header
           className="sticky top-0 z-30 flex items-center gap-3 px-4 py-[14px]"
@@ -565,7 +568,7 @@ export default function GoalsPage() {
           )}
         </header>
 
-        <main className="mx-auto max-w-2xl px-4 py-5 pb-32 space-y-4">
+        <main className="mx-auto max-w-2xl px-4 py-5 pb-32 lg:pb-10 space-y-4">
           {showCreate && (
             <CreateForm
               onCancel={() => setShowCreate(false)}
@@ -609,6 +612,7 @@ export default function GoalsPage() {
           </p>
         </main>
       </div>
+      <BottomBar/>
     </div>
   )
 }

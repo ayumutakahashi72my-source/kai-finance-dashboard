@@ -61,6 +61,9 @@ export function LeaveHouseholdButton({ isOwner }: Props) {
       {/* 確認ダイアログ */}
       {open && (
         <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={isOwner ? '世帯削除の確認' : '世帯脱退の確認'}
           style={{
             position: 'fixed', inset: 0, zIndex: 9999,
             background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)',
