@@ -9,23 +9,23 @@ import { getTransactions } from '@/app/actions/transactions'
 import { getHousehold } from '@/app/actions/households'
 import { CreateHouseholdForm } from '@/components/households/CreateHouseholdForm'
 import { KaiSystemBrand } from '@/components/kai/shared'
+import { jstNow, jstMonthStr, jstDateStr, jstHour } from '@/lib/jst'
 import type { Transaction } from '@/lib/types'
 
 const CORAL = '#fb9477'
 
 function currentMonthStr() {
-  const d = new Date()
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+  return jstMonthStr()
 }
 
 function calcStreak(transactions: Transaction[]): number {
   const dates = new Set(transactions.map((t) => t.occurred_on.slice(0, 10)))
-  const today = new Date()
+  const today = jstNow()
   let streak = 0
   for (let i = 0; i < 60; i++) {
-    const d = new Date(today)
-    d.setDate(d.getDate() - i)
-    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    const d = new Date(today.getTime())
+    d.setUTCDate(d.getUTCDate() - i)
+    const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`
     if (dates.has(key)) streak++
     else if (i > 0) break
   }
@@ -48,7 +48,7 @@ export default async function DashboardPage({
   const month = rawMonth ?? currentMonthStr()
 
   const displayName = user.user_metadata?.full_name ?? user.email ?? 'ユーザー'
-  const firstName   = (displayName as string).split(/[\s　]/)[0] ?? displayName
+  const firstName   = displayName.split(/[\s　]/)[0] ?? displayName
   const avatarUrl   = user.user_metadata?.avatar_url as string | undefined
 
   const [filteredTransactions, allTransactions] = await Promise.all([
@@ -58,9 +58,8 @@ export default async function DashboardPage({
 
   const streak = calcStreak(allTransactions)
 
-  const now     = new Date()
-  const dateStr = `${now.getFullYear()}.${String(now.getMonth() + 1).padStart(2, '0')}.${String(now.getDate()).padStart(2, '0')}`
-  const hour    = now.getHours()
+  const dateStr  = jstDateStr()
+  const hour     = jstHour()
   const greeting = hour < 12 ? 'おはようございます' : hour < 18 ? 'こんにちは' : 'こんばんは'
 
   return (
@@ -161,7 +160,6 @@ export default async function DashboardPage({
             transactions={filteredTransactions}
             allTransactions={allTransactions}
             month={month}
-            displayName={displayName}
             streak={streak}
           />
         </main>

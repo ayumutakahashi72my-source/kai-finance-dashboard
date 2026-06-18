@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { KAI, yen } from '@/lib/kai-tokens'
 import { Ring } from '@/components/kai/shared'
+import { panel } from './dashboard-utils'
 
 export interface FinancialGoal {
   id: string
@@ -115,14 +116,6 @@ function MiniRing({ percent, color, topLabel, centerMain, centerSub, bottomMain,
     </div>
   )
 }
-
-const panel = {
-  background:           KAI.bgPanel,
-  backdropFilter:       'blur(24px) saturate(160%)',
-  WebkitBackdropFilter: 'blur(24px) saturate(160%)',
-  border:               `1px solid ${KAI.border2}`,
-  borderRadius:         18,
-} as const
 
 export function GoalProgressCard({ goal, currentMonthExpense, currentMonthIncome, aggregate }: Props) {
   const [expanded, setExpanded] = useState(false)
@@ -345,16 +338,17 @@ export function GoalProgressCard({ goal, currentMonthExpense, currentMonthIncome
           <p style={{ fontSize: 12, color: KAI.text3, margin: '0 0 10px' }}>
             AI試算を実行すると月次予算が表示されます
           </p>
-          <Link href="/settings/goals">
-            <button
-              style={{
-                background: `${KAI.violet}18`, color: KAI.violet,
-                border: `1px solid ${KAI.violet}40`, borderRadius: 8,
-                padding: '6px 16px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-              }}
-            >
-              設定ページで AI試算を実行 →
-            </button>
+          <Link
+            href="/settings/goals"
+            style={{
+              display: 'inline-block',
+              background: `${KAI.violet}18`, color: KAI.violet,
+              border: `1px solid ${KAI.violet}40`, borderRadius: 8,
+              padding: '6px 16px', fontSize: 12, fontWeight: 600,
+              textDecoration: 'none',
+            }}
+          >
+            設定ページで AI試算を実行 →
           </Link>
         </div>
       )}

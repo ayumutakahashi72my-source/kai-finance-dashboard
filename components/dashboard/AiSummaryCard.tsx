@@ -44,7 +44,11 @@ export function AiSummaryCard() {
 
   const { data, isLoading } = useQuery<{ data: SummaryData | null }>({
     queryKey: ['ai_summary'],
-    queryFn: () => fetch('/api/ai/summary').then((r) => r.json()),
+    queryFn: async () => {
+      const r = await fetch('/api/ai/summary')
+      if (!r.ok) throw new Error('サマリーの読み込みに失敗しました')
+      return r.json()
+    },
   })
 
   const { mutate, isPending, error } = useMutation({

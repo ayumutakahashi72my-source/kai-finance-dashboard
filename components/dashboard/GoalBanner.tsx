@@ -59,23 +59,22 @@ export function GoalBanner() {
         <p style={{ color: KAI.text4, fontSize: 11, textAlign: 'center', maxWidth: 180, margin: 0, lineHeight: 1.6 }}>
           目標を設定すると月次の<br />使用可能額がわかります
         </p>
-        <Link href="/settings/goals">
-          <button
-            style={{
-              background: KAI.coral,
-              color: '#fff',
-              borderRadius: 9,
-              padding: '8px 22px',
-              fontSize: 13,
-              fontWeight: 700,
-              border: 'none',
-              cursor: 'pointer',
-              marginTop: 4,
-              boxShadow: `0 0 16px rgba(251,148,119,0.35)`,
-            }}
-          >
-            目標を設定する
-          </button>
+        <Link
+          href="/settings/goals"
+          style={{
+            display: 'inline-block',
+            background: KAI.coral,
+            color: '#fff',
+            borderRadius: 9,
+            padding: '8px 22px',
+            fontSize: 13,
+            fontWeight: 700,
+            textDecoration: 'none',
+            marginTop: 4,
+            boxShadow: `0 0 16px rgba(251,148,119,0.35)`,
+          }}
+        >
+          目標を設定する
         </Link>
       </div>
     </div>

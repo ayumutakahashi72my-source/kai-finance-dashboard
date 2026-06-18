@@ -45,7 +45,11 @@ function AnomalyItem({ flag }: { flag: AnomalyFlag }) {
 export function AnomalyBanner({ month }: { month: string }) {
   const { data, isLoading } = useQuery<{ anomalies: AnomalyFlag[] }>({
     queryKey: ['anomalies', month],
-    queryFn: () => fetch(`/api/anomalies?month=${month}`).then((r) => r.json()),
+    queryFn: async () => {
+      const r = await fetch(`/api/anomalies?month=${month}`)
+      if (!r.ok) throw new Error('異常検知の読み込みに失敗しました')
+      return r.json()
+    },
     staleTime: 1000 * 60 * 10,
     retry: 1,
   })

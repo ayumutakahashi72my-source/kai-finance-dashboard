@@ -1,8 +1,9 @@
 'use client'
 
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Skeleton } from '@/components/ui/Skeleton'
+import { renderMarkdown } from '@/lib/markdown'
 
 interface QuarterlyInsight {
   year: number
@@ -12,37 +13,17 @@ interface QuarterlyInsight {
   created_at: string
 }
 
-/** **text** を <strong> に変換（dangerouslySetInnerHTML不使用） */
-function parseBold(line: string): React.ReactNode[] {
-  const parts = line.split(/(\*\*[^*]+\*\*)/)
-  return parts.map((part, j) =>
-    part.startsWith('**') && part.endsWith('**')
-      ? <strong key={j} style={{ color: '#e8e8f0' }}>{part.slice(2, -2)}</strong>
-      : part
-  )
-}
-
-function renderMarkdown(text: string) {
-  return text.split('\n').map((line, i) => {
-    if (line.startsWith('## ') || line.startsWith('# ')) {
-      const heading = line.replace(/^#+\s+/, '').replace(/\*\*/g, '')
-      return <p key={i} style={{ fontWeight: 700, color: '#c4b5fd', fontSize: 13, marginTop: i > 0 ? 10 : 0 }}>{heading}</p>
-    }
-    if (line.startsWith('**') && line.endsWith('**')) {
-      return <p key={i} style={{ fontWeight: 700, color: '#e8e8f0', fontSize: 13, marginTop: 8 }}>{line.slice(2, -2)}</p>
-    }
-    if (!line.trim()) return <div key={i} style={{ height: 4 }} />
-    return <p key={i} style={{ fontSize: 13, color: '#b0b0c4', lineHeight: 1.7 }}>{parseBold(line)}</p>
-  })
-}
-
 export function QuarterlyInsightCard() {
   const [expanded, setExpanded] = useState(false)
   const [selected, setSelected] = useState(0)
 
   const { data, isLoading } = useQuery<{ insights: QuarterlyInsight[] }>({
     queryKey: ['quarterly_insights'],
-    queryFn: () => fetch('/api/ai/quarterly').then((r) => r.json()),
+    queryFn: async () => {
+      const r = await fetch('/api/ai/quarterly')
+      if (!r.ok) throw new Error('四半期分析の読み込みに失敗しました')
+      return r.json()
+    },
     staleTime: 1000 * 60 * 60,
   })
 

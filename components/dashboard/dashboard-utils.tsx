@@ -1,4 +1,5 @@
 import { KAI } from '@/lib/kai-tokens'
+import { jstNow } from '@/lib/jst'
 import type { Transaction } from '@/lib/types'
 
 /* ─── color palette ─── */
@@ -43,20 +44,22 @@ export const fmtK = (n: number) => `${(Math.abs(n) / 10000).toFixed(1)}万`
 
 /* ─── data helpers ─── */
 export function buildMonthlyData(transactions: Transaction[]) {
-  const now = new Date()
+  const now = jstNow()
   return Array.from({ length: 6 }, (_, i) => {
-    const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1)
-    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+    const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - (5 - i), 1))
+    const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`
     const monthTx = transactions.filter((t) => t.occurred_on.startsWith(key))
     return {
-      m: `${d.getMonth() + 1}`,
+      m: `${d.getUTCMonth() + 1}`,
       inc: monthTx.filter((t) => t.amount >= 0).reduce((s, t) => s + t.amount, 0),
       exp: monthTx.filter((t) => t.amount < 0).reduce((s, t) => s + Math.abs(t.amount), 0),
     }
   })
 }
 
-export function buildCategoryData(transactions: Transaction[]) {
+export type CategoryData = [string, { amount: number; color: string; icon: string | null }][]
+
+export function buildCategoryData(transactions: Transaction[]): CategoryData {
   const expenses = transactions.filter((t) => t.amount < 0)
   const byCategory = Object.entries(
     expenses.reduce<Record<string, { amount: number; color: string; icon: string | null }>>((acc, t) => {
