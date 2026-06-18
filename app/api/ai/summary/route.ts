@@ -1,30 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { requireAuth } from '@/lib/api-guard'
+import { jstNow } from '@/lib/jst'
 import { generateMonthlySummary } from '@/lib/monthly-summary'
 import { FALLBACK } from '@/lib/fallback-messages'
-
-async function getHouseholdId(supabase: Awaited<ReturnType<typeof createClient>>, userId: string) {
-  const { data } = await supabase
-    .from('household_members')
-    .select('household_id')
-    .eq('user_id', userId)
-    .limit(1)
-    .single()
-  return data?.household_id ?? null
-}
 
 // GET: 月次サマリーを返す
 // ?list=true → 存在する年月一覧
 // ?year=YYYY&month=MM → 指定月のサマリー
 // (パラメータなし) → 最新のサマリー
 export async function GET(req: NextRequest) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: '認証が必要です' }, { status: 401 })
+  const auth = await requireAuth()
+  if (!auth.ok) return auth.response
 
-  const householdId = await getHouseholdId(supabase, user.id)
-  if (!householdId) return NextResponse.json({ error: '世帯が見つかりません' }, { status: 400 })
-
+  const { supabase, householdId } = auth
   const { searchParams } = new URL(req.url)
 
   if (searchParams.get('list') === 'true') {
@@ -65,20 +53,18 @@ export async function GET(req: NextRequest) {
 
 // POST: 今月分を生成（月1回制限）
 export async function POST() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: '認証が必要です' }, { status: 401 })
+  const auth = await requireAuth()
+  if (!auth.ok) return auth.response
 
-  const householdId = await getHouseholdId(supabase, user.id)
-  if (!householdId) return NextResponse.json({ error: '世帯が見つかりません' }, { status: 400 })
+  const { supabase, householdId } = auth
 
   if (!process.env.ANTHROPIC_API_KEY) {
     return NextResponse.json({ error: 'AI機能が設定されていません' }, { status: 503 })
   }
 
-  const now = new Date()
-  const year = now.getFullYear()
-  const month = now.getMonth() + 1
+  const now = jstNow()
+  const year = now.getUTCFullYear()
+  const month = now.getUTCMonth() + 1
 
   let content: string
   try {

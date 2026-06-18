@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { SendIcon } from 'lucide-react'
+import { KAI } from '@/lib/kai-tokens'
 
 interface ChatMessage {
   role: 'user' | 'assistant'
@@ -12,10 +13,6 @@ interface UsageInfo {
   session_count: number
   estimated_cost: number
 }
-
-const CORAL  = '#fb9477'
-const VIOLET = '#a78bfa'
-const TEXT3  = '#8b8ba0'
 
 /* suggestion chips shown when chat is empty (alwaysOpen mode) */
 const SUGGESTIONS = [
@@ -42,8 +39,9 @@ export function AiChatPanel({ alwaysOpen = false }: Props) {
   useEffect(() => {
     if (!open) return
     fetch('/api/ai/chat')
-      .then((r) => r.json())
-      .then((json) => {
+      .then(async (r) => {
+        if (!r.ok) return
+        const json = await r.json()
         setMessages(json.messages ?? [])
         setUsage(json.usage ?? { session_count: 0, estimated_cost: 0 })
       })
@@ -106,7 +104,7 @@ export function AiChatPanel({ alwaysOpen = false }: Props) {
           style={{ padding: '16px 20px 12px', borderBottom: '1px solid rgba(255,255,255,.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{ width: 28, height: 28, borderRadius: 8, background: `linear-gradient(135deg,${VIOLET},${CORAL})`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: 28, height: 28, borderRadius: 8, background: `linear-gradient(135deg,${KAI.violet},${KAI.coral})`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
                 <circle cx="8" cy="6" r="3" fill="rgba(255,255,255,.9)" />
                 <path d="M3 14c0-2.76 2.24-5 5-5s5 2.24 5 5" stroke="rgba(255,255,255,.9)" strokeWidth="1.4" strokeLinecap="round" />
@@ -114,13 +112,13 @@ export function AiChatPanel({ alwaysOpen = false }: Props) {
             </div>
             <div>
               <p style={{ fontSize: 14, fontWeight: 700, color: '#f0f0f5', lineHeight: 1 }}>AIチャット</p>
-              <p style={{ fontSize: 10, color: TEXT3, marginTop: 2, fontFamily: 'var(--font-mono),monospace' }}>
+              <p style={{ fontSize: 10, color: KAI.text3, marginTop: 2, fontFamily: 'var(--font-mono),monospace' }}>
                 {usage.session_count}/20回 · ¥{usage.estimated_cost}
               </p>
             </div>
           </div>
-          <span style={{ fontSize: 9, fontFamily: 'var(--font-mono),monospace', fontWeight: 700, letterSpacing: '.10em', padding: '2px 6px', borderRadius: 99, background: 'rgba(167,139,250,.12)', border: '1px solid rgba(167,139,250,.28)', color: VIOLET, display: 'flex', alignItems: 'center', gap: 4 }}>
-            <span style={{ width: 5, height: 5, borderRadius: '50%', background: VIOLET, boxShadow: `0 0 6px ${VIOLET}`, display: 'inline-block', animation: 'kai-blink 1.8s ease-in-out infinite' }} />
+          <span style={{ fontSize: 9, fontFamily: 'var(--font-mono),monospace', fontWeight: 700, letterSpacing: '.10em', padding: '2px 6px', borderRadius: 99, background: 'rgba(167,139,250,.12)', border: '1px solid rgba(167,139,250,.28)', color: KAI.violet, display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={{ width: 5, height: 5, borderRadius: '50%', background: KAI.violet, boxShadow: `0 0 6px ${KAI.violet}`, display: 'inline-block', animation: 'kai-blink 1.8s ease-in-out infinite' }} />
             Sonnet
           </span>
         </div>
@@ -129,7 +127,7 @@ export function AiChatPanel({ alwaysOpen = false }: Props) {
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3" style={{ maxHeight: 420 }}>
           {messages.length === 0 && (
             <div>
-              <p style={{ fontSize: 13, color: TEXT3, textAlign: 'center', paddingTop: 8, paddingBottom: 16 }}>
+              <p style={{ fontSize: 13, color: KAI.text3, textAlign: 'center', paddingTop: 8, paddingBottom: 16 }}>
                 家計について何でも聞いてください
               </p>
               {/* suggestion chips */}
@@ -140,7 +138,7 @@ export function AiChatPanel({ alwaysOpen = false }: Props) {
                     onClick={() => send(s)}
                     disabled={limitReached || sending}
                     style={{
-                      fontSize: 12, color: CORAL, padding: '6px 12px', borderRadius: 99,
+                      fontSize: 12, color: KAI.coral, padding: '6px 12px', borderRadius: 99,
                       background: 'rgba(251,148,119,.10)', border: '1px solid rgba(251,148,119,.22)',
                       cursor: 'pointer', transition: 'background 0.14s',
                     }}
@@ -155,7 +153,7 @@ export function AiChatPanel({ alwaysOpen = false }: Props) {
           {messages.map((m, i) => (
             <div key={i} style={{ display: 'flex', justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start' }}>
               {m.role === 'assistant' && (
-                <div style={{ width: 22, height: 22, borderRadius: 6, background: `linear-gradient(135deg,${VIOLET},${CORAL})`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginRight: 8, marginTop: 4 }}>
+                <div style={{ width: 22, height: 22, borderRadius: 6, background: `linear-gradient(135deg,${KAI.violet},${KAI.coral})`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginRight: 8, marginTop: 4 }}>
                   <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
                     <circle cx="8" cy="6" r="3" fill="rgba(255,255,255,.9)" />
                     <path d="M3 14c0-2.76 2.24-5 5-5s5 2.24 5 5" stroke="rgba(255,255,255,.9)" strokeWidth="1.6" strokeLinecap="round" />
@@ -179,7 +177,7 @@ export function AiChatPanel({ alwaysOpen = false }: Props) {
 
           {sending && (
             <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', gap: 8 }}>
-              <div style={{ width: 22, height: 22, borderRadius: 6, background: `linear-gradient(135deg,${VIOLET},${CORAL})`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <div style={{ width: 22, height: 22, borderRadius: 6, background: `linear-gradient(135deg,${KAI.violet},${KAI.coral})`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
                   <circle cx="8" cy="6" r="3" fill="rgba(255,255,255,.9)" />
                   <path d="M3 14c0-2.76 2.24-5 5-5s5 2.24 5 5" stroke="rgba(255,255,255,.9)" strokeWidth="1.6" strokeLinecap="round" />
@@ -187,7 +185,7 @@ export function AiChatPanel({ alwaysOpen = false }: Props) {
               </div>
               <div style={{ borderRadius: 16, borderBottomLeftRadius: 4, padding: '10px 14px', background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.07)', display: 'inline-flex', gap: 4, alignItems: 'center' }}>
                 {[0, 150, 300].map((d) => (
-                  <span key={d} style={{ width: 6, height: 6, borderRadius: '50%', background: TEXT3, display: 'inline-block', animation: `kai-stream-dot 1.2s ${d}ms ease-in-out infinite` }} />
+                  <span key={d} style={{ width: 6, height: 6, borderRadius: '50%', background: KAI.text3, display: 'inline-block', animation: `kai-stream-dot 1.2s ${d}ms ease-in-out infinite` }} />
                 ))}
               </div>
             </div>
@@ -196,7 +194,7 @@ export function AiChatPanel({ alwaysOpen = false }: Props) {
           <div ref={bottomRef} />
         </div>
 
-        {error && <p style={{ padding: '0 20px 8px', fontSize: 12, color: '#fb7185' }}>{error}</p>}
+        {error && <p style={{ padding: '0 20px 8px', fontSize: 12, color: KAI.danger }}>{error}</p>}
 
         {/* input */}
         <div style={{ padding: '12px 16px 16px', borderTop: '1px solid rgba(255,255,255,.07)', display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -219,7 +217,7 @@ export function AiChatPanel({ alwaysOpen = false }: Props) {
             aria-label="送信"
             style={{
               width: 40, height: 40, borderRadius: '50%', flexShrink: 0,
-              background: `linear-gradient(135deg,${CORAL},${VIOLET})`,
+              background: `linear-gradient(135deg,${KAI.coral},${KAI.violet})`,
               border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center',
               color: '#0a0a10', cursor: 'pointer', opacity: (!input.trim() || sending || limitReached) ? 0.4 : 1,
               transition: 'opacity .15s',
@@ -248,13 +246,13 @@ export function AiChatPanel({ alwaysOpen = false }: Props) {
       >
         <p style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 600, color: '#c4c4d0' }}>
           <span
-            style={{ width: 20, height: 20, borderRadius: 5, background: `linear-gradient(135deg,${CORAL},#f5d4b8)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 900, color: '#0a0a10' }}
+            style={{ width: 20, height: 20, borderRadius: 5, background: `linear-gradient(135deg,${KAI.coral},#f5d4b8)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 900, color: '#0a0a10' }}
           >
             AI
           </span>
           AIチャット
         </p>
-        <span style={{ fontFamily: 'var(--font-mono),monospace', fontSize: 12, color: TEXT3 }}>
+        <span style={{ fontFamily: 'var(--font-mono),monospace', fontSize: 12, color: KAI.text3 }}>
           {usage.session_count}/20回 · ¥{usage.estimated_cost}
         </span>
       </button>
@@ -263,7 +261,7 @@ export function AiChatPanel({ alwaysOpen = false }: Props) {
         <>
           <div className="max-h-72 space-y-3 overflow-y-auto px-5 pb-3">
             {messages.length === 0 && (
-              <p className="py-4 text-center text-sm" style={{ color: TEXT3 }}>家計について何でも聞いてください</p>
+              <p className="py-4 text-center text-sm" style={{ color: KAI.text3 }}>家計について何でも聞いてください</p>
             )}
             {messages.map((m, i) => (
               <div key={i} style={{ display: 'flex', justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start' }}>
@@ -291,7 +289,7 @@ export function AiChatPanel({ alwaysOpen = false }: Props) {
             <div ref={bottomRef} />
           </div>
 
-          {error && <p style={{ padding: '0 20px 8px', fontSize: 12, color: '#fb7185' }}>{error}</p>}
+          {error && <p style={{ padding: '0 20px 8px', fontSize: 12, color: KAI.danger }}>{error}</p>}
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px', borderTop: '1px solid rgba(255,255,255,.10)' }}>
             <input
@@ -306,7 +304,7 @@ export function AiChatPanel({ alwaysOpen = false }: Props) {
               onClick={() => send()}
               disabled={sending || !input.trim() || limitReached}
               aria-label="送信"
-              style={{ width: 36, height: 36, borderRadius: 12, flexShrink: 0, background: 'rgba(251,148,119,.12)', border: '1px solid rgba(251,148,119,.20)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: CORAL, cursor: 'pointer' }}
+              style={{ width: 36, height: 36, borderRadius: 12, flexShrink: 0, background: 'rgba(251,148,119,.12)', border: '1px solid rgba(251,148,119,.20)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: KAI.coral, cursor: 'pointer' }}
             >
               <SendIcon size={16} />
             </button>

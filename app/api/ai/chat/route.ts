@@ -1,34 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { requireAuth } from '@/lib/api-guard'
+import { jstNow } from '@/lib/jst'
 import Anthropic from '@anthropic-ai/sdk'
 import { FALLBACK } from '@/lib/fallback-messages'
-import { trackCost } from '@/lib/cost-tracker'
+import { trackCost, estimateCostUsd, costUsdToYen } from '@/lib/cost-tracker'
 import { getEnvKey } from '@/lib/api-keys'
 import { embedText } from '@/lib/embedder'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
 const SYSTEM_PROMPT =
   'あなたは日本語で応答する家計簿アシスタントです。ユーザーが提供する家計データをもとに、節約アドバイスや支出分析を行ってください。回答は簡潔に200字以内を目安にしてください。'
 
-async function getHouseholdId(supabase: Awaited<ReturnType<typeof createClient>>, userId: string) {
-  const { data } = await supabase
-    .from('household_members')
-    .select('household_id')
-    .eq('user_id', userId)
-    .limit(1)
-    .single()
-  return data?.household_id ?? null
-}
-
-// 直近3ヶ月の圧縮コンテキスト（約8,000トークン以内）
 async function buildChatContext(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: SupabaseClient,
   householdId: string
 ): Promise<string> {
-  const now = new Date()
+  const now = jstNow()
   const months: string[] = []
   for (let i = 2; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
-    months.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`)
+    const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - i, 1))
+    months.push(`${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`)
   }
 
   const { data: rows } = await supabase
@@ -65,13 +56,8 @@ async function buildChatContext(
   return `[直近3ヶ月（${months[0]}〜${months[2]}）の家計データ]\nカテゴリ別支出: ${catLines || 'なし'}\n上位店舗Top10: ${top10 || 'なし'}`
 }
 
-// Sonnet input/output トークンコストを円換算（$3/$15 per MTok × ¥150/USD）
-function estimateCostYen(inputTokens: number, outputTokens: number): number {
-  return Math.ceil((inputTokens * 3 + outputTokens * 15) / 1_000_000 * 150)
-}
-
 async function getOrCreateSession(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: SupabaseClient,
   householdId: string,
   year: number,
   month: number
@@ -95,34 +81,34 @@ async function getOrCreateSession(
 }
 
 export async function POST(req: NextRequest) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: '認証が必要です' }, { status: 401 })
+  const auth = await requireAuth()
+  if (!auth.ok) return auth.response
 
-  const householdId = await getHouseholdId(supabase, user.id)
-  if (!householdId) return NextResponse.json({ error: '世帯が見つかりません' }, { status: 400 })
+  const { supabase, householdId } = auth
 
   if (!process.env.ANTHROPIC_API_KEY) {
     return NextResponse.json({ error: 'AI機能が設定されていません' }, { status: 503 })
   }
 
-  const body = await req.json() as { message?: string }
-  const userMessage = body.message?.trim()
+  let body: unknown
+  try { body = await req.json() } catch {
+    return NextResponse.json({ error: 'リクエスト本文が不正です' }, { status: 400 })
+  }
+
+  const userMessage = (body as { message?: string }).message?.trim()
   if (!userMessage) return NextResponse.json({ error: 'メッセージが空です' }, { status: 400 })
 
-  const now = new Date()
-  const year = now.getFullYear()
-  const month = now.getMonth() + 1
+  const now = jstNow()
+  const year = now.getUTCFullYear()
+  const month = now.getUTCMonth() + 1
 
   const session = await getOrCreateSession(supabase, householdId, year, month)
   if (!session) return NextResponse.json({ error: 'セッション作成失敗' }, { status: 500 })
 
-  // 送信前チェック（OR条件）
   if (session.session_count >= 20 || session.estimated_cost >= 2000) {
     return NextResponse.json({ error: 'limit_exceeded' }, { status: 429 })
   }
 
-  // 直近6ターン（12件）の履歴
   const { data: history } = await supabase
     .from('chat_messages')
     .select('role, content')
@@ -132,13 +118,11 @@ export async function POST(req: NextRequest) {
     .order('created_at', { ascending: false })
     .limit(12)
 
-  // 最古から並べ直し、先頭が user になるよう調整（assistant始まりはAnthropicがエラー）
   const pastMessages = (history ?? []).reverse()
   while (pastMessages.length > 0 && pastMessages[0].role !== 'user') {
     pastMessages.shift()
   }
 
-  // Vector Memory: 類似 Q&A を検索してコンテキストに追加
   let memoryContext = ''
   if (process.env.VOYAGE_API_KEY) {
     try {
@@ -157,10 +141,10 @@ export async function POST(req: NextRequest) {
     } catch { /* Voyage API 失敗は無視 */ }
   }
 
-  // 現在のuserメッセージにコンテキストをインジェクション
   const context = await buildChatContext(supabase, householdId)
   const userContent = `${context}${memoryContext}\n\n${userMessage}`
 
+  const MODEL = 'claude-sonnet-4-6'
   const messages: Anthropic.MessageParam[] = [
     ...pastMessages.map((m) => ({
       role: m.role as 'user' | 'assistant',
@@ -173,7 +157,7 @@ export async function POST(req: NextRequest) {
   try {
     const client = new Anthropic({ apiKey: getEnvKey('ANTHROPIC_API_KEY') })
     response = await client.messages.create({
-      model: 'claude-sonnet-4-6',
+      model: MODEL,
       max_tokens: 512,
       system: SYSTEM_PROMPT,
       messages,
@@ -190,23 +174,21 @@ export async function POST(req: NextRequest) {
   }
 
   const assistantContent = response.content[0].type === 'text' ? response.content[0].text : ''
-  const callCost = estimateCostYen(response.usage.input_tokens, response.usage.output_tokens)
+  const callCost = costUsdToYen(estimateCostUsd(MODEL, response.usage.input_tokens, response.usage.output_tokens))
 
   void trackCost({
     household_id: householdId,
-    model: 'claude-sonnet-4-6',
+    model: MODEL,
     feature: 'chat',
     input_tokens: response.usage.input_tokens,
     output_tokens: response.usage.output_tokens,
   }, supabase)
 
-  // メッセージ保存（userは元のメッセージ、contextはインジェクションのみで保存しない）
   await supabase.from('chat_messages').insert([
     { household_id: householdId, year, month, role: 'user', content: userMessage },
     { household_id: householdId, year, month, role: 'assistant', content: assistantContent },
   ])
 
-  // Vector Memory: Q&A をベクトル化して保存（Voyage API がある場合のみ）
   if (process.env.VOYAGE_API_KEY) {
     void (async () => {
       try {
@@ -221,7 +203,6 @@ export async function POST(req: NextRequest) {
     })()
   }
 
-  // セッションカウント＋コスト更新
   await supabase
     .from('chat_sessions')
     .update({
@@ -241,16 +222,14 @@ export async function POST(req: NextRequest) {
 
 // GET: チャット履歴と使用量を返す
 export async function GET() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: '認証が必要です' }, { status: 401 })
+  const auth = await requireAuth()
+  if (!auth.ok) return auth.response
 
-  const householdId = await getHouseholdId(supabase, user.id)
-  if (!householdId) return NextResponse.json({ error: '世帯が見つかりません' }, { status: 400 })
+  const { supabase, householdId } = auth
 
-  const now = new Date()
-  const year = now.getFullYear()
-  const month = now.getMonth() + 1
+  const now = jstNow()
+  const year = now.getUTCFullYear()
+  const month = now.getUTCMonth() + 1
 
   const [{ data: messages }, { data: session }] = await Promise.all([
     supabase

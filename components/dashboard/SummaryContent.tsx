@@ -30,7 +30,7 @@ export function SummaryContent() {
   // 存在する月一覧
   const { data: listData } = useQuery<{ data: MonthEntry[] }>({
     queryKey: ['ai_summary_list'],
-    queryFn: () => fetch('/api/ai/summary?list=true').then((r) => r.json()),
+    queryFn: async () => { const r = await fetch('/api/ai/summary?list=true'); if (!r.ok) throw new Error('取得に失敗しました'); return r.json() },
   })
   const months = listData?.data ?? []
 
@@ -41,9 +41,11 @@ export function SummaryContent() {
   // 選択月のサマリー取得
   const { data, isLoading } = useQuery<{ data: SummaryData | null }>({
     queryKey: ['ai_summary', target?.year, target?.month],
-    queryFn: () => {
-      if (!target) return fetch('/api/ai/summary').then((r) => r.json())
-      return fetch(`/api/ai/summary?year=${target.year}&month=${target.month}`).then((r) => r.json())
+    queryFn: async () => {
+      const url = target ? `/api/ai/summary?year=${target.year}&month=${target.month}` : '/api/ai/summary'
+      const r = await fetch(url)
+      if (!r.ok) throw new Error('取得に失敗しました')
+      return r.json()
     },
     enabled: true,
   })
