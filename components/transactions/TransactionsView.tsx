@@ -335,6 +335,47 @@ export function TransactionsView({ month, initialView = 'list' }: Props) {
       {/* Summary Chips */}
       <SummaryChips income={totalIncome} expense={totalExpense} balance={balance} />
 
+      {/* Category filter chips */}
+      {view === 'list' && categories.length > 0 && (
+        <div style={{ display: 'flex', gap: 6, overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: 2 }}>
+          <button
+            onClick={() => {
+              const sp = new URLSearchParams(searchParams.toString())
+              sp.delete('cat')
+              router.push(`?${sp.toString()}`, { scroll: false })
+            }}
+            style={{
+              borderRadius: 20, padding: '5px 12px', fontSize: 11, fontWeight: 600,
+              whiteSpace: 'nowrap', cursor: 'pointer', fontFamily: 'inherit',
+              background: !filters.cat ? `${KAI.coral}1c` : KAI.overlayWeak,
+              border: `1px solid ${!filters.cat ? `${KAI.coral}66` : KAI.border2}`,
+              color: !filters.cat ? KAI.coral : KAI.text3,
+            }}
+          >すべて</button>
+          {categories.slice(0, 8).map(c => {
+            const isActive = filters.cat === c.name
+            return (
+              <button
+                key={c.name}
+                onClick={() => {
+                  const sp = new URLSearchParams(searchParams.toString())
+                  if (isActive) sp.delete('cat')
+                  else sp.set('cat', c.name)
+                  router.push(`?${sp.toString()}`, { scroll: false })
+                }}
+                style={{
+                  borderRadius: 20, padding: '5px 12px', fontSize: 11, fontWeight: 600,
+                  whiteSpace: 'nowrap', cursor: 'pointer', fontFamily: 'inherit',
+                  background: isActive ? `${c.color}1c` : KAI.overlayWeak,
+                  border: `1px solid ${isActive ? `${c.color}66` : KAI.border2}`,
+                  color: isActive ? c.color : KAI.text3,
+                }}
+              >{c.name}</button>
+            )
+          })}
+        </div>
+      )}
+
       {/* ══════ Content ══════ */}
 
       {view === 'calendar' ? (
@@ -452,12 +493,18 @@ export function TransactionsView({ month, initialView = 'list' }: Props) {
                                 <div style={{ fontSize: 13, fontWeight: 500, color: KAI.text1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                   {t.payee}
                                 </div>
-                                <div style={{ fontSize: 10, color: KAI.text3, marginTop: 2, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <div style={{ fontSize: 10, color: KAI.text3, marginTop: 2, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                                   <span>{t.categories?.name ?? '未分類'}</span>
                                   {t.source === 'auto' && (
                                     <>
                                       <span style={{ width: 3, height: 3, borderRadius: '50%', background: KAI.text4, display: 'inline-block' }} />
                                       <span style={{ ...MONO }}>MF同期</span>
+                                    </>
+                                  )}
+                                  {t.source === 'csv' && (
+                                    <>
+                                      <span style={{ width: 3, height: 3, borderRadius: '50%', background: KAI.text4, display: 'inline-block' }} />
+                                      <span style={{ background: `${KAI.violet}1c`, border: `1px solid ${KAI.violet}4d`, borderRadius: 4, padding: '1px 5px', color: KAI.violet, fontSize: 9, fontWeight: 700 }}>CSV</span>
                                     </>
                                   )}
                                 </div>
