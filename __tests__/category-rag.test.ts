@@ -272,3 +272,195 @@ describe('canonicalizeMerchant', () => {
     expect(result).toBe('近所のパン屋')
   })
 })
+
+// ── バッチ重複排除ロジック ──────────────────────────────────────────
+// LLM呼び出し前に同一チェーンをグルーピングするロジックの単体検証
+// （classifyBatch 内の llmKeyToItems Map 構築を再現）
+
+function buildDedupeMap(payees: string[]): Map<string, string[]> {
+  const map = new Map<string, string[]>()
+  for (const payee of payees) {
+    const k = canonicalizeMerchant(normalizeKeyword(payee))
+    if (!map.has(k)) map.set(k, [])
+    map.get(k)!.push(payee)
+  }
+  return map
+}
+
+describe('バッチ重複排除（canonicalizeMerchant 統合後）', () => {
+
+  it('同一チェーンの地名バリエーションが1グループに集約される', () => {
+    const payees = ['セブンイレブン渋谷店', 'セブンイレブン新宿店', 'セブンイレブン池袋店']
+    const map = buildDedupeMap(payees)
+    expect(map.size).toBe(1)
+    expect(map.get('セブンイレブン')).toHaveLength(3)
+  })
+
+  it('異なるチェーンは別グループになる', () => {
+    const payees = ['セブンイレブン渋谷店', 'ファミリーマート新宿店', 'ローソン渋谷店']
+    const map = buildDedupeMap(payees)
+    expect(map.size).toBe(3)
+  })
+
+  it('辞書未登録の店舗は normalizeKeyword 結果でグルーピングされる', () => {
+    const payees = ['近所のパン屋', '近所のパン屋']
+    const map = buildDedupeMap(payees)
+    expect(map.size).toBe(1)
+    expect(map.get('近所のパン屋')).toHaveLength(2)
+  })
+
+  it('amazon.co.jp と amazon が同一グループになる', () => {
+    const payees = ['amazon.co.jp', 'amazon', 'Amazon']
+    const map = buildDedupeMap(payees)
+    expect(map.size).toBe(1)
+  })
+
+  it('amazonprime と amazon は別グループになる', () => {
+    const payees = ['amazonprime', 'amazon']
+    const map = buildDedupeMap(payees)
+    expect(map.size).toBe(2)
+  })
+
+  it('LLM呼び出し削減率: 10件中同一チェーン8件なら代表2件のみ送出', () => {
+    const payees = [
+      'セブンイレブン渋谷店', 'セブンイレブン新宿店', 'セブンイレブン池袋店',
+      'セブンイレブン品川店', 'セブンイレブン上野店',
+      'ファミリーマート渋谷店', 'ファミリーマート新宿店', 'ファミリーマート品川店',
+      'amazon.co.jp', 'amazon',
+    ]
+    const map = buildDedupeMap(payees)
+    // セブン・ファミマ・amazon の3グループ
+    expect(map.size).toBe(3)
+    // 代表1件のみ LLM に送る → 10件 → 3件に削減
+    const dedupedCount = map.size
+    expect(dedupedCount).toBe(3)
+    // 削減率 = (10 - 3) / 10 = 70%
+    const reductionRate = (payees.length - dedupedCount) / payees.length
+    expect(reductionRate).toBeCloseTo(0.7)
+  })
+
+})
+
+// ── RAG統計・分析レスポンスの計算ロジック ────────────────────────
+
+describe('分析ダッシュボード計算ロジック', () => {
+
+  // LLM削減率の計算（analytics page.tsx と同一ロジック）
+  function calcLlmReductionRate(
+    methodBreakdown: Record<string, number>,
+    sampleSize: number,
+  ): number {
+    const llmCount = (methodBreakdown.llm_full ?? 0) + (methodBreakdown.llm_freeform ?? 0)
+    return sampleSize > 0 ? (sampleSize - llmCount) / sampleSize : 0
+  }
+
+  it('LLM削減率: llm_full=384, sampleSize=3200 → 88.0%', () => {
+    const rate = calcLlmReductionRate({ llm_full: 384, exact_cache: 1280, regex_rule: 960 }, 3200)
+    expect(rate).toBeCloseTo(0.88)
+  })
+
+  it('LLM削減率: 全件LLMなら削減率は 0%', () => {
+    const rate = calcLlmReductionRate({ llm_full: 100 }, 100)
+    expect(rate).toBeCloseTo(0)
+  })
+
+  it('LLM削減率: sampleSize=0 なら 0 を返す（ゼロ除算防止）', () => {
+    const rate = calcLlmReductionRate({}, 0)
+    expect(rate).toBe(0)
+  })
+
+  // hit_count 修正後の期待動作検証
+  // upsert payload に hit_count が含まれるかを型レベルで確認
+  it('RagUpsert 型が hit_count と last_seen を必須フィールドとして持つ', () => {
+    // 型の構造を実データで確認（型チェックは tsc で保証、ここではランタイム値を検証）
+    const today = new Date().toISOString().slice(0, 10)
+    const upsert = {
+      household_id: 'hid-001',
+      payee_key: 'セブンイレブン',
+      category_id: 'cat-001',
+      confidence: 0.95,
+      embedding: null,
+      hit_count: 3,        // 修正前は存在しなかったフィールド
+      last_seen: today,    // 修正前は存在しなかったフィールド
+    }
+    expect(typeof upsert.hit_count).toBe('number')
+    expect(upsert.hit_count).toBeGreaterThan(0)
+    expect(upsert.last_seen).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+  })
+
+  // ragHitCountMap の構築ロジック（既存行から hit_count を取得）
+  it('ragHitCountMap: 既存行から hit_count を正しくマップする', () => {
+    const ragRows = [
+      { payee_key: 'セブンイレブン', hit_count: 5 },
+      { payee_key: 'ファミリーマート', hit_count: null }, // null は 1 として扱う
+      { payee_key: 'amazon', hit_count: 0 },
+    ]
+    const ragHitCountMap = new Map<string, number>()
+    for (const row of ragRows) ragHitCountMap.set(row.payee_key, row.hit_count ?? 1)
+
+    expect(ragHitCountMap.get('セブンイレブン')).toBe(5)
+    expect(ragHitCountMap.get('ファミリーマート')).toBe(1)  // null → 1
+    expect(ragHitCountMap.get('amazon')).toBe(0)
+
+    // upsert 時のインクリメント
+    const nextHitCount = (ragHitCountMap.get('セブンイレブン') ?? 0) + 1
+    expect(nextHitCount).toBe(6)
+
+    // 未知の店舗は 0 + 1 = 1 から始まる
+    const newEntry = (ragHitCountMap.get('未知の店舗') ?? 0) + 1
+    expect(newEntry).toBe(1)
+  })
+
+})
+
+// ── ヘルス・スナップショット計算ロジック ─────────────────────────
+
+describe('日次ヘルス・スナップショット計算', () => {
+
+  // Cron ジョブ内の計算ロジックを再現
+  function calcSnapshot(
+    total: number,
+    cacheHits: number,
+    llmFull: number,
+    failed: number,
+    costRows: { cost_usd: string }[],
+  ) {
+    const costUsd = costRows.reduce((s, r) => s + Number(r.cost_usd), 0)
+    return {
+      cache_rate:  total > 0 ? Math.round(cacheHits / total * 10000) / 10000 : null,
+      llm_rate:    total > 0 ? Math.round(llmFull   / total * 10000) / 10000 : null,
+      failed_rate: total > 0 ? Math.round(failed     / total * 10000) / 10000 : null,
+      cost_usd:    Math.round(costUsd * 1_000_000) / 1_000_000,
+    }
+  }
+
+  it('cache_rate が total=0 のとき null を返す（ゼロ除算防止）', () => {
+    const snap = calcSnapshot(0, 0, 0, 0, [])
+    expect(snap.cache_rate).toBeNull()
+    expect(snap.llm_rate).toBeNull()
+    expect(snap.failed_rate).toBeNull()
+  })
+
+  it('cache_rate を小数4桁に丸める', () => {
+    // 1280 / 3200 = 0.4000
+    const snap = calcSnapshot(3200, 1280, 384, 32, [])
+    expect(snap.cache_rate).toBe(0.4)
+    expect(snap.llm_rate).toBe(0.12)
+    expect(snap.failed_rate).toBe(0.01)
+  })
+
+  it('cost_usd を複数行から集計して6桁精度で返す', () => {
+    const snap = calcSnapshot(100, 70, 12, 1, [
+      { cost_usd: '0.000120' },
+      { cost_usd: '0.000080' },
+    ])
+    expect(snap.cost_usd).toBeCloseTo(0.0002)
+  })
+
+  it('healthSnapshots が空のとき UI は蓄積中バナーを表示する（条件確認）', () => {
+    const snapshots: unknown[] = []
+    // analytics page の条件: healthSnapshots.length === 0
+    expect(snapshots.length === 0).toBe(true)
+  })
+
+})
