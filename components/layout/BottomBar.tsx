@@ -6,20 +6,10 @@ import Link from 'next/link'
 import { KAI } from '@/lib/kai-tokens'
 import { Icon } from '@/components/kai/shared'
 import { AddPickerSheet } from '@/components/layout/AddPickerSheet'
+import { BOTTOM_LEFT, BOTTOM_RIGHT, isNavActive } from '@/lib/nav'
 
 const CORAL = KAI.coral
 const BLUE  = KAI.blue
-
-import type { IconName } from '@/components/kai/shared'
-
-const LEFT_NAV: { href: string; icon: IconName; label: string }[] = [
-  { href: '/',         icon: 'grid',     label: 'ホーム' },
-  { href: '/transactions?view=calendar', icon: 'calendar', label: 'カレンダー' },
-]
-const RIGHT_NAV: { href: string; icon: IconName; label: string }[] = [
-  { href: '/transactions', icon: 'pie', label: '収支' },
-  { href: '/summary',      icon: 'msg', label: 'AI' },
-]
 
 export function BottomBar() {
   return (
@@ -33,17 +23,6 @@ function BottomBarInner() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const [pickerOpen, setPickerOpen] = useState(false)
-
-  const isActive = (href: string) => {
-    if (href.includes('?')) {
-      const [path, qs] = href.split('?')
-      const params = new URLSearchParams(qs)
-      if (pathname !== path) return false
-      for (const [k, v] of params) { if (searchParams.get(k) !== v) return false }
-      return true
-    }
-    return pathname === href
-  }
 
   return (
     <>
@@ -62,10 +41,9 @@ function BottomBarInner() {
             boxShadow: '0 8px 32px rgba(0,0,0,0.55)',
           }}
         >
-          {/* Left items — flex-1 so both sides are equal width */}
           <div className="flex flex-1 items-center justify-around">
-            {LEFT_NAV.map((it) => {
-              const active = isActive(it.href)
+            {BOTTOM_LEFT.map((it) => {
+              const active = isNavActive(it.href, pathname, searchParams)
               return (
                 <Link
                   key={it.href}
@@ -75,20 +53,18 @@ function BottomBarInner() {
                   className="flex min-h-[48px] flex-col items-center gap-[3px] px-2 py-2"
                   style={{ color: active ? CORAL : KAI.text3, textDecoration: 'none' }}
                 >
-                  <Icon name={it.icon} size={20}/>
+                  <Icon name={it.mobileIcon ?? it.icon} size={20}/>
                   <span style={{ fontSize: 11, fontWeight: 600 }}>{it.label}</span>
                 </Link>
               )
             })}
           </div>
 
-          {/* Center FAB spacer */}
           <div className="w-[62px] shrink-0" />
 
-          {/* Right items — flex-1 mirrors left */}
           <div className="flex flex-1 items-center justify-around">
-            {RIGHT_NAV.map((it) => {
-              const active = isActive(it.href)
+            {BOTTOM_RIGHT.map((it) => {
+              const active = isNavActive(it.href, pathname, searchParams)
               return (
                 <Link
                   key={it.href}
@@ -98,14 +74,13 @@ function BottomBarInner() {
                   className="flex min-h-[48px] flex-col items-center gap-[3px] px-2 py-2"
                   style={{ color: active ? CORAL : KAI.text3, textDecoration: 'none' }}
                 >
-                  <Icon name={it.icon} size={20}/>
+                  <Icon name={it.mobileIcon ?? it.icon} size={20}/>
                   <span style={{ fontSize: 11, fontWeight: 600 }}>{it.label}</span>
                 </Link>
               )
             })}
           </div>
 
-          {/* Center FAB */}
           <button
             aria-label="追加"
             onClick={() => setPickerOpen(true)}
