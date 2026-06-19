@@ -45,6 +45,7 @@ function Row({
   iconBg,
   iconBorder,
   title,
+  titleColor,
   subtitle,
   href,
   value,
@@ -72,7 +73,7 @@ function Row({
         {icon}
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 13.5, color: KAI.text1, fontWeight: 500 }}>{title}</div>
+        <div style={{ fontSize: 13.5, color: titleColor ?? KAI.text1, fontWeight: 500 }}>{title}</div>
         {subtitle && <div style={{ fontSize: 10.5, color: KAI.text3, marginTop: 2 }}>{subtitle}</div>}
       </div>
       {value && (
@@ -249,7 +250,6 @@ export default async function SettingsPage() {
                 titleColor={KAI.violet}
                 subtitle="キャッシュ率・分類精度・コスト"
                 href={isAdmin ? '/settings/ai-analytics' : undefined}
-                value="86%"
                 valueColor={KAI.mint}
               />
             </div>

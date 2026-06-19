@@ -9,6 +9,7 @@ import type { Category } from '@/lib/types'
 export interface TransactionFilterValues {
   q: string
   cat: string         // comma-separated category ids
+  dir: string         // 'expense' | 'income' | ''
   from: string
   to: string
   min: string
@@ -19,6 +20,7 @@ export function readFiltersFromUrl(params: URLSearchParams): TransactionFilterVa
   return {
     q:    params.get('q')    ?? '',
     cat:  params.get('cat')  ?? '',
+    dir:  params.get('dir')  ?? '',
     from: params.get('from') ?? '',
     to:   params.get('to')   ?? '',
     min:  params.get('min')  ?? '',
@@ -27,7 +29,7 @@ export function readFiltersFromUrl(params: URLSearchParams): TransactionFilterVa
 }
 
 export function isFilterActive(f: TransactionFilterValues): boolean {
-  return !!(f.q || f.cat || f.from || f.to || f.min || f.max)
+  return !!(f.q || f.cat || f.dir || f.from || f.to || f.min || f.max)
 }
 
 interface Props {
@@ -40,11 +42,11 @@ export function TransactionFilters({ categories }: Props) {
   const search = useSearchParams()
   const initial = readFiltersFromUrl(search)
 
-  const [filters, setFilters] = useState<Omit<TransactionFilterValues, never>>({
-    q: initial.q, cat: initial.cat, from: initial.from,
+  const [filters, setFilters] = useState<TransactionFilterValues>({
+    q: initial.q, cat: initial.cat, dir: initial.dir, from: initial.from,
     to: initial.to, min: initial.min, max: initial.max,
   })
-  const { q, cat, from, to, min, max } = filters
+  const { q, cat, dir, from, to, min, max } = filters
   const [showAdv, setShowAdv] = useState(false)
 
   // URL 変化時に一括更新（1回の setState で済む）
@@ -55,8 +57,8 @@ export function TransactionFilters({ categories }: Props) {
 
   function applyToUrl(next: Partial<TransactionFilterValues>) {
     const sp = new URLSearchParams(search.toString())
-    const merged: TransactionFilterValues = { q, cat, from, to, min, max, ...next }
-    for (const k of ['q', 'cat', 'from', 'to', 'min', 'max'] as const) {
+    const merged: TransactionFilterValues = { q, cat, dir, from, to, min, max, ...next }
+    for (const k of ['q', 'cat', 'dir', 'from', 'to', 'min', 'max'] as const) {
       if (merged[k]) sp.set(k, merged[k])
       else sp.delete(k)
     }
@@ -64,7 +66,7 @@ export function TransactionFilters({ categories }: Props) {
   }
 
   function reset() {
-    setFilters({ q: '', cat: '', from: '', to: '', min: '', max: '' })
+    setFilters({ q: '', cat: '', dir: '', from: '', to: '', min: '', max: '' })
     const sp = new URLSearchParams(search.toString())
     for (const k of ['q', 'cat', 'from', 'to', 'min', 'max']) sp.delete(k)
     router.push(`${pathname}?${sp.toString()}`)

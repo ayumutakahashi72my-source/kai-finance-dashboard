@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useCallback } from 'react'
+import Link from 'next/link'
 import { AiSummaryCard } from '@/components/dashboard/AiSummaryCard'
 import { QuarterlyInsightCard } from '@/components/dashboard/QuarterlyInsightCard'
 import { NowTab } from '@/components/dashboard/NowTab'
@@ -68,7 +69,7 @@ export function DashboardTabs({ transactions, allTransactions, month, streak: st
                 fontWeight: active ? 700 : 600,
                 color: active ? '#0c0a14' : KAI.text3,
                 background: active ? GRADIENTS[i] : 'rgba(255,255,255,.04)',
-                border: active ? 'none' : `1px solid ${KAI.border}`,
+                border: `1px solid ${active ? 'transparent' : KAI.border}`,
                 borderRadius: 12,
                 cursor: 'pointer',
                 fontFamily: 'inherit',
@@ -103,7 +104,7 @@ export function DashboardTabs({ transactions, allTransactions, month, streak: st
           <div className="space-y-3">
             <AiSummaryCard />
             <QuarterlyInsightCard />
-            <a
+            <Link
               href="/summary"
               style={{
                 display: 'block',
@@ -119,7 +120,7 @@ export function DashboardTabs({ transactions, allTransactions, month, streak: st
               }}
             >
               AIに相談する →
-            </a>
+            </Link>
           </div>
         )}
       </div>
