@@ -150,10 +150,6 @@ test.describe('ダッシュボード', () => {
     await page.goto('/')
     await page.waitForLoadState('networkidle')
 
-    const navLinks = page.locator('a[aria-label]').filter({
-      has: page.locator('span'),
-    })
-
     const labels = ['ホーム', 'カレンダー', '収支', 'AI']
     for (const label of labels) {
       const link = page.locator(`a[aria-label="${label}"]`)

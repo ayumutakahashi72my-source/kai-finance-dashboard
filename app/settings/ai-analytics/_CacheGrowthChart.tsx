@@ -1,6 +1,6 @@
 'use client'
 
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, Line, ComposedChart } from 'recharts'
+import { Area, XAxis, YAxis, Tooltip, ResponsiveContainer, Line, ComposedChart } from 'recharts'
 import { KAI } from '@/lib/kai-tokens'
 
 const MONO = 'var(--font-mono), "JetBrains Mono", monospace'

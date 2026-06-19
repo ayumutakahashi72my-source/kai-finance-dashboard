@@ -2,6 +2,7 @@
 
 import { CategoryIcon } from '@/components/ui/CategoryIcon'
 import { Icon } from '@/components/kai/shared'
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- used conditionally
 import { yen } from '@/lib/kai-tokens'
 import type { Transaction } from '@/lib/types'
 import {

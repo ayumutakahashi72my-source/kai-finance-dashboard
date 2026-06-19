@@ -171,11 +171,11 @@ test.describe('セキュリティヘッダー', () => {
     const headers = res.headers()
 
     // X-Frame-Options or CSP frame-ancestors
-    const hasFrameProtection =
+    expect(
       headers['x-frame-options'] !== undefined ||
       headers['content-security-policy']?.includes('frame-ancestors')
+    ).toBeTruthy()
 
-    // Strict-Transport-Security は本番環境のみ（localhost では不要）
     // X-Content-Type-Options
     if (headers['x-content-type-options']) {
       expect(headers['x-content-type-options']).toBe('nosniff')

@@ -6,6 +6,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { KAI } from '@/lib/kai-tokens'
 import { useCountUp } from '@/components/kai/hooks'
 import { getCategoryIcon } from '@/lib/category-icons'
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- used dynamically
 import { Icon } from '@/components/kai/shared'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { TransactionFilters, readFiltersFromUrl, isFilterActive } from '@/components/transactions/TransactionFilters'
@@ -98,8 +99,7 @@ function SummaryChips({ income, expense, balance }: { income: number; expense: n
 
 /* ── Category Icon Display ─────────────────────────────────── */
 function CategoryIconDisplay({ name, size = 13, strokeWidth = 1.8 }: { name: string; size?: number; strokeWidth?: number }) {
-  const Icon = getCategoryIcon(name)
-  return <Icon size={size} strokeWidth={strokeWidth} />
+  return getCategoryIcon(name)({ size, strokeWidth })
 }
 
 /* ── CategoryBar ───────────────────────────────────────────── */

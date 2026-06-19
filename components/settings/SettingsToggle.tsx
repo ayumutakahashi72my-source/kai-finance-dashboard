@@ -41,6 +41,7 @@ export function PushNotificationToggle() {
   const [subscribed, setSubscribed] = useState(false)
   const [loading, setLoading] = useState(false)
 
+  /* eslint-disable react-hooks/set-state-in-effect -- capability check only runs once on mount */
   useEffect(() => {
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) return
     setSupported(true)
@@ -48,6 +49,7 @@ export function PushNotificationToggle() {
       reg.pushManager.getSubscription().then((sub) => setSubscribed(!!sub))
     })
   }, [])
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   async function toggle() {
     setLoading(true)

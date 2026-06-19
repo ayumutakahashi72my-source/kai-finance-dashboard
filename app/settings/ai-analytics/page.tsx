@@ -85,13 +85,12 @@ function TierRow({ layer, total }: { layer: Layer; total: number }) {
 }
 
 function Donut({ layers, total, cacheRate }: { layers: Layer[]; total: number; cacheRate: number }) {
-  let acc = 0
-  const stops = layers.map(l => {
+  const stops = layers.reduce<{ segments: string[]; acc: number }>((state, l) => {
     const pct = (l.count / total) * 100
-    const from = acc
-    acc += pct
-    return `${l.color} ${from}% ${acc}%`
-  }).join(', ')
+    const from = state.acc
+    state.segments.push(`${l.color} ${from}% ${from + pct}%`)
+    return { segments: state.segments, acc: from + pct }
+  }, { segments: [], acc: 0 }).segments.join(', ')
 
   return (
     <div style={{
