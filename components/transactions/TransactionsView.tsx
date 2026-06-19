@@ -302,28 +302,28 @@ export function TransactionsView({ month, initialView = 'list' }: Props) {
 
       {/* ══════ Header Area ══════ */}
 
-      {/* Title + action buttons */}
+      {/* Title + view toggle */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ fontSize: 20, fontWeight: 700, color: KAI.text1 }}>収支一覧</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <ViewToggle view={view} onChange={setView} />
-          <button
-            onClick={() => setShowFilters(f => !f)}
-            aria-label="フィルター"
-            style={{
-              width: 36, height: 36, borderRadius: 12,
-              background: showFilters ? `${KAI.coral}1c` : KAI.overlayWeak,
-              border: `1px solid ${showFilters ? `${KAI.coral}40` : KAI.border2}`,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer', color: showFilters ? KAI.coral : KAI.text3,
-            }}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
-          </button>
-        </div>
+        <div style={{ fontSize: 20, fontWeight: 700, color: KAI.text1 }}>収支</div>
+        <ViewToggle view={view} onChange={setView} />
       </div>
 
-      {/* Search & filters (toggled) */}
+      {/* Search bar (always visible) */}
+      {view === 'list' && (
+        <div
+          onClick={() => setShowFilters(true)}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 8,
+            background: 'rgba(255,255,255,.05)', border: `1px solid ${KAI.border}`,
+            borderRadius: 12, padding: '9px 13px', cursor: 'text',
+          }}
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={KAI.text3} strokeWidth="1.8"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+          <span style={{ fontSize: 13, color: KAI.text4 }}>取引を検索…</span>
+        </div>
+      )}
+
+      {/* Filters (expanded) */}
       {view === 'list' && <DuplicateChecker />}
       {view === 'list' && showFilters && <TransactionFilters categories={allCats} />}
 
@@ -347,11 +347,35 @@ export function TransactionsView({ month, initialView = 'list' }: Props) {
             style={{
               borderRadius: 20, padding: '5px 12px', fontSize: 11, fontWeight: 600,
               whiteSpace: 'nowrap', cursor: 'pointer', fontFamily: 'inherit',
-              background: !filters.cat ? `${KAI.coral}1c` : KAI.overlayWeak,
-              border: `1px solid ${!filters.cat ? `${KAI.coral}66` : KAI.border2}`,
+              background: !filters.cat ? `${KAI.coral}1c` : 'rgba(255,255,255,.04)',
+              border: `1px solid ${!filters.cat ? `${KAI.coral}66` : KAI.border}`,
               color: !filters.cat ? KAI.coral : KAI.text3,
             }}
           >すべて</button>
+          {[
+            { name: '支出', color: KAI.danger },
+            { name: '収入', color: KAI.success },
+          ].map(c => {
+            const isActive = filters.cat === c.name
+            return (
+              <button
+                key={c.name}
+                onClick={() => {
+                  const sp = new URLSearchParams(searchParams.toString())
+                  if (isActive) sp.delete('cat')
+                  else sp.set('cat', c.name)
+                  router.push(`?${sp.toString()}`, { scroll: false })
+                }}
+                style={{
+                  borderRadius: 20, padding: '5px 12px', fontSize: 11, fontWeight: 600,
+                  whiteSpace: 'nowrap', cursor: 'pointer', fontFamily: 'inherit',
+                  background: isActive ? `${c.color}1c` : 'rgba(255,255,255,.04)',
+                  border: `1px solid ${isActive ? `${c.color}66` : KAI.border}`,
+                  color: isActive ? c.color : KAI.text3,
+                }}
+              >{c.name}</button>
+            )
+          })}
           {categories.slice(0, 8).map(c => {
             const isActive = filters.cat === c.name
             return (
@@ -366,8 +390,8 @@ export function TransactionsView({ month, initialView = 'list' }: Props) {
                 style={{
                   borderRadius: 20, padding: '5px 12px', fontSize: 11, fontWeight: 600,
                   whiteSpace: 'nowrap', cursor: 'pointer', fontFamily: 'inherit',
-                  background: isActive ? `${c.color}1c` : KAI.overlayWeak,
-                  border: `1px solid ${isActive ? `${c.color}66` : KAI.border2}`,
+                  background: isActive ? `${c.color}1c` : 'rgba(255,255,255,.04)',
+                  border: `1px solid ${isActive ? `${c.color}66` : KAI.border}`,
                   color: isActive ? c.color : KAI.text3,
                 }}
               >{c.name}</button>

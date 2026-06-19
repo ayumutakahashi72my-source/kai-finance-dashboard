@@ -246,8 +246,10 @@ export default async function SettingsPage() {
                 iconBg="rgba(167,139,250,.16)"
                 iconBorder="rgba(167,139,250,.3)"
                 title="AI運用分析"
+                titleColor={KAI.violet}
                 subtitle="キャッシュ率・分類精度・コスト"
                 href={isAdmin ? '/settings/ai-analytics' : undefined}
+                value="86%"
                 valueColor={KAI.mint}
               />
             </div>
