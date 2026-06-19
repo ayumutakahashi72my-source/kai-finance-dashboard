@@ -6,6 +6,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Pencil, Trash2, ArrowLeft, TrendingUp } from 'lucide-react'
 import { KAI } from '@/lib/kai-tokens'
 import { getCategoryIcon } from '@/lib/category-icons'
+import { CategoryIcon } from '@/components/ui/CategoryIcon'
 import { sortedCategoryOptions } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -117,7 +118,7 @@ function EditDialog({ tx, categories, onClose, onSaved }: {
                   <SelectItem key={cat.id} value={cat.id} className="focus:bg-white/5">
                     <span className="flex items-center gap-1.5">
                       {indent && <span style={{ color: '#5e5e72', fontSize: 11 }}>└</span>}
-                      {cat.icon && <span>{cat.icon}</span>}
+                      <CategoryIcon name={cat.icon} size={13} />
                       <span>{cat.name}</span>
                       {indent && parentName && (
                         <span style={{ color: '#5e5e72', fontSize: 10 }}>{parentName}</span>
@@ -219,7 +220,7 @@ export function CategoryTransactionsPage({ catName, color, month, initialTxs, ca
   /* クライアント側で再取得（編集・削除後のリフレッシュ用） */
   const { data: txRes } = useQuery<{ data: Transaction[] }>({
     queryKey: ['transactions', month],
-    queryFn:  () => fetch(`/api/transactions?month=${month}`).then((r) => r.json()),
+    queryFn:  () => fetch(`/api/transactions?month=${month}`).then((r) => { if (!r.ok) throw new Error('取得に失敗しました'); return r.json() }),
     initialData: { data: initialTxs },
   })
 

@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { getCategories } from '@/app/actions/categories'
 import { createTransaction } from '@/app/actions/transactions'
 import type { Category } from '@/lib/types'
+import { CategoryIcon } from '@/components/ui/CategoryIcon'
 import {
   CORAL, VIOLET, GREEN, RED, AMBER,
   TEXT1, TEXT2, TEXT3, TEXT4, TEXT5,
@@ -206,7 +207,7 @@ export function ManualEntryTab({ onBack, onDone, prefill }: {
                   color: on ? (cat.color ?? CORAL) : isAiSuggested ? VIOLET : TEXT2,
                   outline: isAiSuggested && on ? `2px solid ${VIOLET}55` : 'none', outlineOffset: 1,
                 }}>
-                  {cat.icon && <span>{cat.icon}</span>}{cat.name}
+                  <CategoryIcon name={cat.icon} size={13} />{cat.name}
                   {isAiSuggested && !on && <span style={{ fontSize: 8, color: VIOLET, letterSpacing: '.06em' }}>✦</span>}
                 </button>
               )

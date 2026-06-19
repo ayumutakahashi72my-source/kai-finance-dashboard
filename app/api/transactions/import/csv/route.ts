@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { requireAuth } from '@/lib/api-guard'
+import { todayJST } from '@/lib/jst'
 import { parseMfCsv, buildSourceHash, decodeCsvBuffer } from '@/lib/csv-parser'
 import { classifyFreeForm, normalizeKeyword, pickCategoryColor, fetchCategoryIcons } from '@/lib/ai-classifier'
 import { writeClassificationLogs, type ClassificationLogEntry } from '@/lib/classification-logger'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
 /** category_hint "食費 / 外食" → "食費"。空・「その他」系は空文字を返す */
 function extractMajorCategory(hint: string): string {
@@ -18,7 +20,7 @@ function extractMajorCategory(hint: string): string {
 async function upsertCategoriesByName(
   names: string[],
   householdId: string,
-  supabase: Awaited<ReturnType<typeof createClient>>
+  supabase: SupabaseClient
 ): Promise<Map<string, string>> {
   const nameToId = new Map<string, string>()
   if (!names.length) return nameToId
@@ -50,17 +52,10 @@ async function upsertCategoriesByName(
 }
 
 export async function POST(req: NextRequest) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: '認証が必要です' }, { status: 401 })
+  const auth = await requireAuth()
+  if (!auth.ok) return auth.response
 
-  const { data: membership } = await supabase
-    .from('household_members')
-    .select('household_id')
-    .eq('user_id', user.id)
-    .limit(1)
-    .single()
-  if (!membership) return NextResponse.json({ error: '世帯が見つかりません' }, { status: 400 })
+  const { supabase, householdId, user } = auth
 
   const formData = await req.formData()
   const file = formData.get('file') as File | null
@@ -78,7 +73,7 @@ export async function POST(req: NextRequest) {
   const hintNames = [
     ...new Set(rows.map((r) => extractMajorCategory(r.category_hint)).filter(Boolean)),
   ]
-  const catNameToId = await upsertCategoriesByName(hintNames, membership.household_id, supabase)
+  const catNameToId = await upsertCategoriesByName(hintNames, householdId, supabase)
 
   // Step 2: 大項目があれば直接マッピング、ない行はAI待ち
   const categoryIdMap = new Map<number, string>()
@@ -91,7 +86,7 @@ export async function POST(req: NextRequest) {
     if (catId) {
       categoryIdMap.set(i, catId)
       mfHintLogs.push({
-        household_id: membership.household_id,
+        household_id: householdId,
         payee: rows[i].payee,
         payee_key: normalizeKeyword(rows[i].payee),
         category_hint: rows[i].category_hint,
@@ -107,7 +102,7 @@ export async function POST(req: NextRequest) {
 
   // Step 3: 大項目なし・「その他」行は AI が自由にカテゴリを付ける
   if (needsAI.length) {
-    const aiMap = await classifyFreeForm(needsAI, membership.household_id, supabase, user.id)
+    const aiMap = await classifyFreeForm(needsAI, householdId, supabase, user.id)
     for (const [idx, catId] of aiMap) categoryIdMap.set(idx, catId)
   }
 
@@ -119,12 +114,12 @@ export async function POST(req: NextRequest) {
     }
     const uniqueEntries = [...uniqueByKey.values()]
     const payeeKeys = uniqueEntries.map((e) => e.payee_key)
-    const today = new Date().toISOString().slice(0, 10)
+    const today = todayJST()
 
     const { data: existingRag } = await supabase
       .from('category_rag')
       .select('payee_key')
-      .eq('household_id', membership.household_id)
+      .eq('household_id', householdId)
       .in('payee_key', payeeKeys)
 
     const existingKeySet = new Set((existingRag ?? []).map((r) => r.payee_key))
@@ -134,7 +129,7 @@ export async function POST(req: NextRequest) {
       const { error: ragErr } = await supabase
         .from('category_rag')
         .insert(toInsert.map((e) => ({
-          household_id: membership.household_id,
+          household_id: householdId,
           payee_key: e.payee_key,
           category_id: e.category_id!,
           confidence: 0.95,
@@ -151,7 +146,7 @@ export async function POST(req: NextRequest) {
       await supabase
         .from('category_rag')
         .update({ last_seen: today })
-        .eq('household_id', membership.household_id)
+        .eq('household_id', householdId)
         .in('payee_key', toUpdateKeys)
     }
 
@@ -159,7 +154,7 @@ export async function POST(req: NextRequest) {
   }
 
   const records = rows.map((r, i) => ({
-    household_id: membership.household_id,
+    household_id: householdId,
     occurred_on: r.occurred_on,
     payee: r.payee,
     amount: r.amount,
@@ -190,7 +185,7 @@ export async function POST(req: NextRequest) {
     await supabase
       .from('transactions')
       .update({ category_id: catId })
-      .eq('household_id', membership.household_id)
+      .eq('household_id', householdId)
       .in('source_hash', hashes)
       .is('category_id', null)
   }

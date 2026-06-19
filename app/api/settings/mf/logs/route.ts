@@ -1,27 +1,20 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { requireAuth } from '@/lib/api-guard'
 
 export async function GET() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: '認証が必要です' }, { status: 401 })
+  const auth = await requireAuth()
+  if (!auth.ok) return auth.response
 
-  const { data: membership } = await supabase
-    .from('household_members')
-    .select('household_id')
-    .eq('user_id', user.id)
-    .limit(1)
-    .single()
-  if (!membership) return NextResponse.json({ logs: [] })
+  const { supabase, householdId } = auth
 
-  const { data: logs } = await supabase
+  const { data: logs, error } = await supabase
     .from('mf_sync_logs')
     .select('id, triggered_by, status, step, inserted, skipped, year, month, error_msg, created_at')
-    .eq('household_id', membership.household_id)
+    .eq('household_id', householdId)
     .order('created_at', { ascending: false })
     .limit(20)
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   return NextResponse.json({ logs: logs ?? [] })
 }

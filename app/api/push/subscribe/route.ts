@@ -1,30 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { requireAuth } from '@/lib/api-guard'
 
 export async function POST(req: NextRequest) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: '認証が必要です' }, { status: 401 })
+  const auth = await requireAuth()
+  if (!auth.ok) return auth.response
 
-  const { data: member } = await supabase
-    .from('household_members')
-    .select('household_id')
-    .eq('user_id', user.id)
-    .limit(1)
-    .single()
-  if (!member) return NextResponse.json({ error: '世帯が見つかりません' }, { status: 400 })
+  const { supabase, user, householdId } = auth
 
-  const body = await req.json() as {
-    endpoint?: string
-    keys?: { p256dh?: string; auth?: string }
+  let body: { endpoint?: string; keys?: { p256dh?: string; auth?: string } }
+  try {
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ error: '不正なリクエストです' }, { status: 400 })
   }
+
   if (!body.endpoint || !body.keys?.p256dh || !body.keys?.auth) {
     return NextResponse.json({ error: '購読情報が不正です' }, { status: 400 })
   }
 
-  await supabase.from('push_subscriptions').upsert(
+  const { error } = await supabase.from('push_subscriptions').upsert(
     {
-      household_id: member.household_id,
+      household_id: householdId,
       user_id: user.id,
       endpoint: body.endpoint,
       p256dh: body.keys.p256dh,
@@ -32,6 +28,8 @@ export async function POST(req: NextRequest) {
     },
     { onConflict: 'user_id,endpoint' }
   )
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   return NextResponse.json({ ok: true })
 }

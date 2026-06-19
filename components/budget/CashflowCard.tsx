@@ -35,7 +35,7 @@ function Stat({
 export function CashflowCard({ month }: { month: string }) {
   const { data, isLoading } = useQuery<{ data: Transaction[] }>({
     queryKey: ['transactions', month],
-    queryFn: () => fetch(`/api/transactions?month=${month}`).then((r) => r.json()),
+    queryFn: () => fetch(`/api/transactions?month=${month}`).then((r) => { if (!r.ok) throw new Error('取得に失敗しました'); return r.json() }),
   })
 
   if (isLoading) {

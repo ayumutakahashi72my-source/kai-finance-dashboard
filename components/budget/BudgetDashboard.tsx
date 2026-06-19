@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/Skeleton'
 import { useCountUp } from '@/components/kai/hooks'
 import { getCategoryIcon } from '@/lib/category-icons'
 import { KAI } from '@/lib/kai-tokens'
+import { jstMonthStr } from '@/lib/jst'
 import { FixedExpenseCard } from '@/components/budget/FixedExpenseCard'
 import type { Transaction, Category } from '@/lib/types'
 
@@ -33,8 +34,7 @@ interface UserBudget {
 /* ─── helpers ───────────────────────────────────────────────────── */
 
 function currentMonthStr() {
-  const d = new Date()
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+  return jstMonthStr()
 }
 
 function prevMonthStr(month: string) {
@@ -197,23 +197,23 @@ export function BudgetDashboard({ month: monthProp }: { month?: string } = {}) {
   /* ─── queries ─── */
   const { data: budgetRes, isLoading: budgetLoading } = useQuery<{ data: BudgetData | null }>({
     queryKey: ['budget_suggest'],
-    queryFn:  () => fetch('/api/budget/suggest').then((r) => r.json()),
+    queryFn:  () => fetch('/api/budget/suggest').then((r) => { if (!r.ok) throw new Error('取得に失敗しました'); return r.json() }),
   })
   const { data: userBudgetsRes, isLoading: userBudgetsLoading } = useQuery<{ budgets: UserBudget[] }>({
     queryKey: ['user_budgets', month],
-    queryFn:  () => fetch(`/api/budgets?month=${month}`).then((r) => r.json()),
+    queryFn:  () => fetch(`/api/budgets?month=${month}`).then((r) => { if (!r.ok) throw new Error('取得に失敗しました'); return r.json() }),
   })
   const { data: txRes, isLoading: txLoading } = useQuery<{ data: Transaction[] }>({
     queryKey: ['transactions', month],
-    queryFn:  () => fetch(`/api/transactions?month=${month}`).then((r) => r.json()),
+    queryFn:  () => fetch(`/api/transactions?month=${month}`).then((r) => { if (!r.ok) throw new Error('取得に失敗しました'); return r.json() }),
   })
   const { data: prevTxRes } = useQuery<{ data: Transaction[] }>({
     queryKey: ['transactions', prev],
-    queryFn:  () => fetch(`/api/transactions?month=${prev}`).then((r) => r.json()),
+    queryFn:  () => fetch(`/api/transactions?month=${prev}`).then((r) => { if (!r.ok) throw new Error('取得に失敗しました'); return r.json() }),
   })
   const { data: catRes } = useQuery<{ data: Category[] }>({
     queryKey: ['categories'],
-    queryFn:  () => fetch('/api/categories').then((r) => r.json()),
+    queryFn:  () => fetch('/api/categories').then((r) => { if (!r.ok) throw new Error('取得に失敗しました'); return r.json() }),
   })
 
   /* ─── AI generate ─── */
@@ -353,8 +353,8 @@ export function BudgetDashboard({ month: monthProp }: { month?: string } = {}) {
 
         {/* 収入バー */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <OverallBar label="収入" value={totalIncome}  maxValue={overallMax} color="#4ade80" idx={0}/>
-          <OverallBar label="支出" value={totalExpense} maxValue={overallMax} color="#fb7185" idx={1}/>
+          <OverallBar label="収入" value={totalIncome}  maxValue={overallMax} color={KAI.success} idx={0}/>
+          <OverallBar label="支出" value={totalExpense} maxValue={overallMax} color={KAI.danger} idx={1}/>
         </div>
 
         {/* フッター */}

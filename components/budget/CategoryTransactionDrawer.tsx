@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Pencil, Trash2, X, TrendingUp } from 'lucide-react'
 import { KAI } from '@/lib/kai-tokens'
 import { getCategoryIcon } from '@/lib/category-icons'
+import { CategoryIcon } from '@/components/ui/CategoryIcon'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -107,7 +108,7 @@ function EditDialog({
                 {categories.map((cat) => (
                   <SelectItem key={cat.id} value={cat.id} className="focus:bg-white/5">
                     <span className="flex items-center gap-2">
-                      {cat.icon && <span>{cat.icon}</span>}{cat.name}
+                      <CategoryIcon name={cat.icon} size={13} />{cat.name}
                     </span>
                   </SelectItem>
                 ))}

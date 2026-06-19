@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/api-guard'
+import { jstMonthStr } from '@/lib/jst'
 import { z } from 'zod'
 import { recalculateScore } from '@/lib/score-calculator'
 
@@ -33,8 +34,7 @@ export async function DELETE(req: NextRequest) {
   }
 
   // スコア再計算（今月分）
-  const now = new Date()
-  const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  const month = jstMonthStr()
   void recalculateScore(supabase, householdId, month)
 
   return NextResponse.json({ deleted: ids.length })

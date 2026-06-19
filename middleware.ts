@@ -35,6 +35,7 @@ export default async function middleware(request: NextRequest) {
     pathname.startsWith('/login') ||
     pathname.startsWith('/auth') ||
     pathname.startsWith('/legal') ||
+    pathname.startsWith('/api/') ||
     pathname === '/api/auth/demo'
 
   if (!user && !isPublicPath) {

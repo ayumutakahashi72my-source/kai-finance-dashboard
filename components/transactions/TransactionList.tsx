@@ -4,6 +4,7 @@ import { useOptimistic, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { TrendingUp, Pencil, Trash2, CheckSquare, Square, Pin, PinOff } from 'lucide-react'
 import { getCategoryIcon } from '@/lib/category-icons'
+import { CategoryIcon } from '@/components/ui/CategoryIcon'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -202,7 +203,7 @@ export function EditDialog({
                   >
                     <span className="flex items-center gap-1.5">
                       {indent && <span style={{ color: '#5e5e72', fontSize: 11 }}>└</span>}
-                      {cat.icon && <span>{cat.icon}</span>}
+                      <CategoryIcon name={cat.icon} size={13} />
                       <span>{cat.name}</span>
                       {indent && parentName && (
                         <span style={{ color: '#5e5e72', fontSize: 10 }}>{parentName}</span>

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/api-guard'
+import { jstMonthStr } from '@/lib/jst'
 
 export async function GET(req: NextRequest) {
   const auth = await requireAuth()
@@ -9,10 +10,7 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const monthParam = searchParams.get('month') // YYYY-MM
 
-  const monthDate = monthParam ? `${monthParam}-01` : (() => {
-    const now = new Date()
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
-  })()
+  const monthDate = monthParam ? `${monthParam}-01` : `${jstMonthStr()}-01`
 
   // UI側で spike/drop を分離してスライスするため、全件返して UI にソートを委ねる
   const { data, error } = await supabase

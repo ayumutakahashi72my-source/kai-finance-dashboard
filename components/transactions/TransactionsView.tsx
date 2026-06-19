@@ -165,6 +165,7 @@ export function TransactionsView({ month }: { month: string }) {
     setClassifyResult(null)
     try {
       const res  = await fetch('/api/transactions/classify', { method: 'POST' })
+      if (!res.ok) throw new Error('分類に失敗しました')
       const data = await res.json() as { classified: number; total: number }
       setClassifyResult(data)
       qc.invalidateQueries({ queryKey: ['transactions'] })
@@ -191,11 +192,11 @@ export function TransactionsView({ month }: { month: string }) {
 
   const { data: txRes, isLoading } = useQuery<{ data: Transaction[] }>({
     queryKey: ['transactions', month, filters.q, filters.cat, filters.from, filters.to, filters.min, filters.max],
-    queryFn:  () => fetch(apiUrl).then((r) => r.json()),
+    queryFn:  () => fetch(apiUrl).then((r) => { if (!r.ok) throw new Error('取得に失敗しました'); return r.json() }),
   })
   const { data: catRes } = useQuery<{ data: Category[] }>({
     queryKey: ['categories'],
-    queryFn:  () => fetch('/api/categories').then((r) => r.json()),
+    queryFn:  () => fetch('/api/categories').then((r) => { if (!r.ok) throw new Error('取得に失敗しました'); return r.json() }),
   })
 
   const transactions = txRes?.data ?? []

@@ -138,7 +138,7 @@ export function FixedExpenseCard() {
 
   const { data, isLoading, isError } = useQuery<{ data: FixedExpense[] }>({
     queryKey: ['fixed_expenses'],
-    queryFn:  () => fetch('/api/fixed-expenses').then((r) => r.json()),
+    queryFn:  () => fetch('/api/fixed-expenses').then((r) => { if (!r.ok) throw new Error('取得に失敗しました'); return r.json() }),
   })
 
   const { mutate } = useMutation({

@@ -17,22 +17,19 @@ export default defineConfig({
     trace: 'on-first-retry',
   },
   projects: [
-    // auth.json がない場合のみ認証セットアップを実行
     ...(!hasAuthFile ? [{
       name: 'setup',
       testMatch: '**/auth.setup.ts',
     }] : []),
     {
       name: 'chromium',
-      testIgnore: '**/dashboard.spec.ts',
+      testIgnore: ['**/dashboard.spec.ts', '**/api-security.spec.ts'],
       use: {
         ...devices['Desktop Chrome'],
         ...(hasAuthFile ? { storageState: AUTH_FILE } : {}),
       },
       ...(hasAuthFile ? {} : { dependencies: ['setup'] }),
     },
-    // ダッシュボードテストは auth.json なしでも実行可（未認証リダイレクト検証など）
-    // auth.json があれば storageState を使って認証済みテストも実行する
     {
       name: 'dashboard',
       testMatch: '**/dashboard.spec.ts',
@@ -40,6 +37,20 @@ export default defineConfig({
         ...devices['Desktop Chrome'],
         ...(hasAuthFile ? { storageState: AUTH_FILE } : {}),
       },
+    },
+    {
+      name: 'api-security',
+      testMatch: '**/api-security.spec.ts',
+      use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'mobile',
+      testMatch: '**/screens.spec.ts',
+      use: {
+        ...devices['iPhone 14'],
+        ...(hasAuthFile ? { storageState: AUTH_FILE } : {}),
+      },
+      ...(hasAuthFile ? {} : { dependencies: ['setup'] }),
     },
   ],
   webServer: {

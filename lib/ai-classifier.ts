@@ -399,23 +399,32 @@ export function pickCategoryColor(name: string): string {
   return CATEGORY_PALETTE[Math.abs(h) % CATEGORY_PALETTE.length]
 }
 
-const LUCIDE_ICON_NAMES = [
-  'ShoppingCart', 'Utensils', 'Car', 'Train', 'Home', 'Zap', 'Droplets',
-  'Wifi', 'Smartphone', 'Heart', 'Shirt', 'BookOpen', 'Gamepad2', 'Music',
-  'Coffee', 'Beer', 'Dumbbell', 'Scissors', 'Baby', 'GraduationCap',
-  'Gift', 'Plane', 'PawPrint', 'Wrench', 'ShoppingBag', 'CreditCard',
-  'Banknote', 'Building2', 'Sun', 'Tv', 'Package', 'Pizza', 'Briefcase',
-  'Landmark', 'Bus', 'Bike', 'Camera', 'MapPin', 'Star',
-]
+import { resolveIconName } from '@/lib/category-icons'
+import { LUCIDE_ICON_NAMES_LIST } from '@/components/ui/CategoryIcon'
 
 export async function fetchCategoryIcons(names: string[]): Promise<Map<string, string>> {
   if (!names.length) return new Map()
+
+  const result = new Map<string, string>()
+  const unresolved: string[] = []
+
+  for (const name of names) {
+    const icon = resolveIconName(name)
+    if (icon) {
+      result.set(name, icon)
+    } else {
+      unresolved.push(name)
+    }
+  }
+
+  if (!unresolved.length) return result
+
   try {
     const apiKey = getEnvKey('ANTHROPIC_API_KEY')
     const client = new Anthropic({ apiKey })
     const prompt = `以下の日本語支出カテゴリ名に対して、最も適切なLucideアイコン名を1つずつ選んでください。
-使用可能なアイコン一覧: ${LUCIDE_ICON_NAMES.join(', ')}
-カテゴリ: ${names.join(', ')}
+使用可能なアイコン一覧: ${LUCIDE_ICON_NAMES_LIST.join(', ')}
+カテゴリ: ${unresolved.join(', ')}
 必ずJSON形式のみで返してください（説明不要）: {"カテゴリ名": "IconName", ...}`
     const msg = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
@@ -424,15 +433,18 @@ export async function fetchCategoryIcons(names: string[]): Promise<Map<string, s
     })
     const text = msg.content[0]?.type === 'text' ? msg.content[0].text.trim() : ''
     const json = text.match(/\{[\s\S]*\}/)?.[0]
-    if (!json) return new Map()
-    const parsed = JSON.parse(json) as Record<string, string>
-    const validSet = new Set(LUCIDE_ICON_NAMES)
-    return new Map(
-      Object.entries(parsed).filter(([, v]) => validSet.has(v))
-    )
+    if (json) {
+      const parsed = JSON.parse(json) as Record<string, string>
+      const validSet = new Set(LUCIDE_ICON_NAMES_LIST)
+      for (const [k, v] of Object.entries(parsed)) {
+        if (validSet.has(v)) result.set(k, v)
+      }
+    }
   } catch {
-    return new Map()
+    // Haiku失敗時は静的解決分のみ返す
   }
+
+  return result
 }
 
 async function upsertCategoriesByName(

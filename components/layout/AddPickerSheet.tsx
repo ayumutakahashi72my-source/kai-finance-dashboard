@@ -24,7 +24,7 @@ function SheetChrome({ onBackdropClick, children }: { onBackdropClick: () => voi
       <div
         style={{ position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 51, background: BG, backdropFilter: 'blur(28px) saturate(160%)', WebkitBackdropFilter: 'blur(28px) saturate(160%)', border: '1px solid rgba(255,255,255,0.12)', borderBottomWidth: 0, borderRadius: '24px 24px 0 0', padding: '20px 20px 48px', animation: 'kai-sheet-up 0.22s cubic-bezier(.16,1,.3,1) both', boxShadow: '0 -16px 48px rgba(0,0,0,0.6)', maxHeight: '92dvh', overflowY: 'auto' }}
         role="dialog"
-        aria-modal
+        aria-modal="true"
       >
         <div style={{ width: 36, height: 4, borderRadius: 99, background: 'rgba(255,255,255,.15)', margin: '0 auto 20px' }} />
         {children}

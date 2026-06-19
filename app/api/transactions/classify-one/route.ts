@@ -1,29 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { requireAuth } from '@/lib/api-guard'
 import { classifyTransactions } from '@/lib/ai-classifier'
 
 export async function POST(req: NextRequest) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: '認証が必要です' }, { status: 401 })
+  const auth = await requireAuth()
+  if (!auth.ok) return auth.response
 
-  const body = await req.json() as { payee?: string }
-  const payee = body.payee?.trim()
+  const { supabase, householdId, user } = auth
+
+  let body: unknown
+  try { body = await req.json() } catch {
+    return NextResponse.json({ error: 'リクエスト本文が不正です' }, { status: 400 })
+  }
+
+  const payee = (body as { payee?: string }).payee?.trim()
   if (!payee || payee.length < 1) {
     return NextResponse.json({ category_id: null, category_name: null, confidence: 0 })
   }
 
-  const { data: membership } = await supabase
-    .from('household_members')
-    .select('household_id')
-    .eq('user_id', user.id)
-    .limit(1)
-    .single()
-  if (!membership) return NextResponse.json({ error: '世帯が見つかりません' }, { status: 400 })
-
   const { categoryIdMap } = await classifyTransactions(
     [{ index: 0, payee, category_hint: '' }],
-    membership.household_id,
+    householdId,
     supabase,
     user.id
   )

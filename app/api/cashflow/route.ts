@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/api-guard'
+import { jstNow } from '@/lib/jst'
 
 export async function GET(req: NextRequest) {
   const auth = await requireAuth()
@@ -16,8 +17,8 @@ export async function GET(req: NextRequest) {
 
   if (error) {
     // Fallback: JS-side aggregation if RPC not available
-    const cutoff = new Date()
-    cutoff.setMonth(cutoff.getMonth() - months)
+    const cutoff = jstNow()
+    cutoff.setUTCMonth(cutoff.getUTCMonth() - months)
     const cutoffStr = cutoff.toISOString().slice(0, 10)
 
     const { data: rows, error: txErr } = await supabase
