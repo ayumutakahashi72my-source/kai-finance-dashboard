@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { usePathname, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { KAI } from '@/lib/kai-tokens'
@@ -22,6 +22,14 @@ const RIGHT_NAV: { href: string; icon: IconName; label: string }[] = [
 ]
 
 export function BottomBar() {
+  return (
+    <Suspense>
+      <BottomBarInner />
+    </Suspense>
+  )
+}
+
+function BottomBarInner() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const [pickerOpen, setPickerOpen] = useState(false)
