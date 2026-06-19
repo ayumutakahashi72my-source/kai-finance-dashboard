@@ -82,8 +82,8 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="ja" suppressHydrationWarning className={cn("h-full dark", inter.variable, notoSansJP.variable, jetbrainsMono.variable, instrumentSerif.variable)} style={{ background: '#0a0a10', colorScheme: 'dark' }}>
-      <body className="min-h-full antialiased" style={{ fontFamily: "var(--font-inter), var(--font-sans), sans-serif", background: '#0a0a10' }}>
+    <html lang="ja" suppressHydrationWarning className={cn("h-full dark", inter.variable, notoSansJP.variable, jetbrainsMono.variable, instrumentSerif.variable)} style={{ background: 'var(--kai-bg)' }}>
+      <body className="min-h-full antialiased" style={{ fontFamily: "var(--font-inter), var(--font-sans), sans-serif", background: 'var(--kai-bg)' }}>
         {/* Prevent browser scroll restoration from shifting the fixed splash */}
         <script dangerouslySetInnerHTML={{ __html: `if('scrollRestoration'in history)history.scrollRestoration='manual'` }} />
         {/* Capture beforeinstallprompt before React hydrates — InstallBanner reads window.__pwaInstallEvent */}

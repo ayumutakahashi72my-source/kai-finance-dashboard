@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/api-guard'
-import { classifyFreeForm } from '@/lib/ai-classifier'
+import { classifyFreeForm, BAD_CATEGORY_NAMES } from '@/lib/ai-classifier'
 
 const CHUNK = 200
-const BAD_CATEGORY_NAMES = ['未分類', 'その他', '不明', 'unknown', 'other']
 
 export async function POST() {
   const auth = await requireAuth()
@@ -15,7 +14,7 @@ export async function POST() {
     .from('categories')
     .select('id')
     .eq('household_id', householdId)
-    .in('name', BAD_CATEGORY_NAMES)
+    .in('name', [...BAD_CATEGORY_NAMES])
   if (badCats?.length) {
     const ids = badCats.map((c) => c.id)
     await supabase
@@ -52,22 +51,31 @@ export async function POST() {
     return NextResponse.json({ classified: 0, message: '未分類の取引はありません' })
   }
 
-  // CHUNK 件ずつ AI 分類してその都度 DB 更新
+  // CHUNK 件ずつ AI 分類してその都度 DB 更新（カテゴリIDごとにバッチ UPDATE）
   let classified = 0
   for (let offset = 0; offset < allRows.length; offset += CHUNK) {
     const chunk = allRows.slice(offset, offset + CHUNK)
     const items = chunk.map((r, i) => ({ index: i, payee: r.payee, category_hint: '' }))
     const aiMap = await classifyFreeForm(items, householdId, supabase, user.id)
 
+    const catIdToTxIds = new Map<string, string[]>()
     for (const [i, catId] of aiMap) {
       const row = chunk[i]
       if (!row) continue
-      const { error } = await supabase
-        .from('transactions')
-        .update({ category_id: catId })
-        .eq('id', row.id)
-      if (!error) classified++
+      const ids = catIdToTxIds.get(catId) ?? []
+      ids.push(row.id)
+      catIdToTxIds.set(catId, ids)
     }
+
+    await Promise.all(
+      [...catIdToTxIds.entries()].map(async ([catId, txIds]) => {
+        const { error } = await supabase
+          .from('transactions')
+          .update({ category_id: catId })
+          .in('id', txIds)
+        if (!error) classified += txIds.length
+      })
+    )
   }
 
   return NextResponse.json({ classified, total: allRows.length })

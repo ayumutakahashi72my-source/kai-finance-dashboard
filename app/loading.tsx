@@ -4,12 +4,12 @@ import { Skeleton } from '@/components/ui/Skeleton'
 
 export default function DashboardLoading() {
   return (
-    <div className="min-h-screen" style={{ background: '#0c0a14' }}>
+    <div className="min-h-screen" style={{ background: 'var(--kai-bg-card)' }}>
       <div aria-hidden className="pointer-events-none fixed inset-0" style={{ zIndex: 0, backgroundImage: `radial-gradient(ellipse 700px 500px at 20% 20%, rgba(251,148,119,.07), transparent 55%)` }}/>
-      <div aria-hidden className="pointer-events-none fixed inset-0" style={{ zIndex: 1, backgroundImage: `linear-gradient(rgba(255,255,255,.012) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.012) 1px,transparent 1px)`, backgroundSize: '40px 40px' }}/>
+      <div aria-hidden className="pointer-events-none fixed inset-0" style={{ zIndex: 1, backgroundImage: `linear-gradient(var(--kai-grid-line) 1px,transparent 1px),linear-gradient(90deg,var(--kai-grid-line) 1px,transparent 1px)`, backgroundSize: '40px 40px' }}/>
       <Sidebar/>
       <div className="relative min-h-screen lg:pl-[220px]" style={{ zIndex: 2 }}>
-        <header className="sticky top-0 z-30 flex items-center justify-between px-6 py-[14px]" style={{ background: 'rgba(8,8,14,.55)', backdropFilter: 'blur(24px)', borderBottom: '1px solid rgba(255,255,255,0.10)' }}>
+        <header className="sticky top-0 z-30 flex items-center justify-between px-6 py-[14px]" style={{ background: 'var(--kai-header-bg)', backdropFilter: 'blur(24px)', borderBottom: `1px solid var(--kai-border2)` }}>
           <Skeleton variant="line-md" className="w-32"/>
           <Skeleton variant="avatar"/>
         </header>

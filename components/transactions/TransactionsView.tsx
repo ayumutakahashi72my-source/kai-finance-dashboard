@@ -12,9 +12,8 @@ import { TransactionFilters, readFiltersFromUrl, isFilterActive } from '@/compon
 import { EditDialog, DeleteConfirmDialog } from '@/components/transactions/TransactionList'
 import { DuplicateChecker } from '@/components/transactions/DuplicateChecker'
 import { CalendarView } from '@/components/calendar/CalendarView'
+import { MonthSwitcher } from '@/components/dashboard/MonthSwitcher'
 import type { Transaction, Category } from '@/lib/types'
-
-/* ─── helpers ─────────────────────────────────────────────────────── */
 
 const MONO: React.CSSProperties = {
   fontFamily: 'var(--font-jetbrains), "JetBrains Mono", monospace',
@@ -26,68 +25,84 @@ const CAT_COLORS = [
   KAI.amber, KAI.mintExtra,
 ]
 
-/* ─── BalanceBar: 収入・支出を1本に ──────────────────────────────── */
+/* ── SVG icons ─────────────────────────────────────────────── */
+const ListIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
+    <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+  </svg>
+)
+const CalIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>
+  </svg>
+)
 
-function BalanceBar({ totalIncome, totalExpense }: { totalIncome: number; totalExpense: number }) {
-  const total      = totalIncome + totalExpense || 1
-  const incPct     = (totalIncome  / total) * 100
-  const expPct     = (totalExpense / total) * 100
-  const animatedInc = useCountUp(incPct, { duration: 1000, delay: 100 })
-  const animatedExp = useCountUp(expPct, { duration: 1000, delay: 100 })
-
+/* ── View Toggle ───────────────────────────────────────────── */
+function ViewToggle({ view, onChange }: { view: 'list' | 'calendar'; onChange: (v: 'list' | 'calendar') => void }) {
+  const btnBase: React.CSSProperties = {
+    display: 'flex', alignItems: 'center', gap: 5,
+    padding: '6px 10px', fontSize: 11, cursor: 'pointer', fontFamily: 'inherit',
+  }
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      {/* 1本の積み上げ横棒 */}
-      <div style={{
-        width: '100%', height: 20, borderRadius: 99,
-        background: 'rgba(255,255,255,.04)',
-        overflow: 'hidden', display: 'flex',
-      }}>
-        {/* 収入（左・緑） */}
-        <div style={{
-          width: `${animatedInc}%`, height: '100%',
-          background: 'linear-gradient(90deg, #4ade80, #22c55e)',
-          borderRadius: totalExpense === 0 ? 99 : '99px 0 0 99px',
-          borderRight: totalExpense > 0 ? '2px solid rgba(12,10,20,.5)' : 'none',
-          transition: 'width 0s',
-        }}/>
-        {/* 支出（右・赤） */}
-        <div style={{
-          width: `${animatedExp}%`, height: '100%',
-          background: 'linear-gradient(90deg, #f87171, #fb7185)',
-          borderRadius: totalIncome === 0 ? 99 : '0 99px 99px 0',
-        }}/>
-      </div>
-
-      {/* ラベル行 */}
-      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ width: 8, height: 8, borderRadius: 2, background: '#4ade80', display: 'inline-block', flexShrink: 0 }}/>
-          <span style={{ fontSize: 11, color: KAI.text3, fontWeight: 600 }}>収入</span>
-          <span style={{ fontSize: 13, fontWeight: 800, color: '#4ade80', ...MONO, letterSpacing: '-.01em' }}>
-            ¥{totalIncome.toLocaleString('ja-JP')}
-          </span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ fontSize: 13, fontWeight: 800, color: '#fb7185', ...MONO, letterSpacing: '-.01em' }}>
-            ¥{totalExpense.toLocaleString('ja-JP')}
-          </span>
-          <span style={{ fontSize: 11, color: KAI.text3, fontWeight: 600 }}>支出</span>
-          <span style={{ width: 8, height: 8, borderRadius: 2, background: '#fb7185', display: 'inline-block', flexShrink: 0 }}/>
-        </div>
-      </div>
+    <div style={{ display: 'flex', background: KAI.overlayWeak, border: `1px solid ${KAI.border2}`, borderRadius: 10, padding: 2 }}>
+      <button
+        onClick={() => onChange('list')}
+        style={{
+          ...btnBase,
+          borderRadius: 8,
+          background: view === 'list' ? KAI.cardBg : 'none',
+          border: view === 'list' ? `1px solid ${KAI.border2}` : 'none',
+          fontWeight: view === 'list' ? 600 : 400,
+          color: view === 'list' ? KAI.text1 : KAI.text3,
+        }}
+      ><ListIcon />リスト</button>
+      <button
+        onClick={() => onChange('calendar')}
+        style={{
+          ...btnBase,
+          borderRadius: 8,
+          background: view === 'calendar' ? KAI.cardBg : 'none',
+          border: view === 'calendar' ? `1px solid ${KAI.border2}` : 'none',
+          fontWeight: view === 'calendar' ? 600 : 400,
+          color: view === 'calendar' ? KAI.text1 : KAI.text3,
+        }}
+      ><CalIcon />カレンダー</button>
     </div>
   )
 }
 
+/* ── Summary Chips ─────────────────────────────────────────── */
+function SummaryChips({ income, expense, balance }: { income: number; expense: number; balance: number }) {
+  const chips: { label: string; value: number; color: string; bgAlpha: string; borderAlpha: string }[] = [
+    { label: '収入', value: income, color: KAI.success, bgAlpha: 'rgba(74,222,128,.07)', borderAlpha: 'rgba(74,222,128,.2)' },
+    { label: '支出', value: expense, color: KAI.danger, bgAlpha: 'rgba(251,113,133,.07)', borderAlpha: 'rgba(251,113,133,.2)' },
+    { label: '残り', value: balance, color: KAI.blue, bgAlpha: 'rgba(122,167,255,.07)', borderAlpha: 'rgba(122,167,255,.2)' },
+  ]
+  return (
+    <div style={{ display: 'flex', gap: 8 }}>
+      {chips.map(c => (
+        <div key={c.label} style={{
+          flex: 1, background: c.bgAlpha, border: `1px solid ${c.borderAlpha}`,
+          borderRadius: 12, padding: '7px 10px', textAlign: 'center',
+        }}>
+          <div style={{ fontSize: 8.5, color: KAI.text3, fontWeight: 700, letterSpacing: '.06em', marginBottom: 2 }}>{c.label}</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: c.color, ...MONO }}>
+            {c.label === '残り' && c.value >= 0 ? '+' : c.label === '残り' && c.value < 0 ? '' : ''}¥{Math.abs(c.value).toLocaleString('ja-JP')}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/* ── Category Icon Display ─────────────────────────────────── */
 function CategoryIconDisplay({ name, size = 13, strokeWidth = 1.8 }: { name: string; size?: number; strokeWidth?: number }) {
   const Icon = getCategoryIcon(name)
-  // eslint-disable-next-line react-hooks/static-components
   return <Icon size={size} strokeWidth={strokeWidth} />
 }
 
-/* ─── CategoryBar ─────────────────────────────────────────────────── */
-
+/* ── CategoryBar ───────────────────────────────────────────── */
 function CategoryBar({
   name, color, used, totalExpense, idx, onManage,
 }: {
@@ -99,7 +114,6 @@ function CategoryBar({
   const animatedPct = useCountUp(pct, { duration: 1100, delay: 200 + idx * 55 })
   return (
     <div style={{ padding: '11px 14px', animation: `kai-rise .4s ${.15 + idx * .04}s ease-out both` }}>
-      {/* 上段: アイコン・名前・金額・管理ボタン */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 7 }}>
         <div style={{
           width: 26, height: 26, borderRadius: 8, flexShrink: 0,
@@ -108,13 +122,10 @@ function CategoryBar({
         }}>
           <CategoryIconDisplay name={name} size={13} strokeWidth={1.8}/>
         </div>
-
         <span style={{ fontSize: 12.5, fontWeight: 600, color: KAI.text1, flex: 1 }}>{name}</span>
-
         <span style={{ fontSize: 13, fontWeight: 700, color: KAI.text1, ...MONO, letterSpacing: '-.01em' }}>
           ¥{used.toLocaleString('ja-JP')}
         </span>
-
         <button
           type="button"
           onClick={onManage}
@@ -126,16 +137,13 @@ function CategoryBar({
           }}
         >管理 ›</button>
       </div>
-
-      {/* 横棒グラフ */}
-      <div style={{ height: 6, borderRadius: 99, background: 'rgba(255,255,255,.05)', overflow: 'hidden' }}>
+      <div style={{ height: 6, borderRadius: 99, background: KAI.overlayWeak, overflow: 'hidden' }}>
         <div style={{
           height: '100%', width: `${Math.min(100, animatedPct)}%`,
           background: `linear-gradient(90deg, ${color}, ${color}88)`,
           borderRadius: 99,
         }}/>
       </div>
-
       <div style={{ marginTop: 3, fontSize: 9.5, color: KAI.text4, ...MONO }}>
         支出全体の {Math.round(pct)}%
       </div>
@@ -143,20 +151,24 @@ function CategoryBar({
   )
 }
 
-/* ─── TransactionsView ────────────────────────────────────────────── */
+/* ── TransactionsView (main) ───────────────────────────────── */
 
+interface Props {
+  month: string
+  initialView?: 'list' | 'calendar'
+}
 
-export function TransactionsView({ month }: { month: string }) {
+export function TransactionsView({ month, initialView = 'list' }: Props) {
   const router = useRouter()
   const qc     = useQueryClient()
   const searchParams = useSearchParams()
   const filters = readFiltersFromUrl(searchParams)
   const hasFilter = isFilterActive(filters)
-  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list')
+
+  const [view, setView] = useState<'list' | 'calendar'>(initialView)
   const [classifying,    setClassifying]    = useState(false)
   const [classifyResult, setClassifyResult] = useState<{ classified: number; total: number } | null>(null)
 
-  // 編集・削除
   const [editingTx,   setEditingTx]   = useState<Transaction | null>(null)
   const [deletingTx,  setDeletingTx]  = useState<Transaction | null>(null)
   const [menuId,      setMenuId]      = useState<string | null>(null)
@@ -177,7 +189,6 @@ export function TransactionsView({ month }: { month: string }) {
     }
   }
 
-  // URL から API パラメータを構築
   const apiUrl = (() => {
     const sp = new URLSearchParams()
     if (filters.from || filters.to) {
@@ -209,32 +220,18 @@ export function TransactionsView({ month }: { month: string }) {
   const totalExpense = transactions.filter((tx) => tx.amount < 0).reduce((s, tx) => s + Math.abs(tx.amount), 0)
   const balance      = totalIncome - totalExpense
 
-  /* カテゴリ別支出集計 */
   const actualByCategory: Record<string, number> = {}
   for (const tx of transactions) {
     if (tx.amount >= 0) continue
     const name = tx.categories?.name ?? 'その他'
     actualByCategory[name] = (actualByCategory[name] ?? 0) + Math.abs(tx.amount)
   }
-
   const categories = Object.entries(actualByCategory)
     .map(([name, used], i) => {
       const catMeta = allCats.find((c) => c.name === name)
       return { name, color: catMeta?.color ?? CAT_COLORS[i % CAT_COLORS.length], used }
     })
     .sort((a, b) => b.used - a.used)
-
-  const [y, m] = month.split('-').map(Number)
-  const periodLabel = `${y}年${m}月`
-
-  if (isLoading) {
-    return (
-      <div className="space-y-3">
-        <Skeleton variant="panel" className="h-32"/>
-        <Skeleton variant="panel" className="h-64"/>
-      </div>
-    )
-  }
 
   function handleRefresh() {
     qc.invalidateQueries({ queryKey: ['transactions'] })
@@ -247,14 +244,23 @@ export function TransactionsView({ month }: { month: string }) {
     setMenuId(tx.id)
   }
 
+  if (isLoading) {
+    return (
+      <div className="space-y-3">
+        <Skeleton variant="panel" className="h-16"/>
+        <Skeleton variant="panel" className="h-32"/>
+        <Skeleton variant="panel" className="h-64"/>
+      </div>
+    )
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
 
-      {/* ── 編集・削除ダイアログ ── */}
+      {/* ── Dialogs ── */}
       {editingTx && (
         <EditDialog
-          tx={editingTx}
-          categories={allCats}
+          tx={editingTx} categories={allCats}
           onClose={() => setEditingTx(null)}
           onSaved={() => { handleRefresh(); setEditingTx(null) }}
         />
@@ -267,7 +273,7 @@ export function TransactionsView({ month }: { month: string }) {
         />
       )}
 
-      {/* ── ⋯ メニュー ── */}
+      {/* ── Context menu ── */}
       {menuId && menuPos && menuTx && (
         <>
           <div style={{ position: 'fixed', inset: 0, zIndex: 40 }} onClick={() => setMenuId(null)} />
@@ -275,8 +281,8 @@ export function TransactionsView({ month }: { month: string }) {
             position: 'fixed', zIndex: 50,
             top: menuPos.top, right: menuPos.right,
             minWidth: 120, borderRadius: 12,
-            background: 'rgba(20,22,32,0.98)',
-            border: '1px solid rgba(255,255,255,0.12)',
+            background: KAI.dropdownBg,
+            border: `1px solid ${KAI.border2}`,
             boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
             overflow: 'hidden',
           }}>
@@ -284,7 +290,7 @@ export function TransactionsView({ month }: { month: string }) {
               onClick={() => { setMenuId(null); setEditingTx(menuTx) }}
               style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '10px 14px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: KAI.text2, fontFamily: 'inherit' }}
             >✏ 編集</button>
-            <div style={{ height: 1, background: 'rgba(255,255,255,0.06)' }} />
+            <div style={{ height: 1, background: KAI.border }} />
             <button
               onClick={() => { setMenuId(null); setDeletingTx(menuTx) }}
               style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '10px 14px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: KAI.danger, fontFamily: 'inherit' }}
@@ -293,272 +299,235 @@ export function TransactionsView({ month }: { month: string }) {
         </>
       )}
 
-      {/* ── ビュー切替トグル ── */}
+      {/* ══════ Header Area ══════ */}
+
+      {/* Title + View Toggle */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontSize: 18, fontWeight: 700, color: '#f0f0f5' }} className="lg:hidden">収支</span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <button
-          type="button"
-          aria-label="CSVエクスポート"
-          onClick={async () => {
-            const sp = new URLSearchParams()
-            if (filters.from || filters.to) {
-              if (filters.from) sp.set('from', filters.from)
-              if (filters.to) sp.set('to', filters.to)
-            } else {
-              sp.set('month', month)
-            }
-            if (filters.q) sp.set('q', filters.q)
-            if (filters.cat) sp.set('cat', filters.cat)
-            const res = await fetch(`/api/transactions/export?${sp.toString()}`)
-            if (!res.ok) return
-            const blob = await res.blob()
-            const url = URL.createObjectURL(blob)
-            const a = document.createElement('a')
-            a.href = url
-            a.download = `kai_transactions_${month}.csv`
-            document.body.appendChild(a)
-            a.click()
-            document.body.removeChild(a)
-            URL.revokeObjectURL(url)
-          }}
-          style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            width: 34, height: 34, borderRadius: 10,
-            background: 'rgba(255,255,255,0.05)',
-            border: '1px solid rgba(255,255,255,0.10)',
-            cursor: 'pointer', color: '#8b8ba0',
-            transition: 'all .18s',
-          }}
-        >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-            <path d="M7 10l5 5 5-5"/>
-            <path d="M12 15V3"/>
-          </svg>
-        </button>
-        <div style={{
-          display: 'flex',
-          background: 'rgba(255,255,255,0.05)',
-          border: '1px solid rgba(255,255,255,0.10)',
-          borderRadius: 10, padding: 2,
-        }}>
-          <button
-            onClick={() => setViewMode('list')}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 5,
-              padding: '6px 10px', borderRadius: 8,
-              background: viewMode === 'list' ? 'rgba(20,22,32,0.88)' : 'none',
-              border: viewMode === 'list' ? '1px solid rgba(255,255,255,0.10)' : 'none',
-              fontSize: 11, fontWeight: viewMode === 'list' ? 600 : 400,
-              color: viewMode === 'list' ? '#f0f0f5' : '#8b8ba0',
-              cursor: 'pointer', fontFamily: 'inherit',
-              transition: 'all .18s',
-            }}
-          >
-            <Icon name="list" size={13} />リスト
-          </button>
-          <button
-            onClick={() => setViewMode('calendar')}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 5,
-              padding: '6px 10px', borderRadius: 8,
-              background: viewMode === 'calendar' ? 'rgba(20,22,32,0.88)' : 'none',
-              border: viewMode === 'calendar' ? '1px solid rgba(255,255,255,0.10)' : 'none',
-              fontSize: 11, fontWeight: viewMode === 'calendar' ? 600 : 400,
-              color: viewMode === 'calendar' ? '#f0f0f5' : '#8b8ba0',
-              cursor: 'pointer', fontFamily: 'inherit',
-              transition: 'all .18s',
-            }}
-          >
-            <Icon name="calendar" size={13} />カレンダー
-          </button>
-        </div>
-        </div>
+        <div style={{ fontSize: 20, fontWeight: 700, color: KAI.text1 }}>収支</div>
+        <ViewToggle view={view} onChange={setView} />
       </div>
 
-      {/* ── カレンダービュー ── */}
-      {viewMode === 'calendar' && (
-        <div style={{
-          background: 'rgba(20,22,32,0.66)',
-          backdropFilter: 'blur(24px) saturate(160%)',
-          border: '1px solid rgba(255,255,255,0.10)',
-          borderRadius: 18, padding: 16,
-          animation: 'kai-rise .4s ease-out both',
-        }}>
-          <CalendarView transactions={transactions} categories={allCats} month={month} />
-        </div>
-      )}
+      {/* Search (list view only) */}
+      {view === 'list' && <DuplicateChecker />}
+      {view === 'list' && <TransactionFilters categories={allCats} />}
 
-      {/* ── リストビュー ── */}
-      {viewMode === 'list' && <>
+      {/* Month Switcher */}
+      <div style={{ display: 'flex', justifyContent: 'center' }}>
+        <MonthSwitcher currentMonth={month} />
+      </div>
 
-      {/* ── 0. 重複チェック + 検索・フィルタ ── */}
-      <DuplicateChecker />
-      <TransactionFilters categories={allCats} />
+      {/* Summary Chips */}
+      <SummaryChips income={totalIncome} expense={totalExpense} balance={balance} />
 
-      {/* ── フィルタ active 時は flat list 表示 ── */}
-      {hasFilter && (
-        <section
-          style={{
-            background: 'rgba(255,255,255,.02)', border: '1px solid rgba(255,255,255,.06)',
-            borderRadius: 14, overflow: 'hidden',
-          }}
-        >
-          <div style={{ padding: '10px 14px', borderBottom: '1px solid rgba(255,255,255,.04)', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-            <span style={{ fontSize: 11, color: KAI.text3, fontWeight: 700, letterSpacing: '.08em' }}>
-              検索結果
-            </span>
-            <span style={{ fontSize: 11, color: KAI.text4, ...MONO }}>{transactions.length} 件</span>
-          </div>
-          {transactions.length === 0 ? (
-            <div style={{ padding: '32px 20px', textAlign: 'center' }}>
-              <p style={{ fontSize: 13, color: KAI.text3, margin: 0 }}>該当する取引がありません</p>
-            </div>
-          ) : (
-            transactions.slice(0, 100).map((t, i) => (
-              <div
-                key={t.id}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 10,
-                  padding: '10px 14px',
-                  borderBottom: i < Math.min(transactions.length, 100) - 1 ? '1px solid rgba(255,255,255,.04)' : 'none',
-                }}
-              >
-                <div style={{
-                  width: 28, height: 28, borderRadius: 8, flexShrink: 0,
-                  background: `${t.categories?.color ?? KAI.text3}1c`,
-                  border: `1px solid ${t.categories?.color ?? KAI.text3}33`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13,
-                }}>
-                  {t.categories?.icon ?? '·'}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontSize: 12.5, color: KAI.text2, fontWeight: 500, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {t.payee}
-                  </p>
-                  <p style={{ fontSize: 10, color: KAI.text4, margin: '2px 0 0', ...MONO }}>
-                    {t.occurred_on} · {t.categories?.name ?? '未分類'}
-                  </p>
-                </div>
-                <span style={{
-                  fontSize: 13, fontWeight: 700, ...MONO, flexShrink: 0,
-                  color: t.amount < 0 ? KAI.danger : KAI.success,
-                }}>
-                  {t.amount < 0 ? '−' : '+'}¥{Math.abs(t.amount).toLocaleString('ja-JP')}
-                </span>
-                <button
-                  onClick={(e) => { if (menuId === t.id) { setMenuId(null) } else { openMenu(e, t) } }}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: KAI.text4, fontSize: 16, padding: '0 2px', lineHeight: 1, flexShrink: 0 }}
-                >⋯</button>
+      {/* ══════ Content ══════ */}
+
+      {view === 'calendar' ? (
+        <CalendarView transactions={transactions} categories={allCats} month={month} />
+      ) : (
+        <>
+          {/* ── Filter results (flat list) ── */}
+          {hasFilter && (
+            <section style={{
+              background: KAI.overlayWeak, border: `1px solid ${KAI.border}`,
+              borderRadius: 14, overflow: 'hidden',
+            }}>
+              <div style={{ padding: '10px 14px', borderBottom: `1px solid ${KAI.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                <span style={{ fontSize: 11, color: KAI.text3, fontWeight: 700, letterSpacing: '.08em' }}>検索結果</span>
+                <span style={{ fontSize: 11, color: KAI.text4, ...MONO }}>{transactions.length} 件</span>
               </div>
-            ))
+              {transactions.length === 0 ? (
+                <div style={{ padding: '32px 20px', textAlign: 'center' }}>
+                  <p style={{ fontSize: 13, color: KAI.text3, margin: 0 }}>該当する取引がありません</p>
+                </div>
+              ) : (
+                transactions.slice(0, 100).map((t, i) => (
+                  <div key={t.id} style={{
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    padding: '10px 14px',
+                    borderBottom: i < Math.min(transactions.length, 100) - 1 ? `1px solid ${KAI.border}` : 'none',
+                  }}>
+                    <div style={{
+                      width: 28, height: 28, borderRadius: 8, flexShrink: 0,
+                      background: `${t.categories?.color ?? KAI.text3}1c`,
+                      border: `1px solid ${t.categories?.color ?? KAI.text3}33`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13,
+                    }}>
+                      {t.categories?.icon ?? '·'}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontSize: 12.5, color: KAI.text2, fontWeight: 500, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.payee}</p>
+                      <p style={{ fontSize: 10, color: KAI.text4, margin: '2px 0 0', ...MONO }}>{t.occurred_on} · {t.categories?.name ?? '未分類'}</p>
+                    </div>
+                    <span style={{ fontSize: 13, fontWeight: 700, ...MONO, flexShrink: 0, color: t.amount < 0 ? KAI.danger : KAI.success }}>
+                      {t.amount < 0 ? '−' : '+'}¥{Math.abs(t.amount).toLocaleString('ja-JP')}
+                    </span>
+                    <button
+                      onClick={(e) => { if (menuId === t.id) { setMenuId(null) } else { openMenu(e, t) } }}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: KAI.text4, fontSize: 16, padding: '8px 6px', lineHeight: 1, flexShrink: 0, minWidth: 36, minHeight: 36, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                      aria-label="メニュー"
+                    >⋯</button>
+                  </div>
+                ))
+              )}
+              {transactions.length > 100 && (
+                <div style={{ padding: '8px 14px', textAlign: 'center', fontSize: 11, color: KAI.text4 }}>上位 100 件を表示中</div>
+              )}
+            </section>
           )}
-          {transactions.length > 100 && (
-            <div style={{ padding: '8px 14px', textAlign: 'center', fontSize: 11, color: KAI.text4 }}>
-              上位 100 件を表示中（条件を絞り込んでください）
+
+          {/* ── Transaction list by date ── */}
+          {!hasFilter && (
+            <>
+              {(() => {
+                const grouped: Record<string, Transaction[]> = {}
+                for (const tx of transactions) {
+                  const d = tx.occurred_on.slice(0, 10)
+                  if (!grouped[d]) grouped[d] = []
+                  grouped[d].push(tx)
+                }
+                const days = Object.keys(grouped).sort((a, b) => b.localeCompare(a))
+
+                if (days.length === 0) {
+                  return (
+                    <div style={{
+                      background: KAI.overlayWeak, border: `1px solid ${KAI.border}`,
+                      borderRadius: 16, padding: '40px 20px', textAlign: 'center',
+                    }}>
+                      <p style={{ fontSize: 14, color: KAI.text3 }}>取引がありません</p>
+                    </div>
+                  )
+                }
+
+                return days.map(dateStr => {
+                  const dayTxs = grouped[dateStr]
+                  const d = new Date(dateStr + 'T00:00:00')
+                  const dow = ['日', '月', '火', '水', '木', '金', '土'][d.getDay()]
+                  const label = `${parseInt(dateStr.slice(5, 7))}月${parseInt(dateStr.slice(8))}日（${dow}）`
+
+                  return (
+                    <div key={dateStr}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: KAI.text4, letterSpacing: '.08em', padding: '8px 0 6px' }}>
+                        {label}
+                      </div>
+                      <div style={{
+                        background: KAI.cardBg, border: `1px solid ${KAI.border2}`,
+                        borderRadius: 16, overflow: 'hidden',
+                      }}>
+                        {dayTxs.map((t, i) => {
+                          const catColor = t.categories?.color ?? KAI.text3
+                          return (
+                            <div key={t.id} style={{
+                              display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px',
+                              borderBottom: i < dayTxs.length - 1 ? `1px solid ${KAI.border}` : 'none',
+                            }}>
+                              <div style={{
+                                width: 38, height: 38, borderRadius: 12, flexShrink: 0,
+                                background: `${catColor}1c`, border: `1px solid ${catColor}33`,
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                fontSize: 18,
+                              }}>
+                                {t.categories?.icon ? (
+                                  <span>{t.categories.icon}</span>
+                                ) : (
+                                  <CategoryIconDisplay name={t.categories?.name ?? ''} size={16} strokeWidth={1.8} />
+                                )}
+                              </div>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ fontSize: 13, fontWeight: 500, color: KAI.text1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                  {t.payee}
+                                </div>
+                                <div style={{ fontSize: 10, color: KAI.text3, marginTop: 2, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                  <span>{t.categories?.name ?? '未分類'}</span>
+                                  {t.source === 'auto' && (
+                                    <>
+                                      <span style={{ width: 3, height: 3, borderRadius: '50%', background: KAI.text4, display: 'inline-block' }} />
+                                      <span style={{ ...MONO }}>MF同期</span>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                              <div style={{ fontSize: 14, fontWeight: 700, color: t.amount < 0 ? KAI.danger : KAI.success, ...MONO, flexShrink: 0 }}>
+                                {t.amount < 0 ? '−' : '+'}¥{Math.abs(t.amount).toLocaleString('ja-JP')}
+                              </div>
+                              <button
+                                onClick={(e) => { if (menuId === t.id) { setMenuId(null) } else { openMenu(e, t) } }}
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: KAI.text4, fontSize: 16, padding: '8px 6px', lineHeight: 1, flexShrink: 0, minWidth: 36, minHeight: 36, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                aria-label="メニュー"
+                              >⋯</button>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )
+                })
+              })()}
+            </>
+          )}
+
+          {/* ── Category breakdown ── */}
+          <section style={{ animation: 'kai-rise .5s .1s ease-out both' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+              <span style={{ fontSize: 10, color: KAI.text4, letterSpacing: '.14em', fontWeight: 700, textTransform: 'uppercase' }}>カテゴリ別</span>
+              {(() => {
+                const BAD = ['未分類', 'その他', '不明']
+                const uncategorized = transactions.filter((t) => !t.category_id || BAD.includes(t.categories?.name ?? '')).length
+                if (uncategorized === 0 && !classifyResult) return null
+                return (
+                  <button
+                    type="button"
+                    onClick={handleClassify}
+                    disabled={classifying}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 5,
+                      padding: '7px 12px', borderRadius: 10, border: 'none', cursor: classifying ? 'not-allowed' : 'pointer',
+                      background: classifyResult ? 'rgba(74,222,128,.12)' : 'rgba(251,191,36,.12)',
+                      color: classifyResult ? KAI.success : KAI.warning,
+                      fontSize: 12, fontWeight: 600, fontFamily: 'inherit',
+                      opacity: classifying ? 0.6 : 1, whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {classifying ? (
+                      <><span style={{ width: 8, height: 8, borderRadius: '50%', background: KAI.warning, animation: 'kai-blink 1s steps(2) infinite', display: 'inline-block' }}/>分類中…</>
+                    ) : classifyResult ? (
+                      `✓ ${classifyResult.classified}件分類済`
+                    ) : (
+                      <>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 6v6l4 2"/><path d="M22 2 12 12"/></svg>
+                        未分類 {uncategorized}件をAI自動分類
+                      </>
+                    )}
+                  </button>
+                )
+              })()}
             </div>
-          )}
-        </section>
-      )}
 
-      {/* ── 1. 全体収支（1本の横棒） ── */}
-      <section style={{
-        background: 'rgba(255,255,255,.02)', border: '1px solid rgba(255,255,255,.06)',
-        borderRadius: 18, padding: '16px 18px',
-        animation: 'kai-rise .5s ease-out both',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 14 }}>
-          <div>
-            <span style={{ fontSize: 10, fontWeight: 700, color: KAI.text4, letterSpacing: '.12em', textTransform: 'uppercase' }}>
-              全体収支
-            </span>
-            <span style={{ fontSize: 11, color: KAI.text4, marginLeft: 8 }}>{periodLabel}</span>
-          </div>
-          <span style={{
-            fontSize: 12, fontWeight: 700, ...MONO,
-            color: balance >= 0 ? KAI.success : KAI.danger,
-            background: balance >= 0 ? 'rgba(74,222,128,.10)' : 'rgba(251,113,133,.10)',
-            border: `1px solid ${balance >= 0 ? 'rgba(74,222,128,.25)' : 'rgba(251,113,133,.25)'}`,
-            borderRadius: 8, padding: '3px 10px',
-          }}>
-            {balance >= 0 ? '+' : ''}¥{Math.abs(balance).toLocaleString('ja-JP')}
-          </span>
-        </div>
-
-        <BalanceBar totalIncome={totalIncome} totalExpense={totalExpense}/>
-      </section>
-
-      {/* ── 2. カテゴリ別横棒グラフ ── */}
-      <section style={{ animation: 'kai-rise .5s .1s ease-out both' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-          <span style={{ fontSize: 10, color: KAI.text4, letterSpacing: '.14em', fontWeight: 700, textTransform: 'uppercase' }}>
-            カテゴリ別
-          </span>
-          {(() => {
-            const BAD = ['未分類', 'その他', '不明']
-            const uncategorized = transactions.filter((t) => !t.category_id || BAD.includes(t.categories?.name ?? '')).length
-            if (uncategorized === 0 && !classifyResult) return null
-            return (
-              <button
-                type="button"
-                onClick={handleClassify}
-                disabled={classifying}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 5,
-                  padding: '7px 12px', borderRadius: 10, border: 'none', cursor: classifying ? 'not-allowed' : 'pointer',
-                  background: classifyResult ? 'rgba(74,222,128,.12)' : 'rgba(251,191,36,.12)',
-                  color: classifyResult ? '#4ade80' : '#fbbf24',
-                  fontSize: 12, fontWeight: 600, fontFamily: 'inherit',
-                  opacity: classifying ? 0.6 : 1,
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {classifying ? (
-                  <>
-                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#fbbf24', animation: 'kai-blink 1s steps(2) infinite', display: 'inline-block' }}/>
-                    分類中…
-                  </>
-                ) : classifyResult ? (
-                  `✓ ${classifyResult.classified}件分類済`
-                ) : (
-                  <>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 6v6l4 2"/><path d="M22 2 12 12"/></svg>
-                    未分類 {uncategorized}件をAI自動分類
-                  </>
-                )}
-              </button>
-            )
-          })()}
-        </div>
-
-        {categories.length > 0 ? (
-          <div style={{
-            background: 'rgba(255,255,255,.02)', border: '1px solid rgba(255,255,255,.06)',
-            borderRadius: 14, overflow: 'hidden',
-          }}>
-            {categories.map((c, i) => (
-              <div key={c.name} style={{ borderBottom: i < categories.length - 1 ? '1px solid rgba(255,255,255,.04)' : 'none' }}>
-                <CategoryBar
-                  name={c.name} color={c.color}
-                  used={c.used} totalExpense={totalExpense} idx={i}
-                  onManage={() => router.push(`/budget/category/${encodeURIComponent(c.name)}?month=${month}`)}
-                />
+            {categories.length > 0 ? (
+              <div style={{
+                background: KAI.overlayWeak, border: `1px solid ${KAI.border}`,
+                borderRadius: 14, overflow: 'hidden',
+              }}>
+                {categories.map((c, i) => (
+                  <div key={c.name} style={{ borderBottom: i < categories.length - 1 ? `1px solid ${KAI.border}` : 'none' }}>
+                    <CategoryBar
+                      name={c.name} color={c.color}
+                      used={c.used} totalExpense={totalExpense} idx={i}
+                      onManage={() => router.push(`/budget/category/${encodeURIComponent(c.name)}?month=${month}`)}
+                    />
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        ) : (
-          <div style={{
-            background: 'rgba(255,255,255,.02)', border: '1px solid rgba(255,255,255,.06)',
-            borderRadius: 14, padding: '32px 20px', textAlign: 'center',
-          }}>
-            <p style={{ fontSize: 14, color: KAI.text3 }}>支出データがありません</p>
-            <p style={{ fontSize: 12, color: KAI.text4, marginTop: 6 }}>{periodLabel}に支出の取引がありません</p>
-          </div>
-        )}
-      </section>
-
-      </>}
+            ) : (
+              <div style={{
+                background: KAI.overlayWeak, border: `1px solid ${KAI.border}`,
+                borderRadius: 14, padding: '32px 20px', textAlign: 'center',
+              }}>
+                <p style={{ fontSize: 14, color: KAI.text3 }}>支出データがありません</p>
+              </div>
+            )}
+          </section>
+        </>
+      )}
     </div>
   )
 }

@@ -14,7 +14,7 @@ const RAG_DIRECT_THRESHOLD = 0.88  // ベクトル検索で直接採用するラ
 const RAG_RERANK_THRESHOLD = 0.65  // LLM rerank の候補として使う下限
 const RAG_TOPK = 3                 // ベクトル検索の候補数
 
-const BAD_CATEGORY_NAMES = new Set(['未分類', 'その他', '不明', 'unknown', 'other'])
+export const BAD_CATEGORY_NAMES = new Set(['未分類', 'その他', '不明', 'unknown', 'other'])
 
 // ===== 1. Merchant Normalization =====
 
@@ -220,7 +220,10 @@ JSON配列のみ出力（他テキスト不要）:
         confidence: Math.min(Math.max(item.confidence, 0), 1),
       }]
     })
-  } catch { return [] }
+  } catch (err) {
+    console.warn('[classifier] rerankBatch JSON parse failed:', err instanceof Error ? err.message : err)
+    return []
+  }
 }
 
 // ===== LLM Full Classification =====
@@ -268,8 +271,14 @@ ${JSON.stringify(inputJson)}
   let parsed
   try {
     parsed = ClassificationResponseSchema.safeParse(JSON.parse(jsonMatch[0]))
-  } catch { return [] }
-  if (!parsed.success) return []
+  } catch (err) {
+    console.warn('[classifier] callHaiku JSON parse failed:', err instanceof Error ? err.message : err)
+    return []
+  }
+  if (!parsed.success) {
+    console.warn('[classifier] callHaiku schema validation failed:', parsed.error.message)
+    return []
+  }
 
   return parsed.data.flatMap((item) => {
     const category_id = categoryMap.get(item.category_name)
@@ -328,7 +337,10 @@ ${JSON.stringify(inputJson)}
       if (/^(その他|未分類|不明|unknown|other)/i.test(item.category_name.trim())) return []
       return [{ index: originalIndex, categoryName: item.category_name.trim() }]
     })
-  } catch { return [] }
+  } catch (err) {
+    console.warn('[classifier] callHaikuFreeForm JSON parse failed:', err instanceof Error ? err.message : err)
+    return []
+  }
 }
 
 // ===== Forced Category Selection =====
@@ -381,7 +393,10 @@ ${JSON.stringify(inputJson)}
       if (!validSet.has(name)) return []
       return [{ index: originalIndex, categoryName: name }]
     })
-  } catch { return [] }
+  } catch (err) {
+    console.warn('[classifier] callHaikuForceSelect JSON parse failed:', err instanceof Error ? err.message : err)
+    return []
+  }
 }
 
 // ===== Upsert Categories =====
@@ -671,6 +686,12 @@ export async function classifyTransactions(
     return { categoryIdMap }
   }
 
+  // index → remaining配列内位置のマップ（O(1)逆引き）
+  const remainingIdxMap = new Map<number, number>()
+  for (let i = 0; i < remaining.length; i++) remainingIdxMap.set(remaining[i].index, i)
+  const remainingItemMap = new Map<number, ClassifyItem>()
+  for (const item of remaining) remainingItemMap.set(item.index, item)
+
   // ③ Embeddings（vector search と cache 保存で共用）
   let remainingEmbeddings: number[][] = []
   if (process.env.VOYAGE_API_KEY) {
@@ -704,7 +725,7 @@ export async function classifyTransactions(
     if (best.similarity >= RAG_DIRECT_THRESHOLD) {
       // 高信頼度: 直接採用（confidence = similarity）
       categoryIdMap.set(item.index, best.category_id)
-      const idx = remaining.indexOf(item)
+      const idx = remainingIdxMap.get(item.index) ?? -1
       const vdKey = normalizeKeyword(item.payee)
       ragUpserts.push({
         household_id: householdId,
@@ -760,9 +781,9 @@ export async function classifyTransactions(
       const results = await rerankBatch(needsRerank, client, tokenAccum)
       for (const r of results) {
         categoryIdMap.set(r.index, r.category_id)
-        const item = remaining.find((it) => it.index === r.index)
+        const item = remainingItemMap.get(r.index)
         if (item) {
-          const idx = remaining.indexOf(item)
+          const idx = remainingIdxMap.get(item.index) ?? -1
           const bestSim = vecCandidates.get(item.index)?.[0]?.similarity
           const rrKey = normalizeKeyword(item.payee)
           ragUpserts.push({
@@ -794,14 +815,14 @@ export async function classifyTransactions(
       const resolvedByRerank = new Set(results.map((r) => r.index))
       for (const ri of needsRerank) {
         if (!resolvedByRerank.has(ri.index)) {
-          const item = remaining.find((it) => it.index === ri.index)
+          const item = remainingItemMap.get(ri.index)
           if (item) needsLLM.push(item)
         }
       }
     } catch {
       // rerank 全体失敗 → full LLM にフォールバック
       for (const ri of needsRerank) {
-        const item = remaining.find((it) => it.index === ri.index)
+        const item = remainingItemMap.get(ri.index)
         if (item) needsLLM.push(item)
       }
     }
@@ -825,9 +846,9 @@ export async function classifyTransactions(
       const resolvedByLLM = new Set(classified.map((c) => c.index))
       for (const c of classified) {
         categoryIdMap.set(c.index, c.category_id)
-        const item = remaining.find((it) => it.index === c.index)
+        const item = remainingItemMap.get(c.index)
         if (item) {
-          const idx = remaining.indexOf(item)
+          const idx = remainingIdxMap.get(item.index) ?? -1
           const llmKey = normalizeKeyword(item.payee)
           ragUpserts.push({
             household_id: householdId,
@@ -919,9 +940,9 @@ export async function classifyTransactions(
         const catId = categoryMap.get(categoryName)
         if (!catId) continue
         categoryIdMap.set(index, catId)
-        const item = remaining.find((it) => it.index === index)
+        const item = remainingItemMap.get(index)
         if (item) {
-          const idx = remaining.indexOf(item)
+          const idx = remainingIdxMap.get(item.index) ?? -1
           const fKey = normalizeKeyword(item.payee)
           ragUpserts.push({
             household_id: householdId,
@@ -1089,6 +1110,10 @@ export async function classifyFreeForm(
     return categoryIdMap
   }
 
+  // index → remaining配列内位置のマップ（O(1)逆引き）
+  const remainingIdxMapF = new Map<number, number>()
+  for (let i = 0; i < remaining.length; i++) remainingIdxMapF.set(remaining[i].index, i)
+
   // ③ Embeddings（共用）
   let remainingEmbeddings: number[][] = []
   if (process.env.VOYAGE_API_KEY) {
@@ -1110,7 +1135,7 @@ export async function classifyFreeForm(
     const best = candidates?.[0]
     if (best && best.similarity >= RAG_DIRECT_THRESHOLD) {
       categoryIdMap.set(item.index, best.category_id)
-      const idx = remaining.indexOf(item)
+      const idx = remainingIdxMapF.get(item.index) ?? -1
       const fvdKey = normalizeKeyword(item.payee)
       ragUpsertsF.push({
         household_id: householdId,
@@ -1149,6 +1174,10 @@ export async function classifyFreeForm(
     return categoryIdMap
   }
 
+  // needsLLM の逆引きMap
+  const needsLLMMap = new Map<number, ClassifyItem>()
+  for (const item of needsLLM) needsLLMMap.set(item.index, item)
+
   // ④ AI freeform
   const client = new Anthropic({ apiKey: getEnvKey('ANTHROPIC_API_KEY') })
   const allNamed: Array<{ index: number; categoryName: string }> = []
@@ -1169,9 +1198,9 @@ export async function classifyFreeForm(
         const catId = existingNameToId.get(categoryName)
         if (!catId) continue
         categoryIdMap.set(index, catId)
-        const item = needsLLM.find((it) => it.index === index)
+        const item = needsLLMMap.get(index)
         if (item) {
-          const idx = remaining.indexOf(item)
+          const idx = remainingIdxMapF.get(item.index) ?? -1
           const ffKey = normalizeKeyword(item.payee)
           ragUpsertsF.push({
             household_id: householdId,
@@ -1216,7 +1245,7 @@ export async function classifyFreeForm(
     if (!catId) continue
     categoryIdMap.set(index, catId)
     resolvedLLM.add(index)
-    const item = needsLLM.find((it) => it.index === index)
+    const item = needsLLMMap.get(index)
     if (item) {
       logs.push({
         household_id: householdId,
@@ -1231,7 +1260,7 @@ export async function classifyFreeForm(
         api_calls: 1,
         latency_ms: Date.now() - startTime,
       })
-      const idx = remaining.indexOf(item)
+      const idx = remainingIdxMapF.get(item.index) ?? -1
       const ffKey2 = normalizeKeyword(item.payee)
       ragUpsertsF.push({
         household_id: householdId,
@@ -1257,9 +1286,9 @@ export async function classifyFreeForm(
         if (!catId) continue
         categoryIdMap.set(index, catId)
         resolvedByForce.add(index)
-        const item = needsLLM.find((it) => it.index === index)
+        const item = needsLLMMap.get(index)
         if (item) {
-          const idx = remaining.indexOf(item)
+          const idx = remainingIdxMapF.get(item.index) ?? -1
           const ffKey3 = normalizeKeyword(item.payee)
           ragUpsertsF.push({
             household_id: householdId,

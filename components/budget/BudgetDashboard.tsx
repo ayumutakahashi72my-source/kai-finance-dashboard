@@ -383,7 +383,7 @@ export function BudgetDashboard({ month: monthProp }: { month?: string } = {}) {
               style={{
                 fontSize: 10, fontWeight: 600, color: KAI.text4,
                 background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.10)',
-                borderRadius: 6, padding: '3px 10px', cursor: 'pointer', fontFamily: 'inherit',
+                borderRadius: 8, padding: '8px 12px', cursor: 'pointer', fontFamily: 'inherit',
                 display: 'flex', alignItems: 'center', gap: 4,
               }}
             ><Pencil size={10}/> 予算を設定</button>

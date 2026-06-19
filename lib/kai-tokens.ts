@@ -17,6 +17,16 @@ export const KAI = {
   border2:      'var(--kai-border2)',
   borderStrong: 'var(--kai-border-strong)',
 
+  headerBg:       'var(--kai-header-bg)',
+  headerBgSolid:  'var(--kai-header-bg-solid)',
+  gridLine:       'var(--kai-grid-line)',
+  overlayBg:      'var(--kai-overlay-bg)',
+  overlayWeak:    'var(--kai-overlay-weak)',
+  overlayBorder:  'var(--kai-overlay-border)',
+  dropdownBg:     'var(--kai-dropdown-bg)',
+  bottombarBg:    'var(--kai-bottombar-bg)',
+  cardBg:         'var(--kai-card-bg)',
+
   // ── Text scale (CSS 変数 — テーマ切替で自動更新) ──────
   text1:     'var(--kai-text1)',                 // primary
   text2:     'var(--kai-text2)',                 // secondary

@@ -134,7 +134,7 @@
 .kai-lbl {
   font-size: 10px;
   font-weight: 700;
-  color: #8b8ba0;
+  color: var(--kai-text3);
   letter-spacing: 0.12em;
   text-transform: uppercase;
   font-family: var(--font-mono), 'JetBrains Mono', monospace;
@@ -142,7 +142,7 @@
 .kai-lbl-strong {
   font-size: 11px;
   font-weight: 700;
-  color: #8b8ba0;
+  color: var(--kai-text3);
   letter-spacing: 0.14em;
   text-transform: uppercase;
   font-family: var(--font-mono), 'JetBrains Mono', monospace;
@@ -267,6 +267,15 @@
   --kai-btn-sec-color:   #c4c4d0;
   --kai-skeleton-hi:     rgba(255,255,255,0.09);
   --kai-skeleton-lo:     rgba(255,255,255,0.04);
+  --kai-header-bg:       rgba(8,8,14,0.55);
+  --kai-header-bg-solid: rgba(8,8,14,0.72);
+  --kai-grid-line:       rgba(255,255,255,0.012);
+  --kai-overlay-bg:      rgba(20,22,32,0.92);
+  --kai-overlay-weak:    rgba(255,255,255,0.04);
+  --kai-overlay-border:  rgba(255,255,255,0.07);
+  --kai-dropdown-bg:     rgba(16,18,28,0.97);
+  --kai-bottombar-bg:    rgba(20,22,32,0.88);
+  --kai-card-bg:         rgba(20,22,32,0.88);
 }
 
 :root.light {
@@ -290,6 +299,15 @@
   --kai-btn-sec-color:   #3a3a50;
   --kai-skeleton-hi:     rgba(0,0,0,0.08);
   --kai-skeleton-lo:     rgba(0,0,0,0.04);
+  --kai-header-bg:       rgba(250,249,252,0.72);
+  --kai-header-bg-solid: rgba(250,249,252,0.88);
+  --kai-grid-line:       rgba(0,0,0,0.03);
+  --kai-overlay-bg:      rgba(250,249,252,0.95);
+  --kai-overlay-weak:    rgba(0,0,0,0.03);
+  --kai-overlay-border:  rgba(0,0,0,0.07);
+  --kai-dropdown-bg:     rgba(255,255,255,0.97);
+  --kai-bottombar-bg:    rgba(250,249,252,0.94);
+  --kai-card-bg:         rgba(255,255,255,0.92);
 }
 
 /* ==========================================================================
@@ -444,6 +462,15 @@
 html, body {
   background: var(--kai-bg);
   color: var(--kai-text1);
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* PWA standalone: sticky header が status bar に潜り込まない */
+@media (display-mode: standalone) {
+  .sticky.top-0 {
+    top: env(safe-area-inset-top, 0px);
+  }
 }
 
 @layer base {

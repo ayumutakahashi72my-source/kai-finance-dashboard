@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { KAI } from '@/lib/kai-tokens'
 import type { Transaction } from '@/lib/types'
 
 interface Props {
@@ -25,8 +26,8 @@ export function Ticker({ transactions }: Props) {
     <div
       className="relative overflow-hidden"
       style={{
-        borderTop: '1px solid rgba(255,255,255,0.10)',
-        borderBottom: '1px solid rgba(255,255,255,0.10)',
+        borderTop: `1px solid ${KAI.border2}`,
+        borderBottom: `1px solid ${KAI.border2}`,
         background: 'rgba(0,0,0,0.2)',
         whiteSpace: 'nowrap',
       }}
@@ -38,11 +39,12 @@ export function Ticker({ transactions }: Props) {
         {rep.map((t, i) => (
           <span
             key={i}
-            className="mono inline-block px-6 py-2.5 text-xs tracking-[0.04em] text-[#c4c4d0]"
+            className="mono inline-block px-6 py-2.5 text-xs tracking-[0.04em]"
+            style={{ color: KAI.text2 }}
           >
-            <span className="text-[#8b8ba0] mr-1.5">{t.l}</span>
+            <span className="mr-1.5" style={{ color: KAI.text3 }}>{t.l}</span>
             <span className="font-semibold" style={{ color: t.c }}>{t.v}</span>
-            <span className="text-[#8b8ba0] mx-3">·</span>
+            <span className="mx-3" style={{ color: KAI.text3 }}>·</span>
           </span>
         ))}
       </div>
@@ -50,10 +52,11 @@ export function Ticker({ transactions }: Props) {
         onClick={() => setPaused((p) => !p)}
         aria-label={paused ? 'ティッカーを再生' : 'ティッカーを一時停止'}
         aria-pressed={paused}
-        className="absolute right-2 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-[13px] text-[#c4c4d0]"
+        className="absolute right-2 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-[13px]"
         style={{
-          background: 'rgba(20,22,32,0.92)',
-          border: '1px solid rgba(255,255,255,0.16)',
+          color: KAI.text2,
+          background: KAI.overlayBg,
+          border: `1px solid ${KAI.borderStrong}`,
           backdropFilter: 'blur(20px)',
         }}
       >

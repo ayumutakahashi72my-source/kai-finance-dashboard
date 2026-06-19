@@ -93,15 +93,15 @@ export function AiChatPanel({ alwaysOpen = false }: Props) {
       <div
         className="kai-rise rounded-[18px] flex flex-col"
         style={{
-          background: 'rgba(20,22,32,0.66)',
+          background: KAI.bgPanel,
           backdropFilter: 'blur(24px) saturate(160%)',
-          border: '1px solid rgba(255,255,255,0.10)',
+          border: `1px solid ${KAI.border2}`,
           minHeight: 420,
         }}
       >
         {/* header */}
         <div
-          style={{ padding: '16px 20px 12px', borderBottom: '1px solid rgba(255,255,255,.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+          style={{ padding: '16px 20px 12px', borderBottom: `1px solid ${KAI.overlayBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <div style={{ width: 28, height: 28, borderRadius: 8, background: `linear-gradient(135deg,${KAI.violet},${KAI.coral})`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -111,7 +111,7 @@ export function AiChatPanel({ alwaysOpen = false }: Props) {
               </svg>
             </div>
             <div>
-              <p style={{ fontSize: 14, fontWeight: 700, color: '#f0f0f5', lineHeight: 1 }}>AIチャット</p>
+              <p style={{ fontSize: 14, fontWeight: 700, color: KAI.text1, lineHeight: 1 }}>AIチャット</p>
               <p style={{ fontSize: 10, color: KAI.text3, marginTop: 2, fontFamily: 'var(--font-mono),monospace' }}>
                 {usage.session_count}/20回 · ¥{usage.estimated_cost}
               </p>
@@ -164,8 +164,8 @@ export function AiChatPanel({ alwaysOpen = false }: Props) {
                 style={{
                   maxWidth: '78%', borderRadius: 16, padding: '10px 14px', fontSize: 14, lineHeight: 1.65,
                   background: m.role === 'user' ? 'rgba(251,148,119,0.15)' : 'rgba(255,255,255,0.04)',
-                  color: m.role === 'user' ? '#f0f0f5' : '#c4c4d0',
-                  border: m.role === 'user' ? '1px solid rgba(251,148,119,0.22)' : '1px solid rgba(255,255,255,0.07)',
+                  color: m.role === 'user' ? KAI.text1 : KAI.text2,
+                  border: m.role === 'user' ? '1px solid rgba(251,148,119,0.22)' : `1px solid ${KAI.overlayBorder}`,
                   borderBottomRightRadius: m.role === 'user' ? 4 : 16,
                   borderBottomLeftRadius: m.role === 'assistant' ? 4 : 16,
                 }}
@@ -183,7 +183,7 @@ export function AiChatPanel({ alwaysOpen = false }: Props) {
                   <path d="M3 14c0-2.76 2.24-5 5-5s5 2.24 5 5" stroke="rgba(255,255,255,.9)" strokeWidth="1.6" strokeLinecap="round" />
                 </svg>
               </div>
-              <div style={{ borderRadius: 16, borderBottomLeftRadius: 4, padding: '10px 14px', background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.07)', display: 'inline-flex', gap: 4, alignItems: 'center' }}>
+              <div style={{ borderRadius: 16, borderBottomLeftRadius: 4, padding: '10px 14px', background: KAI.overlayWeak, border: `1px solid ${KAI.overlayBorder}`, display: 'inline-flex', gap: 4, alignItems: 'center' }}>
                 {[0, 150, 300].map((d) => (
                   <span key={d} style={{ width: 6, height: 6, borderRadius: '50%', background: KAI.text3, display: 'inline-block', animation: `kai-stream-dot 1.2s ${d}ms ease-in-out infinite` }} />
                 ))}
@@ -197,7 +197,7 @@ export function AiChatPanel({ alwaysOpen = false }: Props) {
         {error && <p style={{ padding: '0 20px 8px', fontSize: 12, color: KAI.danger }}>{error}</p>}
 
         {/* input */}
-        <div style={{ padding: '12px 16px 16px', borderTop: '1px solid rgba(255,255,255,.07)', display: 'flex', gap: 8, alignItems: 'center' }}>
+        <div style={{ padding: '12px 16px 16px', borderTop: `1px solid ${KAI.overlayBorder}`, display: 'flex', gap: 8, alignItems: 'center' }}>
           <input
             ref={inputRef}
             value={input}
@@ -205,10 +205,9 @@ export function AiChatPanel({ alwaysOpen = false }: Props) {
             onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && send()}
             placeholder={limitReached ? '今月の利用上限に達しました' : '家計について質問…'}
             disabled={sending || limitReached}
+            className="kai-input"
             style={{
               flex: 1, borderRadius: 99, padding: '10px 16px', fontSize: 14,
-              background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.12)',
-              color: '#f0f0f5', outline: 'none',
             }}
           />
           <button
@@ -219,7 +218,7 @@ export function AiChatPanel({ alwaysOpen = false }: Props) {
               width: 40, height: 40, borderRadius: '50%', flexShrink: 0,
               background: `linear-gradient(135deg,${KAI.coral},${KAI.violet})`,
               border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: '#0a0a10', cursor: 'pointer', opacity: (!input.trim() || sending || limitReached) ? 0.4 : 1,
+              color: KAI.bg, cursor: 'pointer', opacity: (!input.trim() || sending || limitReached) ? 0.4 : 1,
               transition: 'opacity .15s',
             }}
           >
@@ -235,18 +234,18 @@ export function AiChatPanel({ alwaysOpen = false }: Props) {
     <div
       className="rounded-[18px]"
       style={{
-        background: 'rgba(20,22,32,0.66)',
+        background: KAI.bgPanel,
         backdropFilter: 'blur(24px) saturate(160%)',
-        border: '1px solid rgba(255,255,255,0.10)',
+        border: `1px solid ${KAI.border2}`,
       }}
     >
       <button
         className="flex w-full items-center justify-between p-5"
         onClick={() => setOpen((v) => !v)}
       >
-        <p style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 600, color: '#c4c4d0' }}>
+        <p style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 600, color: KAI.text2 }}>
           <span
-            style={{ width: 20, height: 20, borderRadius: 5, background: `linear-gradient(135deg,${KAI.coral},#f5d4b8)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 900, color: '#0a0a10' }}
+            style={{ width: 20, height: 20, borderRadius: 5, background: `linear-gradient(135deg,${KAI.coral},#f5d4b8)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 900, color: KAI.bg }}
           >
             AI
           </span>
@@ -269,8 +268,8 @@ export function AiChatPanel({ alwaysOpen = false }: Props) {
                   style={{
                     maxWidth: '80%', borderRadius: 16, padding: '8px 14px', fontSize: 14, lineHeight: 1.6,
                     background: m.role === 'user' ? 'rgba(251,148,119,0.15)' : 'rgba(255,255,255,0.04)',
-                    color: m.role === 'user' ? '#f0f0f5' : '#c4c4d0',
-                    border: m.role === 'user' ? '1px solid rgba(251,148,119,0.20)' : '1px solid rgba(255,255,255,0.07)',
+                    color: m.role === 'user' ? KAI.text1 : KAI.text2,
+                    border: m.role === 'user' ? '1px solid rgba(251,148,119,0.20)' : `1px solid ${KAI.overlayBorder}`,
                   }}
                 >
                   {m.content}

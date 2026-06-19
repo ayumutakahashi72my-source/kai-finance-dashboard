@@ -4,6 +4,9 @@ import { extractReceiptBlocks, structureReceiptData } from '@/lib/ocr'
 
 export const maxDuration = 45
 
+const ALLOWED_MIME = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'])
+const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10 MB
+
 export async function POST(request: NextRequest) {
   const auth = await requireAuth()
   if (!auth.ok) return auth.response
@@ -14,6 +17,14 @@ export async function POST(request: NextRequest) {
     const file = form.get('file') as File | null
     if (!file) {
       return NextResponse.json({ error: '画像が必要です' }, { status: 400 })
+    }
+
+    if (!ALLOWED_MIME.has(file.type)) {
+      return NextResponse.json({ error: `未対応の画像形式です: ${file.type}` }, { status: 400 })
+    }
+
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json({ error: 'ファイルサイズが10MBを超えています' }, { status: 400 })
     }
 
     const t_ocr0 = Date.now()
@@ -35,6 +46,6 @@ export async function POST(request: NextRequest) {
       amount: 0,
       occurred_on: new Date().toISOString().split('T')[0],
       confidence: 0,
-    })
+    }, { status: 500 })
   }
 }

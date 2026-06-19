@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { todayJST } from './jst'
 
 export interface CacheHints {
   canonicalChain?: string
@@ -39,7 +40,7 @@ export async function lookupStoreCache(
     .update({
       hit_count: (data.hit_count as number) + 1,
       confidence: Math.min(0.99, (data.confidence as number) + CACHE_HIT_DELTA),
-      last_seen: new Date(Date.now() + 9 * 3600_000).toISOString().split('T')[0],
+      last_seen: todayJST(),
     })
     .eq('household_id', householdId)
     .eq('store_key', storeKey)
@@ -65,7 +66,7 @@ export async function writeStoreCache(
 ): Promise<void> {
   if (confidence < MIN_WRITE_CONF) return
 
-  const today = new Date(Date.now() + 9 * 3600_000).toISOString().split('T')[0]
+  const today = todayJST()
 
   // atomic upsert via RPC: GREATEST(old, new) で低品質上書きを防止
   const { error } = await supabase.rpc('ocr_cache_upsert', {

@@ -63,7 +63,7 @@ export default async function DashboardPage({
   const greeting = hour < 12 ? 'おはようございます' : hour < 18 ? 'こんにちは' : 'こんばんは'
 
   return (
-    <div className="min-h-screen" style={{ background: '#0c0a14' }}>
+    <div className="min-h-screen" style={{ background: 'var(--kai-bg-card)' }}>
       {/* Warm mesh background */}
       <div
         aria-hidden
@@ -83,7 +83,7 @@ export default async function DashboardPage({
         className="pointer-events-none fixed inset-0"
         style={{
           zIndex: 1,
-          backgroundImage: `linear-gradient(rgba(255,255,255,.011) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.011) 1px,transparent 1px)`,
+          backgroundImage: `linear-gradient(var(--kai-grid-line) 1px,transparent 1px),linear-gradient(90deg,var(--kai-grid-line) 1px,transparent 1px)`,
           backgroundSize: '36px 36px',
         }}
       />
@@ -94,7 +94,7 @@ export default async function DashboardPage({
         {/* ── Mobile header ── */}
         <header
           className="flex items-center justify-between px-[18px] py-[14px] lg:hidden"
-          style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+          style={{ borderBottom: `1px solid var(--kai-border)`, paddingTop: 'calc(env(safe-area-inset-top, 14px) + 14px)' }}
         >
           <KaiSystemBrand size="sm"/>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -115,12 +115,12 @@ export default async function DashboardPage({
         {/* ── Desktop topbar ── */}
         <div
           className="hidden lg:flex items-center justify-between px-[30px] py-4"
-          style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+          style={{ borderBottom: `1px solid var(--kai-border)` }}
         >
           <div>
-            <p style={{ fontSize: 12, color: '#8b8ba0' }}>{greeting}、</p>
+            <p style={{ fontSize: 12, color: 'var(--kai-text3)' }}>{greeting}、</p>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
-              <p style={{ fontSize: 18, fontWeight: 700, color: '#f0f0f5', marginTop: 1 }}>
+              <p style={{ fontSize: 18, fontWeight: 700, color: 'var(--kai-text1)', marginTop: 1 }}>
                 {firstName}さん
               </p>
               <MonthSwitcher currentMonth={month} />
@@ -144,12 +144,12 @@ export default async function DashboardPage({
         {/* ── Mobile greeting row ── */}
         <div
           className="flex items-baseline justify-between px-[18px] py-2 lg:hidden"
-          style={{ fontSize: 12.5, color: '#c4c4d0' }}
+          style={{ fontSize: 12.5, color: 'var(--kai-text2)' }}
         >
           <span>
-            {greeting}、<span style={{ color: '#f0f0f5', fontWeight: 600 }}>{firstName}さん</span>
+            {greeting}、<span style={{ color: 'var(--kai-text1)', fontWeight: 600 }}>{firstName}さん</span>
           </span>
-          <span style={{ fontSize: 10, color: '#5e5e72', fontFamily: 'var(--font-mono),monospace', letterSpacing: '.1em' }}>
+          <span style={{ fontSize: 10, color: 'var(--kai-text4)', fontFamily: 'var(--font-mono),monospace', letterSpacing: '.1em' }}>
             {dateStr}
           </span>
         </div>

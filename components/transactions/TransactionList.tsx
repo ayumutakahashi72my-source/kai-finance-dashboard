@@ -3,6 +3,7 @@
 import { useOptimistic, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { TrendingUp, Pencil, Trash2, CheckSquare, Square, Pin, PinOff } from 'lucide-react'
+import { KAI } from '@/lib/kai-tokens'
 import { getCategoryIcon } from '@/lib/category-icons'
 import { CategoryIcon } from '@/components/ui/CategoryIcon'
 import { Button } from '@/components/ui/button'
@@ -391,8 +392,8 @@ export function TransactionList({ initial, categories, uncategorizedCount = 0 }:
             className="fixed z-50 min-w-[120px] overflow-hidden rounded-[12px]"
             style={{
               top: menuPos.top, right: menuPos.right,
-              background: 'rgba(20,22,32,0.98)',
-              border: '1px solid rgba(255,255,255,0.12)',
+              background: KAI.dropdownBg,
+              border: `1px solid ${KAI.border2}`,
               boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
             }}
           >
@@ -515,8 +516,8 @@ export function TransactionList({ initial, categories, uncategorizedCount = 0 }:
       {/* Date-grouped list */}
       {optimisticItems.length === 0 ? (
         <div
-          className="rounded-[18px] px-4 py-8 text-center text-sm text-[#5e5e72]"
-          style={{ background: 'rgba(20,22,32,0.66)', border: '1px solid rgba(255,255,255,0.10)' }}
+          className="rounded-[18px] px-4 py-8 text-center text-sm"
+          style={{ color: KAI.text4, background: KAI.bgPanel, border: `1px solid ${KAI.border2}` }}
         >
           取引がありません。＋ボタンから記録してください。
         </div>
@@ -539,7 +540,7 @@ export function TransactionList({ initial, categories, uncategorizedCount = 0 }:
 
               <div
                 className="rounded-[18px] px-3 py-1"
-                style={{ background: 'rgba(20,22,32,0.66)', backdropFilter: 'blur(24px) saturate(160%)', border: '1px solid rgba(255,255,255,0.10)' }}
+                style={{ background: KAI.bgPanel, backdropFilter: 'blur(24px) saturate(160%)', border: `1px solid ${KAI.border2}` }}
               >
                 {txs.map((tx, i) => {
                   const color = categoryColor(tx)
@@ -549,7 +550,7 @@ export function TransactionList({ initial, categories, uncategorizedCount = 0 }:
                     <div
                       key={tx.id}
                       className="relative flex min-h-[48px] items-center gap-3 py-3.5"
-                      style={{ borderBottom: i < txs.length - 1 ? '1px solid rgba(255,255,255,0.07)' : 'none' }}
+                      style={{ borderBottom: i < txs.length - 1 ? `1px solid ${KAI.overlayBorder}` : 'none' }}
                       onClick={selectMode ? () => toggleSelect(tx.id) : undefined}
                     >
                       {/* チェックボックス（選択モード時） */}
@@ -565,7 +566,7 @@ export function TransactionList({ initial, categories, uncategorizedCount = 0 }:
                         className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px] text-[15px]"
                         style={{
                           background: tx.amount >= 0 ? 'rgba(74,222,128,0.10)' : 'rgba(255,255,255,0.04)',
-                          border: `1px solid ${tx.amount >= 0 ? 'rgba(74,222,128,0.25)' : 'rgba(255,255,255,0.10)'}`,
+                          border: `1px solid ${tx.amount >= 0 ? 'rgba(74,222,128,0.25)' : KAI.border2}`,
                           color: tx.amount >= 0 ? '#4ade80' : color,
                         }}
                       >
@@ -591,7 +592,7 @@ export function TransactionList({ initial, categories, uncategorizedCount = 0 }:
                       </div>
                       <span
                         className="mono text-[15px] font-semibold"
-                        style={{ color: tx.amount >= 0 ? '#4ade80' : '#f0f0f5' }}
+                        style={{ color: tx.amount >= 0 ? '#4ade80' : KAI.text1 }}
                       >
                         {tx.amount >= 0 ? '+' : ''}¥{Math.abs(tx.amount).toLocaleString()}
                       </span>

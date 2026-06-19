@@ -2,9 +2,26 @@
 /// <reference types="@playwright/test" />
 import { defineConfig, devices } from '@playwright/test'
 import fs from 'fs'
+import path from 'path'
+
+// .env.local を手動で読み込み（Playwright は Next.js のenv自動読み込みを使わないため）
+function loadEnvFile(filePath: string) {
+  if (!fs.existsSync(filePath)) return
+  const content = fs.readFileSync(filePath, 'utf-8')
+  for (const line of content.split('\n')) {
+    const trimmed = line.trim()
+    if (!trimmed || trimmed.startsWith('#')) continue
+    const eqIdx = trimmed.indexOf('=')
+    if (eqIdx < 0) continue
+    const key = trimmed.slice(0, eqIdx).trim()
+    const val = trimmed.slice(eqIdx + 1).trim()
+    if (!process.env[key]) process.env[key] = val
+  }
+}
+loadEnvFile(path.resolve('.env.local'))
+loadEnvFile(path.resolve('.env'))
 
 const AUTH_FILE = 'e2e/.auth/user.json'
-const hasAuthFile = fs.existsSync(AUTH_FILE)
 
 export default defineConfig({
   testDir: './e2e',
@@ -17,26 +34,27 @@ export default defineConfig({
     trace: 'on-first-retry',
   },
   projects: [
-    ...(!hasAuthFile ? [{
+    {
       name: 'setup',
       testMatch: '**/auth.setup.ts',
-    }] : []),
+    },
     {
       name: 'chromium',
       testIgnore: ['**/dashboard.spec.ts', '**/api-security.spec.ts'],
       use: {
         ...devices['Desktop Chrome'],
-        ...(hasAuthFile ? { storageState: AUTH_FILE } : {}),
+        storageState: AUTH_FILE,
       },
-      ...(hasAuthFile ? {} : { dependencies: ['setup'] }),
+      dependencies: ['setup'],
     },
     {
       name: 'dashboard',
       testMatch: '**/dashboard.spec.ts',
       use: {
         ...devices['Desktop Chrome'],
-        ...(hasAuthFile ? { storageState: AUTH_FILE } : {}),
+        storageState: AUTH_FILE,
       },
+      dependencies: ['setup'],
     },
     {
       name: 'api-security',
@@ -48,9 +66,9 @@ export default defineConfig({
       testMatch: '**/screens.spec.ts',
       use: {
         ...devices['iPhone 14'],
-        ...(hasAuthFile ? { storageState: AUTH_FILE } : {}),
+        storageState: AUTH_FILE,
       },
-      ...(hasAuthFile ? {} : { dependencies: ['setup'] }),
+      dependencies: ['setup'],
     },
   ],
   webServer: {

@@ -119,12 +119,12 @@ export function ReceiptAnalyzingV2({ image, onDone, onError, onCancel }: Props) 
           method: 'POST',
           body: formData,
         })
-        if (!res.ok) {
-          if (!cancelled) onError(`HTTP ${res.status}`)
-          return
-        }
         const json = await res.json() as OcrResult & { error?: string }
         if (cancelled) return
+        if (!res.ok || json.error) {
+          onError(json.error ?? `HTTP ${res.status}`)
+          return
+        }
         pendingResult.current = json
         setHasResult(true)
       } catch (err) {

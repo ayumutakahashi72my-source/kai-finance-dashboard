@@ -10,8 +10,11 @@ const WAREKI: Record<string, number> = {
 
 function parseWareki(text: string): { y: number; m: number; d: number } | null {
   for (const [era, base] of Object.entries(WAREKI)) {
-    const m = text.match(new RegExp(`${era}(\\d{1,2})年(\\d{1,2})月(\\d{1,2})日?`))
-    if (m) return { y: base + parseInt(m[1], 10), m: parseInt(m[2], 10), d: parseInt(m[3], 10) }
+    const m = text.match(new RegExp(`${era}(元|\\d{1,2})年(\\d{1,2})月(\\d{1,2})日?`))
+    if (m) {
+      const yearVal = m[1] === '元' ? 1 : parseInt(m[1], 10)
+      return { y: base + yearVal, m: parseInt(m[2], 10), d: parseInt(m[3], 10) }
+    }
   }
   return null
 }
