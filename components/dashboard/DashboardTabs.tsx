@@ -2,30 +2,18 @@
 
 import { useState, useRef, useCallback } from 'react'
 import dynamic from 'next/dynamic'
-import { AiSummaryCard } from '@/components/dashboard/AiSummaryCard'
-import { AiChatPanel } from '@/components/dashboard/AiChatPanel'
-import { QuarterlyInsightCard } from '@/components/dashboard/QuarterlyInsightCard'
+import { BudgetDashboard } from '@/components/budget/BudgetDashboard'
+import { CashflowCard } from '@/components/budget/CashflowCard'
+import { SavingsRateTracker } from '@/components/budget/SavingsRateTracker'
+import { FixedExpenseCard } from '@/components/budget/FixedExpenseCard'
 import { NowTab } from '@/components/dashboard/NowTab'
-import { CORAL, CORALG, TEXT3, BORDER } from './dashboard-utils'
-import { KAI } from '@/lib/kai-tokens'
+import { CORAL, TEXT3 } from './dashboard-utils'
 import type { Transaction } from '@/lib/types'
 
 const AnalyticsTab = dynamic(
   () => import('@/components/dashboard/AnalyticsTab').then((m) => m.AnalyticsTab),
   { ssr: false, loading: () => <div style={{ minHeight: 300 }} /> }
 )
-
-function StrategyTab() {
-  return (
-    <div className="space-y-3">
-      <AiSummaryCard />
-      <QuarterlyInsightCard />
-      <div className="kai-rise" style={{ animationDelay: '140ms' }}>
-        <AiChatPanel />
-      </div>
-    </div>
-  )
-}
 
 interface Props {
   transactions: Transaction[]
@@ -34,7 +22,7 @@ interface Props {
   streak?: number
 }
 
-const TABS = ['NOW', '分析', 'AI戦略'] as const
+const TABS = ['ホーム', '分析', '予算'] as const
 
 export function DashboardTabs({ transactions, allTransactions, month, streak: streakProp = 0 }: Props) {
   const [tab, setTab] = useState(0)
@@ -62,8 +50,7 @@ export function DashboardTabs({ transactions, allTransactions, month, streak: st
     <div className="px-[18px] py-4 lg:px-[30px]">
       <div
         role="tablist"
-        className="mb-4 inline-flex gap-1 rounded-[12px] p-1"
-        style={{ background: KAI.overlayWeak, border: `1px solid ${BORDER}` }}
+        style={{ display: 'flex', gap: 0, padding: '0 0 12px' }}
         onKeyDown={handleKeyDown}
       >
         {TABS.map((t, i) => {
@@ -79,13 +66,17 @@ export function DashboardTabs({ transactions, allTransactions, month, streak: st
               tabIndex={active ? 0 : -1}
               onClick={() => setTab(i)}
               style={{
-                fontFamily: 'var(--font-mono),monospace',
-                background: active ? 'rgba(251,148,119,0.12)' : 'transparent',
+                flex: 1,
+                padding: 8,
+                fontSize: 13,
+                fontWeight: active ? 700 : 400,
                 color: active ? CORAL : TEXT3,
-                boxShadow: active ? `0 0 8px ${CORALG}` : 'none',
-                border: 'none', borderRadius: 9, padding: '8px 18px',
-                fontSize: 12, fontWeight: 700, letterSpacing: '.04em',
-                cursor: 'pointer', minHeight: 38, transition: 'all .18s',
+                background: 'none',
+                border: 'none',
+                borderBottom: active ? `2px solid ${CORAL}` : '2px solid transparent',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                transition: 'all .18s',
               }}
             >
               {t}
@@ -94,10 +85,24 @@ export function DashboardTabs({ transactions, allTransactions, month, streak: st
         })}
       </div>
 
-      <div role="tabpanel" id={`dash-tabpanel-${tab}`} aria-labelledby={`dash-tab-${tab}`}>
+      <div
+        role="tabpanel"
+        id={`dash-tabpanel-${tab}`}
+        aria-labelledby={`dash-tab-${tab}`}
+        className="space-y-3"
+        style={{ animation: 'kai-rise .4s ease-out both' }}
+        key={tab}
+      >
         {tab === 0 && <NowTab transactions={transactions} allTransactions={allTransactions} month={month} streak={streakProp} />}
         {tab === 1 && <AnalyticsTab allTransactions={allTransactions} month={month} />}
-        {tab === 2 && <StrategyTab />}
+        {tab === 2 && (
+          <>
+            <CashflowCard month={month} />
+            <BudgetDashboard month={month} />
+            <SavingsRateTracker currentMonth={month} />
+            <FixedExpenseCard />
+          </>
+        )}
       </div>
     </div>
   )

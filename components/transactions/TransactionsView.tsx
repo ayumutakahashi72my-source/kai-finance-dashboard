@@ -164,6 +164,7 @@ export function TransactionsView({ month, initialView = 'list' }: Props) {
   const searchParams = useSearchParams()
   const filters = readFiltersFromUrl(searchParams)
   const hasFilter = isFilterActive(filters)
+  const [showFilters, setShowFilters] = useState(hasFilter)
 
   const [view, setView] = useState<'list' | 'calendar'>(initialView)
   const [classifying,    setClassifying]    = useState(false)
@@ -301,15 +302,30 @@ export function TransactionsView({ month, initialView = 'list' }: Props) {
 
       {/* ══════ Header Area ══════ */}
 
-      {/* Title + View Toggle */}
+      {/* Title + action buttons */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ fontSize: 20, fontWeight: 700, color: KAI.text1 }}>収支</div>
-        <ViewToggle view={view} onChange={setView} />
+        <div style={{ fontSize: 20, fontWeight: 700, color: KAI.text1 }}>収支一覧</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <ViewToggle view={view} onChange={setView} />
+          <button
+            onClick={() => setShowFilters(f => !f)}
+            aria-label="フィルター"
+            style={{
+              width: 36, height: 36, borderRadius: 12,
+              background: showFilters ? `${KAI.coral}1c` : KAI.overlayWeak,
+              border: `1px solid ${showFilters ? `${KAI.coral}40` : KAI.border2}`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer', color: showFilters ? KAI.coral : KAI.text3,
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+          </button>
+        </div>
       </div>
 
-      {/* Search (list view only) */}
+      {/* Search & filters (toggled) */}
       {view === 'list' && <DuplicateChecker />}
-      {view === 'list' && <TransactionFilters categories={allCats} />}
+      {view === 'list' && showFilters && <TransactionFilters categories={allCats} />}
 
       {/* Month Switcher */}
       <div style={{ display: 'flex', justifyContent: 'center' }}>
