@@ -11,6 +11,12 @@
  */
 import { test, expect } from '@playwright/test'
 
+/** 認証保護の確認: 401(API拒否) または 302/307(ミドルウェアリダイレクト) を許容 */
+function expectAuthProtected(status: number, endpoint: string) {
+  const isProtected = status === 401 || status === 302 || status === 307
+  expect(isProtected, `${endpoint} returned ${status} — expected 401/302/307`).toBeTruthy()
+}
+
 // ── 認証なしアクセス ──────────────────────────────────────────
 
 test.describe('API 認証ガード', () => {
@@ -52,19 +58,20 @@ test.describe('API 認証ガード', () => {
   ]
 
   for (const endpoint of protectedGET) {
-    test(`GET ${endpoint} → 401`, async ({ request }) => {
-      const res = await request.get(endpoint)
-      expect(res.status(), `${endpoint} returned ${res.status()}`).toBe(401)
+    test(`GET ${endpoint} → 認証保護`, async ({ request }) => {
+      const res = await request.get(endpoint, { maxRedirects: 0 })
+      expectAuthProtected(res.status(), `GET ${endpoint}`)
     })
   }
 
   for (const endpoint of protectedPOST) {
-    test(`POST ${endpoint} → 401`, async ({ request }) => {
+    test(`POST ${endpoint} → 認証保護`, async ({ request }) => {
       const res = await request.post(endpoint, {
         data: {},
         headers: { 'Content-Type': 'application/json' },
+        maxRedirects: 0,
       })
-      expect(res.status(), `${endpoint} returned ${res.status()}`).toBe(401)
+      expectAuthProtected(res.status(), `POST ${endpoint}`)
     })
   }
 })
@@ -81,16 +88,17 @@ test.describe('CRON エンドポイント認証', () => {
   ]
 
   for (const endpoint of cronEndpoints) {
-    test(`${endpoint} — Bearer なしで 401`, async ({ request }) => {
-      const res = await request.get(endpoint)
-      expect(res.status()).toBe(401)
+    test(`${endpoint} — Bearer なしで認証保護`, async ({ request }) => {
+      const res = await request.get(endpoint, { maxRedirects: 0 })
+      expectAuthProtected(res.status(), endpoint)
     })
 
-    test(`${endpoint} — 不正な Bearer で 401`, async ({ request }) => {
+    test(`${endpoint} — 不正な Bearer で認証保護`, async ({ request }) => {
       const res = await request.get(endpoint, {
         headers: { Authorization: 'Bearer invalid-secret' },
+        maxRedirects: 0,
       })
-      expect(res.status()).toBe(401)
+      expectAuthProtected(res.status(), endpoint)
     })
   }
 })
@@ -163,11 +171,11 @@ test.describe('セキュリティヘッダー', () => {
     const headers = res.headers()
 
     // X-Frame-Options or CSP frame-ancestors
-    const hasFrameProtection =
+    expect(
       headers['x-frame-options'] !== undefined ||
       headers['content-security-policy']?.includes('frame-ancestors')
+    ).toBeTruthy()
 
-    // Strict-Transport-Security は本番環境のみ（localhost では不要）
     // X-Content-Type-Options
     if (headers['x-content-type-options']) {
       expect(headers['x-content-type-options']).toBe('nosniff')

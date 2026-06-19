@@ -1,5 +1,6 @@
 'use client'
 
+import { KAI } from '@/lib/kai-tokens'
 import { CORAL, TEXT2, TEXT3 } from './dashboard-utils'
 
 export function StreakCard({ streak }: { streak: number }) {
@@ -19,7 +20,7 @@ export function StreakCard({ streak }: { streak: number }) {
         </div>
         <div style={{ display: 'flex', gap: 4 }}>
           {bars.map((on, i) => (
-            <div key={i} style={{ width: 16, height: 26, borderRadius: 4, background: on ? CORAL : 'rgba(255,255,255,.05)', boxShadow: on ? `0 0 8px ${CORAL}66` : 'none', border: on ? 'none' : '1px dashed rgba(255,255,255,.10)' }} />
+            <div key={i} style={{ width: 16, height: 26, borderRadius: 4, background: on ? CORAL : KAI.overlayWeak, boxShadow: on ? `0 0 8px ${CORAL}66` : 'none', border: on ? 'none' : `1px dashed ${KAI.border2}` }} />
           ))}
         </div>
       </div>

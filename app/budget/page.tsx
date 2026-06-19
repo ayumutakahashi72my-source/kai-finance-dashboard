@@ -32,17 +32,17 @@ export default async function BudgetPage({
 
 
   return (
-    <div className="min-h-screen" style={{ background: '#0c0a14' }}>
+    <div className="min-h-screen" style={{ background: 'var(--kai-bg-card)' }}>
       {/* Mesh background */}
       <div aria-hidden className="mesh-bg pointer-events-none fixed inset-0" style={{ zIndex: 0, backgroundImage: `radial-gradient(ellipse 700px 500px at 80% 8%, rgba(251,148,119,.09), transparent 55%),radial-gradient(ellipse 500px 400px at 12% 78%, rgba(122,167,255,.06), transparent 55%)` }} />
-      <div aria-hidden className="pointer-events-none fixed inset-0" style={{ zIndex: 1, backgroundImage: `linear-gradient(rgba(255,255,255,.012) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.012) 1px,transparent 1px)`, backgroundSize: '40px 40px' }} />
+      <div aria-hidden className="pointer-events-none fixed inset-0" style={{ zIndex: 1, backgroundImage: `linear-gradient(var(--kai-grid-line) 1px,transparent 1px),linear-gradient(90deg,var(--kai-grid-line) 1px,transparent 1px)`, backgroundSize: '40px 40px' }} />
 
       <Sidebar />
 
       <div className="relative min-h-screen lg:pl-[220px]" style={{ zIndex: 2 }}>
         <header
           className="sticky top-0 z-30 flex items-center justify-between px-6 py-[14px]"
-          style={{ background: 'rgba(8,8,14,.55)', backdropFilter: 'blur(24px)', borderBottom: '1px solid rgba(255,255,255,0.10)' }}
+          style={{ background: 'var(--kai-header-bg)', backdropFilter: 'blur(24px)', borderBottom: `1px solid var(--kai-border2)` }}
         >
           <div className="flex items-center gap-3">
             {/* mobile logo */}
@@ -50,8 +50,8 @@ export default async function BudgetPage({
               <KaiSystemBrand size="sm"/>
             </div>
             <div className="hidden lg:block">
-              <h1 className="text-[17px] font-bold" style={{ color: '#f0f0f5' }}>予算管理</h1>
-              <p style={{ fontSize: 11, color: '#5e5e72', marginTop: 1 }}>{month.replace('-', '年') + '月'}</p>
+              <h1 className="text-[17px] font-bold" style={{ color: 'var(--kai-text1)' }}>予算管理</h1>
+              <p style={{ fontSize: 11, color: 'var(--kai-text4)', marginTop: 1 }}>{month.replace('-', '年') + '月'}</p>
             </div>
           </div>
 
@@ -64,7 +64,7 @@ export default async function BudgetPage({
         {/* Mobile: MonthSwitcher below header */}
         <div
           className="lg:hidden sticky top-[57px] z-20 flex justify-center py-2"
-          style={{ background: 'rgba(8,8,14,.72)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(255,255,255,0.07)' }}
+          style={{ background: 'var(--kai-header-bg-solid)', backdropFilter: 'blur(20px)', borderBottom: `1px solid var(--kai-border)` }}
         >
           <MonthSwitcher currentMonth={month} />
         </div>

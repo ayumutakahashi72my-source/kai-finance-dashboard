@@ -67,6 +67,6 @@ export function resolveChain(merchant: string): string {
   }
   return merchant
     .replace(/\d+号?店$/, '')
-    .replace(/(店|支店|営業所|センター|ショップ)$/, '')
+    .replace(/(書店|薬店|店|支店|営業所|センター|ショップ)$/, '')
     .trim()
 }

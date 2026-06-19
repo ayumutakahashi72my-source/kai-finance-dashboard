@@ -113,7 +113,7 @@ export function TooltipDark({ active, payload, label }: {
 }) {
   if (!active || !payload?.length) return null
   return (
-    <div style={{ background: 'rgba(20,22,32,0.92)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.16)', borderRadius: 10, padding: '10px 14px', fontSize: 12, boxShadow: '0 8px 32px rgba(0,0,0,.5)' }}>
+    <div style={{ background: KAI.overlayBg, backdropFilter: 'blur(20px)', border: `1px solid ${KAI.borderStrong}`, borderRadius: 10, padding: '10px 14px', fontSize: 12, boxShadow: '0 8px 32px rgba(0,0,0,.5)' }}>
       <p style={{ fontFamily: MONO_FONT, fontWeight: 700, color: TEXT, marginBottom: 6 }}>{label}</p>
       {payload.map((p, i) => (
         <p key={i} style={{ fontFamily: MONO_FONT, color: p.color, marginBottom: 2 }}>{p.name}: {fmt(p.value)}</p>

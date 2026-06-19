@@ -22,7 +22,7 @@ function SheetChrome({ onBackdropClick, children }: { onBackdropClick: () => voi
         style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)', animation: 'kai-rise 0.18s ease-out both' }}
       />
       <div
-        style={{ position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 51, background: BG, backdropFilter: 'blur(28px) saturate(160%)', WebkitBackdropFilter: 'blur(28px) saturate(160%)', border: '1px solid rgba(255,255,255,0.12)', borderBottomWidth: 0, borderRadius: '24px 24px 0 0', padding: '20px 20px 48px', animation: 'kai-sheet-up 0.22s cubic-bezier(.16,1,.3,1) both', boxShadow: '0 -16px 48px rgba(0,0,0,0.6)', maxHeight: '92dvh', overflowY: 'auto' }}
+        style={{ position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 51, background: BG, backdropFilter: 'blur(28px) saturate(160%)', WebkitBackdropFilter: 'blur(28px) saturate(160%)', border: '1px solid rgba(255,255,255,0.12)', borderBottomWidth: 0, borderRadius: '24px 24px 0 0', padding: '20px 20px calc(env(safe-area-inset-bottom, 20px) + 28px)', animation: 'kai-sheet-up 0.22s cubic-bezier(.16,1,.3,1) both', boxShadow: '0 -16px 48px rgba(0,0,0,0.6)', maxHeight: '92dvh', overflowY: 'auto' }}
         role="dialog"
         aria-modal="true"
       >

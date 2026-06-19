@@ -71,11 +71,11 @@ async function toImageData(buf: Buffer) {
   const { data, info } = await sharp(buf)
     .rotate()
     .resize({ width: 1800, height: 3600, fit: 'inside', withoutEnlargement: true })
-    .modulate({ saturation: 0 })
     .normalize()
     .linear(1.4, -20)
     .sharpen({ sigma: 1.0, m1: 1.5, m2: 0.7 })
     .flatten({ background: { r: 255, g: 255, b: 255 } })
+    .toColourspace('b-w')
     .raw()
     .toBuffer({ resolveWithObject: true })
 

@@ -4,7 +4,7 @@ import { retryWithBackoff } from '@/lib/retry'
 import { todayJST } from './jst'
 import type { NormalizedBlock, OcrResult } from './types'
 
-const AI_TIMEOUT_MS = 5000
+const AI_TIMEOUT_MS = 8000
 
 // タイムアウト・レート制限はリトライしない (過負荷時に再送しても無意味)
 function isRetryableAIError(err: unknown): boolean {

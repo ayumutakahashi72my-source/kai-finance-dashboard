@@ -13,7 +13,6 @@ const TYPO_MAP: [RegExp, string][] = [
   [/LAWSO[NM]/gi,   'LAWSON'],
   [/FamilylMart/gi, 'FamilyMart'],
   [/7-ELEVEn/gi,   '7-ELEVEN'],
-  [/YOIEX/gi,       'YOMEX'],
 ]
 
 const NOISE_PATTERNS = [
@@ -64,7 +63,7 @@ export function normalizeOCRBlocks(blocks: OCRBlock[]): NormalizedBlock[] {
 
       const { w, h } = block.bbox
       const isVertical = h > w * 2.5
-      const isNoise = NOISE_PATTERNS.some(p => p.test(block.text.trim())) || block.score < 0.4
+      const isNoise = NOISE_PATTERNS.some(p => p.test(textNorm)) || block.score < 0.4
 
       return { ...block, textNorm, lineGroup: lineGroups[i], isVertical, isNoise }
     })

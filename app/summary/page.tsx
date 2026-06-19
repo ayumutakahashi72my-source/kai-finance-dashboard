@@ -20,7 +20,7 @@ export default async function SummaryPage() {
   const avatarUrl = user.user_metadata?.avatar_url as string | undefined
 
   return (
-    <div className="min-h-screen" style={{ background: '#0c0a14' }}>
+    <div className="min-h-screen" style={{ background: 'var(--kai-bg-card)' }}>
       <div
         aria-hidden
         className="mesh-bg pointer-events-none fixed inset-0"
@@ -37,7 +37,7 @@ export default async function SummaryPage() {
         className="pointer-events-none fixed inset-0"
         style={{
           zIndex: 1,
-          backgroundImage: `linear-gradient(rgba(255,255,255,.012) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.012) 1px,transparent 1px)`,
+          backgroundImage: `linear-gradient(var(--kai-grid-line) 1px,transparent 1px),linear-gradient(90deg,var(--kai-grid-line) 1px,transparent 1px)`,
           backgroundSize: '40px 40px',
         }}
       />
@@ -48,7 +48,7 @@ export default async function SummaryPage() {
         {/* header */}
         <header
           className="sticky top-0 z-30 flex items-center justify-between px-6 py-[14px]"
-          style={{ background: 'rgba(8,8,14,.55)', backdropFilter: 'blur(24px)', borderBottom: '1px solid rgba(255,255,255,0.10)' }}
+          style={{ background: 'var(--kai-header-bg)', backdropFilter: 'blur(24px)', borderBottom: `1px solid var(--kai-border2)` }}
         >
           <div className="flex items-center gap-3">
             {/* mobile logo */}
@@ -63,7 +63,7 @@ export default async function SummaryPage() {
                   <defs><linearGradient id="hd-g" x1="0" y1="0" x2="1" y2="1"><stop stopColor="#a78bfa"/><stop offset="1" stopColor="#fb9477"/></linearGradient></defs>
                 </svg>
               </div>
-              <h1 className="text-[17px] font-bold" style={{ color: '#f0f0f5' }}>AIチャット</h1>
+              <h1 className="text-[17px] font-bold" style={{ color: 'var(--kai-text1)' }}>AIチャット</h1>
               <span style={{ fontSize: 9, fontFamily: 'var(--font-mono),monospace', fontWeight: 700, letterSpacing: '.10em', padding: '2px 6px', borderRadius: 99, background: 'rgba(167,139,250,.12)', border: '1px solid rgba(167,139,250,.28)', color: '#a78bfa', display: 'flex', alignItems: 'center', gap: 4 }}>
                 <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#a78bfa', boxShadow: '0 0 6px rgba(167,139,250,.8)', animation: 'kai-blink 1.8s ease-in-out infinite', display: 'inline-block' }} />
                 Sonnet
@@ -80,14 +80,14 @@ export default async function SummaryPage() {
           {/* Secondary: monthly summary (collapsible) */}
           <details
             className="rounded-[18px] overflow-hidden"
-            style={{ background: 'rgba(20,22,32,0.66)', backdropFilter: 'blur(24px) saturate(160%)', border: '1px solid rgba(255,255,255,0.10)' }}
+            style={{ background: 'var(--kai-bg-panel)', backdropFilter: 'blur(24px) saturate(160%)', border: `1px solid var(--kai-border2)` }}
           >
             <summary
-              style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#8b8ba0', listStyle: 'none', userSelect: 'none' }}
+              style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600, color: 'var(--kai-text3)', listStyle: 'none', userSelect: 'none' }}
             >
-              <span style={{ width: 20, height: 20, borderRadius: 5, background: 'linear-gradient(135deg,#a78bfa,#fb9477)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 900, color: '#0a0a10', flexShrink: 0 }}>AI</span>
+              <span style={{ width: 20, height: 20, borderRadius: 5, background: 'linear-gradient(135deg,#a78bfa,#fb9477)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 900, color: 'var(--kai-bg)', flexShrink: 0 }}>AI</span>
               月次サマリー
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ marginLeft: 'auto', flexShrink: 0 }}><path d="M3 4.5L6 7.5L9 4.5" stroke="#3e3e55" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ marginLeft: 'auto', flexShrink: 0 }}><path d="M3 4.5L6 7.5L9 4.5" stroke="var(--kai-text5)" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </summary>
             <div style={{ padding: '0 20px 20px' }}>
               <SummaryContent />

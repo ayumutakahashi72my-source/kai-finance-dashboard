@@ -12,10 +12,10 @@ const EXCLUDE_KWS   = ['お預り', 'お釣り', 'おつり', '釣り', '釣銭'
 const REFUND_KWS = ['返品', '返金', '取消', 'RETURN', 'REFUND', 'CANCEL', '払戻']
 
 function parseAmount(text: string): number | null {
-  // 明示的負数: "-1,280" or "−1,280"
-  const negMatch = text.match(/[−\-]\s*[\d,，０-９]+/)
+  // 明示的負数: "-1,280" or "−1,280" or "ー1,280" or "-¥1,280"
+  const negMatch = text.match(/[−\-ー]\s*[¥￥]?\s*[\d,，０-９]+/)
   if (negMatch) {
-    const digits = negMatch[0].replace(/[−\-\s,，]/g, '').replace(/[０-９]/g, c => String(c.charCodeAt(0) - 0xFF10))
+    const digits = negMatch[0].replace(/[−\-ー¥￥\s,，]/g, '').replace(/[０-９]/g, c => String(c.charCodeAt(0) - 0xFF10))
     const val = parseInt(digits, 10)
     if (!isNaN(val) && val > 0) return -val
   }
@@ -43,7 +43,7 @@ export function extractAmount(blocks: NormalizedBlock[]): AmountResult {
     if (raw === null) continue
 
     const absAmt = Math.abs(raw)
-    if (absAmt < 10 || absAmt > 1_000_000) continue
+    if (absAmt < 1 || absAmt > 10_000_000) continue
 
     const isTotalKw    = TOTAL_KWS.some(kw => text.includes(kw))
     const isSecondary  = SECONDARY_KWS.some(kw => text.includes(kw))

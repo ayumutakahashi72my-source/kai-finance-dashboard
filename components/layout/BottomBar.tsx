@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { usePathname } from 'next/navigation'
+import { Suspense, useState } from 'react'
+import { usePathname, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { KAI } from '@/lib/kai-tokens'
 import { Icon } from '@/components/kai/shared'
@@ -14,7 +14,7 @@ import type { IconName } from '@/components/kai/shared'
 
 const LEFT_NAV: { href: string; icon: IconName; label: string }[] = [
   { href: '/',         icon: 'grid',     label: 'ホーム' },
-  { href: '/calendar', icon: 'calendar', label: 'カレンダー' },
+  { href: '/transactions?view=calendar', icon: 'calendar', label: 'カレンダー' },
 ]
 const RIGHT_NAV: { href: string; icon: IconName; label: string }[] = [
   { href: '/transactions', icon: 'pie', label: '収支' },
@@ -22,30 +22,50 @@ const RIGHT_NAV: { href: string; icon: IconName; label: string }[] = [
 ]
 
 export function BottomBar() {
+  return (
+    <Suspense>
+      <BottomBarInner />
+    </Suspense>
+  )
+}
+
+function BottomBarInner() {
   const pathname = usePathname()
+  const searchParams = useSearchParams()
   const [pickerOpen, setPickerOpen] = useState(false)
+
+  const isActive = (href: string) => {
+    if (href.includes('?')) {
+      const [path, qs] = href.split('?')
+      const params = new URLSearchParams(qs)
+      if (pathname !== path) return false
+      for (const [k, v] of params) { if (searchParams.get(k) !== v) return false }
+      return true
+    }
+    return pathname === href
+  }
 
   return (
     <>
       <AddPickerSheet open={pickerOpen} onClose={() => setPickerOpen(false)} />
 
       <div
-        className="fixed bottom-0 left-0 right-0 z-40 pb-6 pt-2 lg:hidden"
-        style={{ background: 'linear-gradient(180deg, transparent, rgba(10,10,16,0.92) 30%)' }}
+        className="fixed bottom-0 left-0 right-0 z-40 pt-2 lg:hidden"
+        style={{ background: 'linear-gradient(180deg, transparent, rgba(10,10,16,0.92) 30%)', paddingBottom: 'calc(env(safe-area-inset-bottom, 16px) + 8px)' }}
       >
         <div
           className="relative mx-3.5 flex items-center rounded-[24px] px-3 py-2"
           style={{
-            background: 'rgba(20,22,32,0.88)',
+            background: KAI.bottombarBg,
             backdropFilter: 'blur(20px) saturate(160%)',
-            border: '1px solid rgba(255,255,255,0.16)',
+            border: `1px solid ${KAI.borderStrong}`,
             boxShadow: '0 8px 32px rgba(0,0,0,0.55)',
           }}
         >
           {/* Left items — flex-1 so both sides are equal width */}
           <div className="flex flex-1 items-center justify-around">
             {LEFT_NAV.map((it) => {
-              const active = pathname === it.href
+              const active = isActive(it.href)
               return (
                 <Link
                   key={it.href}
@@ -68,7 +88,7 @@ export function BottomBar() {
           {/* Right items — flex-1 mirrors left */}
           <div className="flex flex-1 items-center justify-around">
             {RIGHT_NAV.map((it) => {
-              const active = pathname === it.href
+              const active = isActive(it.href)
               return (
                 <Link
                   key={it.href}
@@ -92,8 +112,8 @@ export function BottomBar() {
             className="absolute left-1/2 -translate-x-1/2 -translate-y-[14px] flex h-[54px] w-[54px] items-center justify-center rounded-full border-[3px]"
             style={{
               background: `linear-gradient(135deg, ${CORAL} 0%, ${BLUE} 100%)`,
-              borderColor: '#0a0a10',
-              color: '#0a0a10',
+              borderColor: KAI.bg,
+              color: KAI.bg,
               boxShadow: `0 8px 24px ${CORAL}55`,
               animation: 'kai-pulse-coral 2.4s ease-in-out infinite',
             }}

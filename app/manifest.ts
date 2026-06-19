@@ -6,7 +6,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: 'kai — 家計簿管理',
     short_name: 'kai',
     description: 'AI × 家計管理。支出の削減・節約をサポートするダッシュボード。',
-    start_url: '/login',
+    start_url: '/',
     scope: '/',
     display: 'standalone',
     orientation: 'portrait',
