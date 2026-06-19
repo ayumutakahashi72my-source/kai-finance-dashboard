@@ -2,6 +2,7 @@
 
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react'
+import { KAI } from '@/lib/kai-tokens'
 
 function monthOffset(ym: string, delta: number): string {
   const [y, m] = ym.split('-').map(Number)
@@ -54,7 +55,8 @@ export function MonthSwitcher({ currentMonth }: { currentMonth: string }) {
       {!isCurrentMonth && (
         <button
           onClick={() => navigate(thisMonth)}
-          className="rounded-md px-2 py-0.5 text-xs text-[#fb9477] transition-colors hover:bg-[#fb9477]/10"
+          className="rounded-md px-2 py-0.5 text-xs transition-colors hover:opacity-70"
+          style={{ color: KAI.coral }}
         >
           今月
         </button>

@@ -38,7 +38,8 @@ export function AiChatPanel({ alwaysOpen = false }: Props) {
 
   useEffect(() => {
     if (!open) return
-    fetch('/api/ai/chat')
+    const controller = new AbortController()
+    fetch('/api/ai/chat', { signal: controller.signal })
       .then(async (r) => {
         if (!r.ok) return
         const json = await r.json()
@@ -46,6 +47,7 @@ export function AiChatPanel({ alwaysOpen = false }: Props) {
         setUsage(json.usage ?? { session_count: 0, estimated_cost: 0 })
       })
       .catch(() => {})
+    return () => controller.abort()
   }, [open])
 
   useEffect(() => {
@@ -163,7 +165,7 @@ export function AiChatPanel({ alwaysOpen = false }: Props) {
               <div
                 style={{
                   maxWidth: '78%', borderRadius: 16, padding: '10px 14px', fontSize: 14, lineHeight: 1.65,
-                  background: m.role === 'user' ? 'rgba(251,148,119,0.15)' : 'rgba(255,255,255,0.04)',
+                  background: m.role === 'user' ? 'rgba(251,148,119,0.15)' : KAI.overlayWeak,
                   color: m.role === 'user' ? KAI.text1 : KAI.text2,
                   border: m.role === 'user' ? '1px solid rgba(251,148,119,0.22)' : `1px solid ${KAI.overlayBorder}`,
                   borderBottomRightRadius: m.role === 'user' ? 4 : 16,
@@ -267,7 +269,7 @@ export function AiChatPanel({ alwaysOpen = false }: Props) {
                 <div
                   style={{
                     maxWidth: '80%', borderRadius: 16, padding: '8px 14px', fontSize: 14, lineHeight: 1.6,
-                    background: m.role === 'user' ? 'rgba(251,148,119,0.15)' : 'rgba(255,255,255,0.04)',
+                    background: m.role === 'user' ? 'rgba(251,148,119,0.15)' : KAI.overlayWeak,
                     color: m.role === 'user' ? KAI.text1 : KAI.text2,
                     border: m.role === 'user' ? '1px solid rgba(251,148,119,0.20)' : `1px solid ${KAI.overlayBorder}`,
                   }}
@@ -278,9 +280,9 @@ export function AiChatPanel({ alwaysOpen = false }: Props) {
             ))}
             {sending && (
               <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
-                <div style={{ borderRadius: 16, padding: '8px 14px', background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.07)', display: 'inline-flex', gap: 4, alignItems: 'center' }}>
+                <div style={{ borderRadius: 16, padding: '8px 14px', background: KAI.overlayWeak, border: `1px solid ${KAI.overlayBorder}`, display: 'inline-flex', gap: 4, alignItems: 'center' }}>
                   {[0, 150, 300].map((d) => (
-                    <span key={d} className="h-1.5 w-1.5 animate-bounce rounded-full bg-[#8b8ba0]" style={{ animationDelay: `${d}ms` }} />
+                    <span key={d} className="h-1.5 w-1.5 animate-bounce rounded-full" style={{ animationDelay: `${d}ms`, background: KAI.text3 }} />
                   ))}
                 </div>
               </div>
@@ -290,14 +292,14 @@ export function AiChatPanel({ alwaysOpen = false }: Props) {
 
           {error && <p style={{ padding: '0 20px 8px', fontSize: 12, color: KAI.danger }}>{error}</p>}
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px', borderTop: '1px solid rgba(255,255,255,.10)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px', borderTop: `1px solid ${KAI.overlayBorder}` }}>
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && send()}
               placeholder={limitReached ? '今月の利用上限に達しました' : '質問を入力…'}
               disabled={sending || limitReached}
-              style={{ flex: 1, borderRadius: 12, padding: '8px 14px', fontSize: 14, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.10)', color: '#f0f0f5', outline: 'none' }}
+              style={{ flex: 1, borderRadius: 12, padding: '8px 14px', fontSize: 14, background: KAI.overlayWeak, border: `1px solid ${KAI.overlayBorder}`, color: KAI.text1, outline: 'none' }}
             />
             <button
               onClick={() => send()}

@@ -67,8 +67,8 @@ export function AnomalyBanner({ month }: { month: string }) {
   return (
     <div
       style={{
-        background: 'rgba(255,255,255,0.02)',
-        border: '1px solid rgba(255,255,255,0.07)',
+        background: KAI.overlayWeak,
+        border: `1px solid ${KAI.overlayBorder}`,
         borderRadius: 16,
         padding: '12px 14px',
         animation: 'kai-rise .5s ease-out both',
@@ -76,10 +76,10 @@ export function AnomalyBanner({ month }: { month: string }) {
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
         <span style={{ fontSize: 12 }}>⚡</span>
-        <span style={{ fontSize: 12, fontWeight: 700, color: '#fb9477', letterSpacing: '.06em' }}>
+        <span style={{ fontSize: 12, fontWeight: 700, color: KAI.coral, letterSpacing: '.06em' }}>
           支出異常アラート
         </span>
-        <span style={{ fontSize: 10, color: '#5e5e72', marginLeft: 'auto' }}>
+        <span style={{ fontSize: 10, color: KAI.text4, marginLeft: 'auto' }}>
           前3ヶ月平均比 ±30%以上
         </span>
       </div>

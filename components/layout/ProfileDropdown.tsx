@@ -54,7 +54,7 @@ export function ProfileDropdown({ displayName, avatarUrl }: Props) {
         ) : (
           <div
             className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold"
-            style={{ background: 'rgba(251,148,119,0.15)', color: '#fb9477' }}
+            style={{ background: 'rgba(251,148,119,0.15)', color: KAI.coral }}
           >
             {displayName.charAt(0).toUpperCase()}
           </div>
@@ -96,7 +96,7 @@ export function ProfileDropdown({ displayName, avatarUrl }: Props) {
             <button
               onClick={handleLogout}
               className="flex w-full items-center gap-2.5 rounded-[9px] px-3 py-2 text-[13px] font-medium transition-colors hover:bg-[#fb7185]/[0.08]"
-              style={{ color: '#fb7185' }}
+              style={{ color: KAI.danger }}
             >
               <LogoutIcon />
               ログアウト

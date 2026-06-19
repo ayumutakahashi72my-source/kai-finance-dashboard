@@ -23,7 +23,7 @@ function Toggle({ on, loading, onClick }: { on: boolean; loading?: boolean; onCl
       style={{
         width: 44, height: 25, borderRadius: 13, position: 'relative', flexShrink: 0,
         cursor: loading ? 'not-allowed' : 'pointer', border: 'none',
-        background: on ? KAI.success : 'rgba(255,255,255,.12)',
+        background: on ? KAI.success : KAI.overlayWeak,
         transition: 'background .2s', opacity: loading ? 0.5 : 1,
       }}
     >

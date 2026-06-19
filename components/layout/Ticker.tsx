@@ -16,9 +16,9 @@ export function Ticker({ transactions }: Props) {
   const balance = totalIncome - totalExpense
 
   const items = [
-    { l: 'INCOME',  v: `¥${totalIncome.toLocaleString()}`,   c: '#4ade80' },
-    { l: 'EXPENSE', v: `¥${totalExpense.toLocaleString()}`,  c: '#fb7185' },
-    { l: 'BALANCE', v: `${balance >= 0 ? '+' : ''}¥${balance.toLocaleString()}`, c: '#fb9477' },
+    { l: 'INCOME',  v: `¥${totalIncome.toLocaleString()}`,   c: KAI.success },
+    { l: 'EXPENSE', v: `¥${totalExpense.toLocaleString()}`,  c: KAI.danger },
+    { l: 'BALANCE', v: `${balance >= 0 ? '+' : ''}¥${balance.toLocaleString()}`, c: KAI.coral },
   ]
   const rep = [...items, ...items, ...items, ...items]
 
@@ -28,7 +28,7 @@ export function Ticker({ transactions }: Props) {
       style={{
         borderTop: `1px solid ${KAI.border2}`,
         borderBottom: `1px solid ${KAI.border2}`,
-        background: 'rgba(0,0,0,0.2)',
+        background: KAI.overlayWeak,
         whiteSpace: 'nowrap',
       }}
     >

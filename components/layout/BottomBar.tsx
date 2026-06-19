@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { usePathname } from 'next/navigation'
+import { usePathname, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { KAI } from '@/lib/kai-tokens'
 import { Icon } from '@/components/kai/shared'
@@ -14,7 +14,7 @@ import type { IconName } from '@/components/kai/shared'
 
 const LEFT_NAV: { href: string; icon: IconName; label: string }[] = [
   { href: '/',         icon: 'grid',     label: 'ホーム' },
-  { href: '/calendar', icon: 'calendar', label: 'カレンダー' },
+  { href: '/transactions?view=calendar', icon: 'calendar', label: 'カレンダー' },
 ]
 const RIGHT_NAV: { href: string; icon: IconName; label: string }[] = [
   { href: '/transactions', icon: 'pie', label: '収支' },
@@ -23,7 +23,19 @@ const RIGHT_NAV: { href: string; icon: IconName; label: string }[] = [
 
 export function BottomBar() {
   const pathname = usePathname()
+  const searchParams = useSearchParams()
   const [pickerOpen, setPickerOpen] = useState(false)
+
+  const isActive = (href: string) => {
+    if (href.includes('?')) {
+      const [path, qs] = href.split('?')
+      const params = new URLSearchParams(qs)
+      if (pathname !== path) return false
+      for (const [k, v] of params) { if (searchParams.get(k) !== v) return false }
+      return true
+    }
+    return pathname === href
+  }
 
   return (
     <>
@@ -45,7 +57,7 @@ export function BottomBar() {
           {/* Left items — flex-1 so both sides are equal width */}
           <div className="flex flex-1 items-center justify-around">
             {LEFT_NAV.map((it) => {
-              const active = pathname === it.href
+              const active = isActive(it.href)
               return (
                 <Link
                   key={it.href}
@@ -68,7 +80,7 @@ export function BottomBar() {
           {/* Right items — flex-1 mirrors left */}
           <div className="flex flex-1 items-center justify-around">
             {RIGHT_NAV.map((it) => {
-              const active = pathname === it.href
+              const active = isActive(it.href)
               return (
                 <Link
                   key={it.href}

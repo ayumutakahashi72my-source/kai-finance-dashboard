@@ -7,6 +7,7 @@ import { classifyByKeyword } from './keyword-rules'
 import { writeClassificationLogs, type ClassificationLogEntry } from './classification-logger'
 import { trackCost, type TokenUsageAccum } from './cost-tracker'
 import { canonicalizeMerchant } from './merchant-canonical'
+import { todayJST } from '@/lib/jst'
 
 const MAX_BATCH = 10
 const RAG_EXACT_THRESHOLD = 0.80   // exact キャッシュの直接採用ライン（LLM分類結果を再利用）
@@ -642,7 +643,7 @@ export async function classifyTransactions(
 
   // ragUpserts はここから全ステージで使う（regex / vector / LLM 全て書き込む）
   const ragUpserts: RagUpsert[] = []
-  const today = new Date().toISOString().slice(0, 10)
+  const today = todayJST()
 
   // ② Regex rule（DB 不要 — in-memory キーワードマッチ、純粋な perf optimization）
   const remaining: ClassifyItem[] = []
@@ -1124,7 +1125,7 @@ export async function classifyFreeForm(
 
   const vecCandidates = await vectorSearchTopK(remaining, remainingEmbeddings, householdId, supabase)
   const ragUpsertsF: RagUpsert[] = []
-  const todayF = new Date().toISOString().slice(0, 10)
+  const todayF = todayJST()
   const needsLLM: ClassifyItem[] = []
 
   for (const item of remaining) {

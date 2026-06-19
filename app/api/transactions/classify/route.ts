@@ -3,6 +3,7 @@ import { requireAuth } from '@/lib/api-guard'
 import { classifyFreeForm, BAD_CATEGORY_NAMES } from '@/lib/ai-classifier'
 
 const CHUNK = 200
+const MAX_TOTAL = 5000
 
 export async function POST() {
   const auth = await requireAuth()
@@ -43,7 +44,7 @@ export async function POST() {
       .range(from, from + CHUNK - 1)
     if (!data?.length) break
     allRows.push(...data)
-    if (data.length < CHUNK) break
+    if (data.length < CHUNK || allRows.length >= MAX_TOTAL) break
     from += CHUNK
   }
 

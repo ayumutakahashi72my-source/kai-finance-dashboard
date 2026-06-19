@@ -63,7 +63,7 @@ export function DashboardTabs({ transactions, allTransactions, month, streak: st
       <div
         role="tablist"
         className="mb-4 inline-flex gap-1 rounded-[12px] p-1"
-        style={{ background: 'rgba(255,255,255,0.04)', border: `1px solid ${BORDER}` }}
+        style={{ background: KAI.overlayWeak, border: `1px solid ${BORDER}` }}
         onKeyDown={handleKeyDown}
       >
         {TABS.map((t, i) => {

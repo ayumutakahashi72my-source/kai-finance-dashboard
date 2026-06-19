@@ -14,10 +14,11 @@ export async function POST(request: NextRequest) {
 
   try {
     const form = await request.formData()
-    const file = form.get('file') as File | null
-    if (!file) {
+    const raw = form.get('file')
+    if (!raw || !(raw instanceof File)) {
       return NextResponse.json({ error: '画像が必要です' }, { status: 400 })
     }
+    const file = raw
 
     if (!ALLOWED_MIME.has(file.type)) {
       return NextResponse.json({ error: `未対応の画像形式です: ${file.type}` }, { status: 400 })

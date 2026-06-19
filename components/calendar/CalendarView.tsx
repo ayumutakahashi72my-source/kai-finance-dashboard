@@ -86,7 +86,7 @@ function DayDetailOverlay({
     <div className="flex flex-col gap-3">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <p className="text-base font-bold" style={{ color: '#fb9477' }}>
+        <p className="text-base font-bold" style={{ color: KAI.coral }}>
           {data.date.replace(/-/g, '/')}
         </p>
         <button onClick={onClose} className="flex h-7 w-7 items-center justify-center rounded-full text-sm transition-colors hover:bg-white/10" style={{ color: KAI.text3 }}>
@@ -98,13 +98,13 @@ function DayDetailOverlay({
       <div className="grid grid-cols-2 gap-2">
         <div className="rounded-[10px] p-3" style={{ background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.15)' }}>
           <p className="text-[10px]" style={{ color: KAI.text3 }}>収入</p>
-          <p className="text-sm font-bold" style={{ color: '#4ade80' }}>
+          <p className="text-sm font-bold" style={{ color: KAI.success }}>
             {data.income > 0 ? `+¥${data.income.toLocaleString()}` : '—'}
           </p>
         </div>
         <div className="rounded-[10px] p-3" style={{ background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.15)' }}>
           <p className="text-[10px]" style={{ color: KAI.text3 }}>支出</p>
-          <p className="text-sm font-bold" style={{ color: '#f87171' }}>
+          <p className="text-sm font-bold" style={{ color: KAI.danger }}>
             {data.expense > 0 ? `-¥${data.expense.toLocaleString()}` : '—'}
           </p>
         </div>
@@ -121,17 +121,17 @@ function DayDetailOverlay({
                 <div key={cat.name}>
                   <div className="mb-0.5 flex items-center justify-between gap-2">
                     <div className="flex min-w-0 items-center gap-1.5">
-                      <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: cat.color ?? '#8b8ba0' }} />
+                      <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: cat.color ?? KAI.text3 }} />
                       <span className="truncate text-xs" style={{ color: KAI.text2 }}>{cat.name}</span>
                     </div>
-                    <span className="shrink-0 text-xs font-semibold" style={{ color: '#f87171' }}>
+                    <span className="shrink-0 text-xs font-semibold" style={{ color: KAI.danger }}>
                       ¥{cat.total.toLocaleString()}
                     </span>
                   </div>
                   <div className="h-1 overflow-hidden rounded-full" style={{ background: KAI.border }}>
                     <div
                       className="h-full rounded-full transition-all"
-                      style={{ width: `${pct}%`, background: cat.color ?? '#8b8ba0', opacity: 0.7 }}
+                      style={{ width: `${pct}%`, background: cat.color ?? KAI.text3, opacity: 0.7 }}
                     />
                   </div>
                 </div>
@@ -159,23 +159,23 @@ function DayDetailOverlay({
                     <div className="flex items-center gap-1.5">
                       {cat && (
                         <>
-                          <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: cat.color ?? '#8b8ba0' }} />
+                          <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: cat.color ?? KAI.text3 }} />
                           <span className="text-[11px]" style={{ color: KAI.text3 }}>{cat.name}</span>
                         </>
                       )}
                       {tx.is_fixed && (
-                        <span className="rounded px-1 text-[10px] font-semibold" style={{ background: 'rgba(167,139,250,0.15)', color: '#a78bfa' }}>
+                        <span className="rounded px-1 text-[10px] font-semibold" style={{ background: 'rgba(167,139,250,0.15)', color: KAI.violet }}>
                           固定
                         </span>
                       )}
                       {isHeatExcluded(tx) && !tx.is_fixed && (
-                        <span className="rounded px-1 text-[10px] font-semibold" style={{ background: 'rgba(34,211,238,0.12)', color: '#22d3ee' }}>
+                        <span className="rounded px-1 text-[10px] font-semibold" style={{ background: 'rgba(34,211,238,0.12)', color: KAI.cyan }}>
                           クレカ
                         </span>
                       )}
                     </div>
                   </div>
-                  <span className="shrink-0 text-sm font-bold" style={{ color: tx.amount > 0 ? '#4ade80' : '#f87171' }}>
+                  <span className="shrink-0 text-sm font-bold" style={{ color: tx.amount > 0 ? KAI.success : KAI.danger }}>
                     {tx.amount > 0 ? '+' : ''}¥{tx.amount.toLocaleString()}
                   </span>
                 </div>
@@ -205,7 +205,7 @@ function DayDetailOverlay({
           style={{
             maxHeight: '82vh',
             overflowY: 'auto',
-            background: 'rgba(16,18,28,0.98)',
+            background: KAI.overlayBg,
             border: `1px solid ${KAI.border2}`,
             borderBottom: 'none',
             boxShadow: '0 -16px 48px rgba(0,0,0,0.6)',
@@ -213,7 +213,7 @@ function DayDetailOverlay({
           }}
         >
           {/* Handle */}
-          <div className="mx-auto mb-4 h-1 w-10 shrink-0 rounded-full" style={{ background: 'rgba(255,255,255,0.2)' }} />
+          <div className="mx-auto mb-4 h-1 w-10 shrink-0 rounded-full" style={{ background: KAI.overlayWeak }} />
           {content}
         </div>
       </div>
@@ -230,7 +230,7 @@ function DayDetailOverlay({
         <div
           className="fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-[20px] p-6"
           style={{
-            background: 'rgba(16,18,28,0.98)',
+            background: KAI.overlayBg,
             border: `1px solid ${KAI.border2}`,
             boxShadow: '0 24px 64px rgba(0,0,0,0.7)',
             animation: 'fadeScaleIn 0.18s ease-out',
@@ -313,7 +313,7 @@ export function CalendarView({ transactions, categories, month }: Props) {
       {/* Day-of-week headers */}
       <div className="mb-1 grid grid-cols-7 text-center">
         {['日', '月', '火', '水', '木', '金', '土'].map((d, i) => (
-          <div key={d} className="py-1.5 text-xs font-semibold" style={{ color: i === 0 ? '#f87171' : i === 6 ? '#60a5fa' : '#8b8ba0' }}>
+          <div key={d} className="py-1.5 text-xs font-semibold" style={{ color: i === 0 ? KAI.danger : i === 6 ? KAI.blue : KAI.text3 }}>
             {d}
           </div>
         ))}
@@ -337,7 +337,7 @@ export function CalendarView({ transactions, categories, month }: Props) {
               onClick={() => setSelectedDate(isSelected ? null : dateStr)}
               className="relative flex min-h-[52px] flex-col items-start justify-between rounded-[12px] p-2 text-left transition-all active:scale-95 sm:min-h-[58px]"
               style={{
-                background: isSelected ? 'rgba(251,148,119,0.12)' : (ratio > 0 ? heatColor(ratio) : 'rgba(255,255,255,0.03)'),
+                background: isSelected ? 'rgba(251,148,119,0.12)' : (ratio > 0 ? heatColor(ratio) : KAI.overlayWeak),
                 border: isSelected
                   ? '1.5px solid rgba(251,148,119,0.6)'
                   : isToday
@@ -349,8 +349,8 @@ export function CalendarView({ transactions, categories, month }: Props) {
               <span
                 className="flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold"
                 style={{
-                  background: isToday ? '#fb9477' : 'transparent',
-                  color: isToday ? KAI.bg : dow === 0 ? '#f87171' : dow === 6 ? '#60a5fa' : KAI.text2,
+                  background: isToday ? KAI.coral : 'transparent',
+                  color: isToday ? KAI.bg : dow === 0 ? KAI.danger : dow === 6 ? KAI.blue : KAI.text2,
                 }}
               >
                 {day}
@@ -360,13 +360,13 @@ export function CalendarView({ transactions, categories, month }: Props) {
               {data && (
                 <div className="flex w-full items-center gap-[3px]">
                   {data.income > 0 && (
-                    <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: '#4ade80' }} />
+                    <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: KAI.success }} />
                   )}
                   {data.expense > 0 && (
-                    <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: '#fb9477' }} />
+                    <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: KAI.coral }} />
                   )}
                   {data?.transactions.some((t) => t.is_fixed) && (
-                    <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: '#a78bfa' }} />
+                    <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: KAI.violet }} />
                   )}
                 </div>
               )}
@@ -405,7 +405,7 @@ export function CalendarView({ transactions, categories, month }: Props) {
                 className="flex-1 rounded-[3px] transition-all hover:opacity-80"
                 style={{
                   height: 22,
-                  background: ratio > 0 ? heatColor(ratio) : 'rgba(255,255,255,0.05)',
+                  background: ratio > 0 ? heatColor(ratio) : KAI.overlayWeak,
                   border: isSelected ? '1px solid rgba(251,148,119,0.7)' : '1px solid transparent',
                 }}
                 title={`${i + 1}日 ¥${(data?.expense ?? 0).toLocaleString()}`}
