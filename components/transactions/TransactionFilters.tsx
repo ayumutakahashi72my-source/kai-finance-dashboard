@@ -68,7 +68,7 @@ export function TransactionFilters({ categories }: Props) {
   function reset() {
     setFilters({ q: '', cat: '', dir: '', from: '', to: '', min: '', max: '' })
     const sp = new URLSearchParams(search.toString())
-    for (const k of ['q', 'cat', 'from', 'to', 'min', 'max']) sp.delete(k)
+    for (const k of ['q', 'cat', 'dir', 'from', 'to', 'min', 'max']) sp.delete(k)
     router.push(`${pathname}?${sp.toString()}`)
   }
 
