@@ -34,11 +34,11 @@ const STEP_LABELS: Record<string, string> = {
 
 function LogDetail({ steps }: { steps: MfLoginStep[] }) {
   return (
-    <ol className="mt-2 space-y-1 rounded-lg border border-white/5 bg-[#0a0a10] px-3 py-2">
+    <ol className="mt-2 space-y-1 rounded-lg border border-[var(--kai-border)] bg-[var(--kai-bg)] px-3 py-2">
       {steps.map((s, i) => (
         <li key={i} className="flex items-start gap-2 text-[11px]">
           <span className={`mt-0.5 shrink-0 rounded px-1 font-mono ${
-            s.status === 0 ? 'bg-white/5 text-[#5e5e72]' :
+            s.status === 0 ? 'bg-[var(--kai-overlay-weak)] text-[var(--kai-text4)]' :
             s.status < 300 ? 'bg-[#4ade80]/10 text-[#4ade80]' :
             s.status < 400 ? 'bg-[#fbbf24]/10 text-[#fbbf24]' :
             'bg-[#fb7185]/10 text-[#fb7185]'
@@ -47,10 +47,10 @@ function LogDetail({ steps }: { steps: MfLoginStep[] }) {
           </span>
           <div className="min-w-0 flex-1">
             <span className="font-mono text-[#fb9477]">{s.step}</span>
-            <span className="ml-2 break-all text-[#5e5e72]">
+            <span className="ml-2 break-all text-[var(--kai-text4)]">
               {s.url.replace('https://', '')}
             </span>
-            <p className="mt-0.5 break-all text-[#8b8ba0]">{s.note}</p>
+            <p className="mt-0.5 break-all text-[var(--kai-text3)]">{s.note}</p>
           </div>
         </li>
       ))}
@@ -93,23 +93,23 @@ export function MfSyncLogs() {
   }
 
   if (!logs.length) {
-    return <p className="py-4 text-center text-xs text-[#5e5e72]">ログがありません</p>
+    return <p className="py-4 text-center text-xs text-[var(--kai-text4)]">ログがありません</p>
   }
 
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <p className="text-xs font-medium text-[#8b8ba0]">直近20件</p>
+        <p className="text-xs font-medium text-[var(--kai-text3)]">直近20件</p>
         <button
           onClick={load}
-          className="flex items-center gap-1 text-xs text-[#5e5e72] hover:text-[#f0f0f5] transition-colors"
+          className="flex items-center gap-1 text-xs text-[var(--kai-text4)] hover:text-[var(--kai-text1)] transition-colors"
         >
           <RefreshCwIcon className="size-3" />
           更新
         </button>
       </div>
 
-      <ul className="divide-y divide-white/5">
+      <ul className="divide-y divide-[var(--kai-border)]">
         {logs.map((log) => {
           const date = new Date(log.created_at)
           const dateStr = `${date.getMonth() + 1}/${date.getDate()} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
@@ -134,17 +134,17 @@ export function MfSyncLogs() {
 
                 <div className="min-w-0 flex-1">
                   {/* 1行目 */}
-                  <p className="text-xs text-[#f0f0f5]">
+                  <p className="text-xs text-[var(--kai-text1)]">
                     {dateStr}
-                    <span className="ml-2 text-[#5e5e72]">
+                    <span className="ml-2 text-[var(--kai-text4)]">
                       {log.triggered_by === 'manual' ? '手動' : '自動（Cron）'}
                     </span>
-                    {target && <span className="ml-2 text-[#8b8ba0]">{target}</span>}
+                    {target && <span className="ml-2 text-[var(--kai-text3)]">{target}</span>}
                   </p>
 
                   {/* 2行目 */}
                   {log.status === 'success' ? (
-                    <p className="mt-0.5 text-xs text-[#8b8ba0]">
+                    <p className="mt-0.5 text-xs text-[var(--kai-text3)]">
                       追加 {log.inserted}件 · スキップ {log.skipped}件
                     </p>
                   ) : (
@@ -158,7 +158,7 @@ export function MfSyncLogs() {
                   {hasDetail && (
                     <button
                       onClick={() => toggle(log.id)}
-                      className="mt-1.5 flex items-center gap-1 text-[11px] text-[#5e5e72] hover:text-[#8b8ba0] transition-colors"
+                      className="mt-1.5 flex items-center gap-1 text-[11px] text-[var(--kai-text4)] hover:text-[var(--kai-text3)] transition-colors"
                     >
                       {isExpanded
                         ? <ChevronDownIcon className="size-3" />

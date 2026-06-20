@@ -68,7 +68,7 @@ export function DuplicateChecker() {
           display: 'flex', alignItems: 'center', gap: 6,
           padding: '7px 14px', borderRadius: 10,
           border: '1px solid rgba(251,191,36,0.25)',
-          background: open ? 'rgba(251,191,36,0.12)' : 'rgba(255,255,255,0.03)',
+          background: open ? 'rgba(251,191,36,0.12)' : KAI.overlayWeak,
           color: open ? '#fbbf24' : KAI.text3,
           fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
           transition: 'all .15s',
@@ -90,7 +90,7 @@ export function DuplicateChecker() {
       {open && (
         <div style={{
           marginTop: 8, borderRadius: 14,
-          background: 'rgba(255,255,255,.02)', border: '1px solid rgba(255,255,255,.07)',
+          background: KAI.overlayWeak, border: `1px solid ${KAI.overlayBorder}`,
           overflow: 'hidden',
         }}>
           {loading ? (
@@ -104,7 +104,7 @@ export function DuplicateChecker() {
           ) : (
             <>
               <div style={{
-                padding: '10px 14px', borderBottom: '1px solid rgba(255,255,255,.05)',
+                padding: '10px 14px', borderBottom: `1px solid ${KAI.border}`,
               }}>
                 <span style={{ fontSize: 11, color: KAI.text4, fontWeight: 700, letterSpacing: '.08em' }}>
                   重複の可能性 — {groups.length}グループ
@@ -117,7 +117,7 @@ export function DuplicateChecker() {
                 const keepTarget   = isConfirming ? group.find((tx) => tx.id !== confirm.deleteId) : null
 
                 return (
-                  <div key={gi} style={{ borderBottom: gi < groups.length - 1 ? '1px solid rgba(255,255,255,.05)' : 'none', padding: '12px 14px' }}>
+                  <div key={gi} style={{ borderBottom: gi < groups.length - 1 ? `1px solid ${KAI.border}` : 'none', padding: '12px 14px' }}>
                     {/* 日付・金額ヘッダ */}
                     <div style={{ fontSize: 10, color: KAI.text4, fontWeight: 700, letterSpacing: '.06em', marginBottom: 8 }}>
                       {group[0].occurred_on} · ¥{Math.abs(group[0].amount).toLocaleString()}
@@ -150,7 +150,7 @@ export function DuplicateChecker() {
                             onClick={() => setConfirm(null)}
                             style={{
                               flex: 1, fontSize: 12, padding: '7px 0', borderRadius: 8,
-                              border: '1px solid rgba(255,255,255,.12)', background: 'none',
+                              border: `1px solid ${KAI.borderStrong}`, background: 'none',
                               color: KAI.text3, cursor: 'pointer', fontFamily: 'inherit',
                             }}
                           >キャンセル</button>
@@ -177,7 +177,7 @@ export function DuplicateChecker() {
                             style={{
                               display: 'flex', alignItems: 'center', gap: 10,
                               padding: '6px 0',
-                              borderTop: ti > 0 ? '1px solid rgba(255,255,255,.04)' : 'none',
+                              borderTop: ti > 0 ? `1px solid ${KAI.border}` : 'none',
                             }}
                           >
                             <div style={{ flex: 1, minWidth: 0 }}>
@@ -196,8 +196,8 @@ export function DuplicateChecker() {
                               onClick={() => setConfirm({ groupIdx: gi, deleteId: tx.id })}
                               style={{
                                 fontSize: 10, padding: '4px 9px', borderRadius: 7,
-                                border: '1px solid rgba(255,255,255,.12)',
-                                background: 'rgba(255,255,255,.04)',
+                                border: `1px solid ${KAI.borderStrong}`,
+                                background: KAI.overlayWeak,
                                 color: KAI.text3, cursor: 'pointer', fontFamily: 'inherit',
                                 flexShrink: 0, whiteSpace: 'nowrap',
                               }}

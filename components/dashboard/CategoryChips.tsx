@@ -12,17 +12,17 @@ function CategoryChipItem({ name, value, total, color, icon, idx }: {
   const pct = Math.min(100, (value / Math.max(total, 1)) * 100)
   const animatedPct = useCountUp(pct, { duration: 1200, delay: 400 + idx * 80 })
   return (
-    <div style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.06)', borderRadius: 14, padding: '10px 12px' }}>
+    <div style={{ background: KAI.overlayWeak, border: `1px solid ${KAI.border}`, borderRadius: 14, padding: '10px 12px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
         <div style={{ width: 22, height: 22, borderRadius: 7, background: `${color}22`, border: `1px solid ${color}44`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           {icon ? <CategoryIcon name={icon} size={12} color={color} /> : <span style={{ color, fontSize: 11 }}>·</span>}
         </div>
-        <span style={{ fontSize: 12, color: '#e8e8f0', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{name}</span>
+        <span style={{ fontSize: 12, color: KAI.text1, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{name}</span>
       </div>
       <div style={{ fontSize: 14, fontWeight: 700, fontFamily: MONO_FONT, color: TEXT, letterSpacing: '-.01em' }}>
         ¥{value.toLocaleString('ja-JP')}
       </div>
-      <div style={{ marginTop: 6, height: 3, borderRadius: 99, background: 'rgba(255,255,255,.06)', overflow: 'hidden' }}>
+      <div style={{ marginTop: 6, height: 3, borderRadius: 99, background: KAI.border, overflow: 'hidden' }}>
         <div style={{ height: '100%', width: `${Math.min(100, animatedPct)}%`, background: color, borderRadius: 99 }}/>
       </div>
       <div style={{ fontSize: 9, color: KAI.text4, marginTop: 3, fontFamily: MONO_FONT }}>

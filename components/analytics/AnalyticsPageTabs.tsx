@@ -50,7 +50,7 @@ export function AnalyticsPageTabs({ month, allTransactions, initialTab = 0 }: Pr
         role="tablist"
         style={{
           display: 'flex', gap: 5,
-          background: 'rgba(255,255,255,0.04)',
+          background: KAI.overlayWeak,
           borderRadius: 12, padding: 3,
           marginBottom: 16,
         }}

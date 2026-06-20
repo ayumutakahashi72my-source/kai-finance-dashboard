@@ -68,7 +68,7 @@ export function ProfileDropdown({ displayName, avatarUrl }: Props) {
             background: KAI.dropdownBg,
             backdropFilter: 'blur(28px)',
             border: `1px solid ${KAI.border2}`,
-            boxShadow: '0 12px 40px rgba(0,0,0,0.65), 0 0 0 0.5px rgba(255,255,255,0.05)',
+            boxShadow: `0 12px 40px rgba(0,0,0,0.65), 0 0 0 0.5px ${KAI.overlayWeak}`,
           }}
         >
           {/* プロフィール情報 */}
@@ -83,7 +83,7 @@ export function ProfileDropdown({ displayName, avatarUrl }: Props) {
             <Link
               href="/settings"
               onClick={() => setOpen(false)}
-              className="flex items-center gap-2.5 rounded-[9px] px-3 py-2 text-[13px] font-medium transition-colors hover:bg-white/[0.06]"
+              className="flex items-center gap-2.5 rounded-[9px] px-3 py-2 text-[13px] font-medium transition-colors hover:bg-[var(--kai-overlay-weak)]"
               style={{ color: KAI.text2 }}
             >
               <SettingsIcon />

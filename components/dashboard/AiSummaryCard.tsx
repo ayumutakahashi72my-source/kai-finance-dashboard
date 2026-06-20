@@ -3,6 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import Link from 'next/link'
 import { Skeleton } from '@/components/ui/Skeleton'
+import { KAI } from '@/lib/kai-tokens'
 
 interface SummaryData {
   year: number
@@ -94,11 +95,11 @@ export function AiSummaryCard() {
           <Skeleton variant="line-sm" className="w-3/4" />
         </div>
       ) : summary ? (
-        <p className="text-[14px] leading-[1.75] text-[#c4c4d0]">
+        <p className="text-[14px] leading-[1.75]" style={{ color: KAI.text2 }}>
           {extractFirstParagraph(summary.content)}
         </p>
       ) : (
-        <p className="text-[13px] text-[#5e5e72]">
+        <p className="text-[13px]" style={{ color: KAI.text4 }}>
           今月のサマリーはまだ生成されていません
         </p>
       )}

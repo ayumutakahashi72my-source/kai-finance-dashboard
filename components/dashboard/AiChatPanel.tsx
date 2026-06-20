@@ -108,8 +108,8 @@ export function AiChatPanel({ alwaysOpen = false }: Props) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <div style={{ width: 28, height: 28, borderRadius: 8, background: `linear-gradient(135deg,${KAI.violet},${KAI.coral})`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
-                <circle cx="8" cy="6" r="3" fill="rgba(255,255,255,.9)" />
-                <path d="M3 14c0-2.76 2.24-5 5-5s5 2.24 5 5" stroke="rgba(255,255,255,.9)" strokeWidth="1.4" strokeLinecap="round" />
+                <circle cx="8" cy="6" r="3" fill="var(--kai-text1)" />
+                <path d="M3 14c0-2.76 2.24-5 5-5s5 2.24 5 5" stroke="var(--kai-text1)" strokeWidth="1.4" strokeLinecap="round" />
               </svg>
             </div>
             <div>
@@ -157,8 +157,8 @@ export function AiChatPanel({ alwaysOpen = false }: Props) {
               {m.role === 'assistant' && (
                 <div style={{ width: 22, height: 22, borderRadius: 6, background: `linear-gradient(135deg,${KAI.violet},${KAI.coral})`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginRight: 8, marginTop: 4 }}>
                   <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
-                    <circle cx="8" cy="6" r="3" fill="rgba(255,255,255,.9)" />
-                    <path d="M3 14c0-2.76 2.24-5 5-5s5 2.24 5 5" stroke="rgba(255,255,255,.9)" strokeWidth="1.6" strokeLinecap="round" />
+                    <circle cx="8" cy="6" r="3" fill="var(--kai-text1)" />
+                    <path d="M3 14c0-2.76 2.24-5 5-5s5 2.24 5 5" stroke="var(--kai-text1)" strokeWidth="1.6" strokeLinecap="round" />
                   </svg>
                 </div>
               )}
@@ -181,8 +181,8 @@ export function AiChatPanel({ alwaysOpen = false }: Props) {
             <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', gap: 8 }}>
               <div style={{ width: 22, height: 22, borderRadius: 6, background: `linear-gradient(135deg,${KAI.violet},${KAI.coral})`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
-                  <circle cx="8" cy="6" r="3" fill="rgba(255,255,255,.9)" />
-                  <path d="M3 14c0-2.76 2.24-5 5-5s5 2.24 5 5" stroke="rgba(255,255,255,.9)" strokeWidth="1.6" strokeLinecap="round" />
+                  <circle cx="8" cy="6" r="3" fill="var(--kai-text1)" />
+                  <path d="M3 14c0-2.76 2.24-5 5-5s5 2.24 5 5" stroke="var(--kai-text1)" strokeWidth="1.6" strokeLinecap="round" />
                 </svg>
               </div>
               <div style={{ borderRadius: 16, borderBottomLeftRadius: 4, padding: '10px 14px', background: KAI.overlayWeak, border: `1px solid ${KAI.overlayBorder}`, display: 'inline-flex', gap: 4, alignItems: 'center' }}>

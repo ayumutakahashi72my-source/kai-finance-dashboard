@@ -47,7 +47,7 @@ function StatusBadge({ entry }: { entry: CorrectionEntry }) {
   return (
     <span style={{
       fontSize: 10, fontWeight: 600, padding: '3px 8px', borderRadius: 6,
-      background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.10)',
+      background: KAI.overlayWeak, border: `1px solid ${KAI.border2}`,
       color: KAI.text4, whiteSpace: 'nowrap',
     }}>
       {entry.use_count < 3 ? `あと${3 - entry.use_count}回で学習` : '学習待ち'}
@@ -76,7 +76,7 @@ export function CorrectionHistory() {
 
   if (entries.length === 0) return (
     <div style={{
-      background: 'rgba(255,255,255,.02)', border: '1px solid rgba(255,255,255,.06)',
+      background: KAI.overlayWeak, border: `1px solid ${KAI.border}`,
       borderRadius: 14, padding: '32px 16px', textAlign: 'center',
       animation: 'kai-rise .5s ease-out both',
     }}>
@@ -116,7 +116,7 @@ export function CorrectionHistory() {
         </div>
         <div style={{
           flex: 1, minWidth: 120,
-          background: 'rgba(255,255,255,.02)', border: '1px solid rgba(255,255,255,.06)',
+          background: KAI.overlayWeak, border: `1px solid ${KAI.border}`,
           borderRadius: 10, padding: '10px 14px',
         }}>
           <p style={{ fontSize: 10, color: KAI.text4, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase' }}>累計修正数</p>
@@ -138,14 +138,14 @@ export function CorrectionHistory() {
 
       {/* 履歴リスト */}
       <div style={{
-        background: 'rgba(255,255,255,.02)', border: '1px solid rgba(255,255,255,.06)',
+        background: KAI.overlayWeak, border: `1px solid ${KAI.border}`,
         borderRadius: 14, overflow: 'hidden',
       }}>
         {/* ヘッダー */}
         <div style={{
           display: 'grid', gridTemplateColumns: '1fr 180px 110px 90px',
           padding: '8px 16px',
-          borderBottom: '1px solid rgba(255,255,255,.06)',
+          borderBottom: `1px solid ${KAI.border}`,
         }}>
           {['支払先', 'カテゴリ変更', '修正日', 'ステータス'].map((h) => (
             <span key={h} style={{
@@ -161,7 +161,7 @@ export function CorrectionHistory() {
             style={{
               display: 'grid', gridTemplateColumns: '1fr 180px 110px 90px',
               padding: '10px 16px', alignItems: 'center',
-              borderBottom: i < entries.length - 1 ? '1px solid rgba(255,255,255,.04)' : 'none',
+              borderBottom: i < entries.length - 1 ? `1px solid ${KAI.border}` : 'none',
               opacity: entry.rag_promoted ? 0.75 : 1,
             }}
           >

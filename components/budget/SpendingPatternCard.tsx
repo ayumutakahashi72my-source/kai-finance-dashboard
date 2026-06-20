@@ -29,7 +29,7 @@ export function SpendingPatternCard({ pattern }: Props) {
         <span className="text-[13px] font-bold text-[#a78bfa]">支出クセ</span>
       </div>
 
-      <p className="mb-3 text-[14px] leading-[1.75] text-[#c4c4d0]">{pattern.summary}</p>
+      <p className="mb-3 text-[14px] leading-[1.75] text-[var(--kai-text2)]">{pattern.summary}</p>
 
       <ul className="space-y-2">
         {pattern.habits.map((habit, i) => (
@@ -40,7 +40,7 @@ export function SpendingPatternCard({ pattern }: Props) {
             >
               {i + 1}
             </span>
-            <span className="text-[13px] leading-[1.6] text-[#c4c4d0]">{habit}</span>
+            <span className="text-[13px] leading-[1.6] text-[var(--kai-text2)]">{habit}</span>
           </li>
         ))}
       </ul>

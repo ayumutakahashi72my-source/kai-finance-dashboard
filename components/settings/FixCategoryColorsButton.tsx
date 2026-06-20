@@ -33,10 +33,10 @@ export function FixCategoryColorsButton() {
           <Palette className="size-[18px]" style={{ color: '#7aa7ff' }} />
         </div>
         <div className="flex-1">
-          <p className="text-[14px] font-medium" style={{ color: '#e8e8f0' }}>
+          <p className="text-[14px] font-medium" style={{ color: 'var(--kai-text1)' }}>
             カテゴリ色・アイコンを自動設定
           </p>
-          <p className="mt-0.5 text-[12px]" style={{ color: '#5e5e72' }}>
+          <p className="mt-0.5 text-[12px]" style={{ color: 'var(--kai-text4)' }}>
             色やアイコンが未設定のカテゴリにHaikuが絵文字を割り当てます
           </p>
 

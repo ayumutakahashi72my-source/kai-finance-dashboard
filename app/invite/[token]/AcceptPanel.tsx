@@ -30,9 +30,9 @@ export default function AcceptPanel({ token, householdName, isValid }: Props) {
   }
 
   const panel: React.CSSProperties = {
-    background: 'rgba(20,22,32,0.75)',
+    background: KAI.overlayBg,
     backdropFilter: 'blur(24px) saturate(160%)',
-    border: '1px solid rgba(255,255,255,0.08)',
+    border: `1px solid ${KAI.border}`,
     borderRadius: 20,
     padding: '36px 32px',
     textAlign: 'center',

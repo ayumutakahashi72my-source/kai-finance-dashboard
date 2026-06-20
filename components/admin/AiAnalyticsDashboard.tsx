@@ -77,7 +77,7 @@ function CacheRateDonut({ rate }: { rate: number }) {
   return (
     <div style={{ position: 'relative', width: 158, height: 158, flexShrink: 0 }}>
       <svg width="158" height="158" viewBox="0 0 160 160">
-        <circle cx="80" cy="80" r={r} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="14" />
+        <circle cx="80" cy="80" r={r} fill="none" stroke={KAI.border} strokeWidth="14" />
         <circle
           cx="80" cy="80" r={r} fill="none"
           stroke="url(#donutGrad)" strokeWidth="14" strokeLinecap="round"
@@ -144,8 +144,8 @@ function GrowthChart({ data }: { data: { rate: number }[] }) {
           <stop offset="1" stopColor={MINT} stopOpacity="0" />
         </linearGradient>
       </defs>
-      <line x1="0" y1={H * 0.25} x2={W} y2={H * 0.25} stroke="rgba(255,255,255,.05)" strokeWidth="1" />
-      <line x1="0" y1={H * 0.6} x2={W} y2={H * 0.6} stroke="rgba(255,255,255,.05)" strokeWidth="1" />
+      <line x1="0" y1={H * 0.25} x2={W} y2={H * 0.25} stroke={KAI.border} strokeWidth="1" />
+      <line x1="0" y1={H * 0.6} x2={W} y2={H * 0.6} stroke={KAI.border} strokeWidth="1" />
       <path d={area} fill="url(#growthFill)" />
       <path d={line} fill="none" stroke={MINT} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
       {last && <circle cx={last.x} cy={last.y} r="3.5" fill={MINT} />}
@@ -158,7 +158,7 @@ function GrowthChart({ data }: { data: { rate: number }[] }) {
 function Panel({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
   return (
     <div style={{
-      background: 'rgba(20,22,32,0.88)', border: '1px solid rgba(255,255,255,0.10)',
+      background: KAI.bgPanel, border: `1px solid ${KAI.border2}`,
       borderRadius: 16, ...style,
     }}>
       {children}
@@ -177,7 +177,7 @@ function CostBar({ label, sublabel, amount, pct, color }: {
         <span style={{ color: KAI.text2 }}>{label} <span style={{ ...MONO, color: KAI.text4, fontSize: 10 }}>{sublabel}</span></span>
         <span style={{ ...MONO, color, fontWeight: 700 }}>{amount}</span>
       </div>
-      <div style={{ height: 7, borderRadius: 99, background: 'rgba(255,255,255,.05)', overflow: 'hidden' }}>
+      <div style={{ height: 7, borderRadius: 99, background: KAI.overlayWeak, overflow: 'hidden' }}>
         <div style={{ width: `${Math.min(100, pct)}%`, height: '100%', background: color, transition: 'width .5s ease-out' }} />
       </div>
     </div>
@@ -245,7 +245,7 @@ export function AiAnalyticsDashboard({ data }: {
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <Link href="/settings" style={{
             width: 34, height: 34, borderRadius: 11,
-            background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.10)',
+            background: KAI.overlayWeak, border: `1px solid ${KAI.border2}`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             cursor: 'pointer', flexShrink: 0, textDecoration: 'none',
           }}>
@@ -322,7 +322,7 @@ export function AiAnalyticsDashboard({ data }: {
         {pipelinePcts.map(t => (
           <div key={t.key} style={{
             display: 'flex', alignItems: 'center', gap: 9, padding: '8px 0',
-            borderTop: '1px solid rgba(255,255,255,.04)',
+            borderTop: `1px solid ${KAI.border}`,
           }}>
             <span style={{ width: 9, height: 9, borderRadius: 3, background: t.color, flexShrink: 0 }} />
             <span style={{ flex: 1, fontSize: 12, color: KAI.text2 }}>{t.label}</span>
@@ -439,8 +439,8 @@ export function AiAnalyticsDashboard({ data }: {
                 <div key={i} style={{
                   display: 'flex', alignItems: 'center', gap: 12,
                   padding: '9px 12px',
-                  background: 'rgba(255,255,255,.03)',
-                  border: '1px solid rgba(255,255,255,.06)',
+                  background: KAI.overlayWeak,
+                  border: `1px solid ${KAI.border}`,
                   borderRadius: 10,
                 }}>
                   <span style={{

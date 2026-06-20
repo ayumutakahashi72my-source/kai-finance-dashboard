@@ -128,7 +128,7 @@ export function KaiSystemBrand({ size = 'sm' }: { size?: 'sm' | 'md' | 'lg' }) {
           }}>
             <div style={{
               position: 'absolute', top: 0, left: 0, right: 0, height: '42%',
-              background: 'linear-gradient(180deg, rgba(255,255,255,.07), transparent)',
+              background: `linear-gradient(180deg, ${KAI.overlayBorder}, transparent)`,
             }}/>
             <KaiLogo size={Math.round(av * 0.46)} gradientId={`c-brand-${size}`}/>
             <span style={{ position: 'absolute', top: 3, left: 3, width: 4, height: 4, borderTop: `1px solid ${KAI.coral}99`, borderLeft: `1px solid ${KAI.coral}99` }}/>
@@ -149,7 +149,7 @@ export function KaiSystemBrand({ size = 'sm' }: { size?: 'sm' | 'md' | 'lg' }) {
           <span style={{
             fontSize: 8, fontFamily: 'var(--font-jetbrains), JetBrains Mono, monospace', color: KAI.text3, fontWeight: 700,
             letterSpacing: '.14em', padding: '1px 5px',
-            background: 'rgba(255,255,255,.04)', border: `1px solid ${KAI.border}`,
+            background: KAI.overlayWeak, border: `1px solid ${KAI.border}`,
             borderRadius: 4,
           }}>v2.4</span>
         </div>
@@ -204,8 +204,8 @@ export function PhoneShell({
     <div style={{
       width, height, background: bg,
       borderRadius: radius, overflow: 'hidden',
-      border: '1px solid rgba(255,255,255,.10)',
-      boxShadow: '0 20px 60px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.04)',
+      border: `1px solid ${KAI.border2}`,
+      boxShadow: `0 20px 60px rgba(0,0,0,.45), inset 0 0 0 1px ${KAI.overlayWeak}`,
       position: 'relative', display: 'flex', flexDirection: 'column',
       fontFamily: 'var(--font-sans), Inter, sans-serif', color: KAI.text1,
     }}>
@@ -237,7 +237,7 @@ export function DesktopShell({ children, width = 1100, height = 680, bg = '#0a0a
     <div style={{
       width, height, background: bg,
       borderRadius: 18, overflow: 'hidden',
-      border: '1px solid rgba(255,255,255,.10)',
+      border: `1px solid ${KAI.border2}`,
       boxShadow: '0 24px 80px rgba(0,0,0,.65)',
       position: 'relative', display: 'flex',
       fontFamily: 'var(--font-inter), Inter, sans-serif', color: KAI.text1,
@@ -248,7 +248,7 @@ export function DesktopShell({ children, width = 1100, height = 680, bg = '#0a0a
       }}/>
       <div style={{
         position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
-        backgroundImage: 'linear-gradient(rgba(255,255,255,.011) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.011) 1px, transparent 1px)',
+        backgroundImage: `linear-gradient(${KAI.gridLine} 1px, transparent 1px), linear-gradient(90deg, ${KAI.gridLine} 1px, transparent 1px)`,
         backgroundSize: '36px 36px',
       }}/>
       <div style={{ position: 'relative', zIndex: 1, display: 'flex', width: '100%' }}>
@@ -272,16 +272,16 @@ export function KaiSidebar({ active = 'dashboard', accent = KAI.mint, accentSoft
   return (
     <aside style={{
       width: 220, flexShrink: 0, height: '100%',
-      background: 'rgba(8,8,14,.82)',
-      borderRight: '1px solid rgba(255,255,255,.10)',
+      background: KAI.bgPanel,
+      borderRight: `1px solid ${KAI.border2}`,
       display: 'flex', flexDirection: 'column',
       backdropFilter: 'blur(24px)',
     }}>
-      <div style={{ padding: '20px 16px', borderBottom: '1px solid rgba(255,255,255,.10)' }}>
+      <div style={{ padding: '20px 16px', borderBottom: `1px solid ${KAI.border2}` }}>
         {brand || (
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <div style={{ padding: 1, borderRadius: 12, background: 'linear-gradient(135deg, rgba(167,139,250,.75), rgba(94,234,212,.75))' }}>
-              <div style={{ width: 34, height: 34, background: '#0d0f1a', borderRadius: 11, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: 34, height: 34, background: KAI.bg, borderRadius: 11, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <KaiLogo size={16} gradientId="sidebar-logo"/>
               </div>
             </div>
@@ -317,12 +317,12 @@ export function KaiSidebar({ active = 'dashboard', accent = KAI.mint, accentSoft
           );
         })}
       </nav>
-      <div style={{ padding: 14, borderTop: '1px solid rgba(255,255,255,.10)' }}>
+      <div style={{ padding: 14, borderTop: `1px solid ${KAI.border2}` }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{
             width: 36, height: 36, borderRadius: 11,
             background: 'linear-gradient(135deg, rgba(167,139,250,.4), rgba(94,234,212,.3))',
-            border: '1px solid rgba(255,255,255,.16)',
+            border: `1px solid ${KAI.borderStrong}`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: 14, fontWeight: 700,
           }}>家</div>
@@ -369,7 +369,7 @@ export function BottomBar({ active = 'home', accent = KAI.mint, items, variant =
       <div style={{ padding: '8px 14px 28px', position: 'relative', zIndex: 2 }}>
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          background: 'rgba(20,22,32,.88)', border: '1px solid rgba(255,255,255,.16)',
+          background: KAI.bottombarBg, border: `1px solid ${KAI.borderStrong}`,
           borderRadius: 24, padding: '8px 12px', backdropFilter: 'blur(20px)',
           boxShadow: '0 8px 32px rgba(0,0,0,.55)', position: 'relative',
         }}>
@@ -395,7 +395,7 @@ export function BottomBar({ active = 'home', accent = KAI.mint, items, variant =
     <div style={{ padding: '8px 14px 28px', position: 'relative', zIndex: 2 }}>
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-around',
-        background: 'rgba(20,22,32,.88)', border: '1px solid rgba(255,255,255,.16)',
+        background: KAI.bottombarBg, border: `1px solid ${KAI.borderStrong}`,
         borderRadius: 22, padding: '8px 12px', backdropFilter: 'blur(20px)',
         boxShadow: '0 8px 32px rgba(0,0,0,.55)',
       }}>
@@ -421,7 +421,7 @@ export function BarChart({ data, height = 90, accent = KAI.mint, highlight = 4, 
               <div style={{
                 width: '100%',
                 height: `${pct}%`,
-                background: isHi ? `linear-gradient(180deg, ${accent}, ${accent}77)` : 'rgba(255,255,255,.12)',
+                background: isHi ? `linear-gradient(180deg, ${accent}, ${accent}77)` : KAI.borderStrong,
                 borderRadius: '4px 4px 2px 2px',
                 transformOrigin: 'bottom',
                 animation: `kai-bar-grow .9s ${0.12 + i * 0.06}s cubic-bezier(.2,.8,.3,1) both`,
@@ -437,7 +437,7 @@ export function BarChart({ data, height = 90, accent = KAI.mint, highlight = 4, 
 }
 
 // ── Ring ──────────────────────────────────────────────────────────────
-export function Ring({ percent = 65, size = 160, stroke = 14, color = KAI.coral, track = 'rgba(255,255,255,.07)', delay = 200 }: {
+export function Ring({ percent = 65, size = 160, stroke = 14, color = KAI.coral, track = KAI.overlayBorder, delay = 200 }: {
   percent?: number; size?: number; stroke?: number; color?: string; track?: string; delay?: number;
 }) {
   const r = (size - stroke) / 2;

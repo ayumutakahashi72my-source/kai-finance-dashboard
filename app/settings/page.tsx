@@ -45,6 +45,7 @@ function Row({
   iconBg,
   iconBorder,
   title,
+  titleColor,
   subtitle,
   href,
   value,
@@ -72,7 +73,7 @@ function Row({
         {icon}
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 13.5, color: KAI.text1, fontWeight: 500 }}>{title}</div>
+        <div style={{ fontSize: 13.5, color: titleColor ?? KAI.text1, fontWeight: 500 }}>{title}</div>
         {subtitle && <div style={{ fontSize: 10.5, color: KAI.text3, marginTop: 2 }}>{subtitle}</div>}
       </div>
       {value && (
@@ -246,6 +247,7 @@ export default async function SettingsPage() {
                 iconBg="rgba(167,139,250,.16)"
                 iconBorder="rgba(167,139,250,.3)"
                 title="AI運用分析"
+                titleColor={KAI.violet}
                 subtitle="キャッシュ率・分類精度・コスト"
                 href={isAdmin ? '/settings/ai-analytics' : undefined}
                 valueColor={KAI.mint}
@@ -269,16 +271,16 @@ export default async function SettingsPage() {
           </Panel>
           <div style={{ marginTop: 8 }}>
             <Panel>
-              <Row icon={<TimerIcon />} iconBg="rgba(255,255,255,.05)" title="通貨・週開始日" value="¥ JPY · 月" />
+              <Row icon={<TimerIcon />} iconBg="var(--kai-overlay-weak)" title="通貨・週開始日" value="¥ JPY · 月" />
             </Panel>
           </div>
 
           {/* ── データ・その他 ── */}
           <GrpLabel>データ・その他</GrpLabel>
           <Panel>
-            <Row icon={<DownloadIcon />} iconBg="rgba(255,255,255,.05)" title="データをエクスポート" subtitle="CSV / JSON" href="/legal/data" />
+            <Row icon={<DownloadIcon />} iconBg="var(--kai-overlay-weak)" title="データをエクスポート" subtitle="CSV / JSON" href="/legal/data" />
             <RowDivider />
-            <Row icon={<InfoIcon />} iconBg="rgba(255,255,255,.05)" title="プライバシー・データ取扱い" href="/legal/privacy" />
+            <Row icon={<InfoIcon />} iconBg="var(--kai-overlay-weak)" title="プライバシー・データ取扱い" href="/legal/privacy" />
           </Panel>
 
           {/* ── メンテナンス（管理者のみ） ── */}

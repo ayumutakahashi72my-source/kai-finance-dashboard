@@ -89,7 +89,7 @@ function DayDetailOverlay({
         <p className="text-base font-bold" style={{ color: KAI.coral }}>
           {data.date.replace(/-/g, '/')}
         </p>
-        <button onClick={onClose} className="flex h-7 w-7 items-center justify-center rounded-full text-sm transition-colors hover:bg-white/10" style={{ color: KAI.text3 }}>
+        <button onClick={onClose} className="flex h-7 w-7 items-center justify-center rounded-full text-sm transition-colors hover:bg-[var(--kai-overlay-weak)]" style={{ color: KAI.text3 }}>
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 3L11 11M11 3L3 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
         </button>
       </div>

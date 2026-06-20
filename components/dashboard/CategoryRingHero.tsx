@@ -88,9 +88,9 @@ export function CategoryRingHero({ categoryData }: { categoryData: CategoryData 
       <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
         <div style={{ flexShrink: 0 }}>
           <svg viewBox={`0 0 ${VB} ${VB}`} style={{ width: 148, height: 148, display: 'block' }} aria-hidden="true">
-            <circle cx={CX} cy={CY} r={(OUTER_R + INNER_R) / 2} fill="none" stroke="rgba(255,255,255,.06)" strokeWidth={OUTER_R - INNER_R} />
+            <circle cx={CX} cy={CY} r={(OUTER_R + INNER_R) / 2} fill="none" stroke={KAI.border} strokeWidth={OUTER_R - INNER_R} />
             {totalExpense === 0 ? (
-              <circle cx={CX} cy={CY} r={(OUTER_R + INNER_R) / 2} fill="none" stroke="rgba(255,255,255,.08)" strokeWidth={OUTER_R - INNER_R} />
+              <circle cx={CX} cy={CY} r={(OUTER_R + INNER_R) / 2} fill="none" stroke={KAI.border2} strokeWidth={OUTER_R - INNER_R} />
             ) : arcs.map(({ name, color, startDeg, endDeg }) => (
               <path
                 key={name}

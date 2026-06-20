@@ -164,6 +164,7 @@ export function TransactionsView({ month, initialView = 'list' }: Props) {
   const searchParams = useSearchParams()
   const filters = readFiltersFromUrl(searchParams)
   const hasFilter = isFilterActive(filters)
+  const [showFilters, setShowFilters] = useState(hasFilter)
 
   const [view, setView] = useState<'list' | 'calendar'>(initialView)
   const [classifying,    setClassifying]    = useState(false)
@@ -205,7 +206,7 @@ export function TransactionsView({ month, initialView = 'list' }: Props) {
   })()
 
   const { data: txRes, isLoading } = useQuery<{ data: Transaction[] }>({
-    queryKey: ['transactions', month, filters.q, filters.cat, filters.from, filters.to, filters.min, filters.max],
+    queryKey: ['transactions', month, filters.q, filters.cat, filters.dir, filters.from, filters.to, filters.min, filters.max],
     queryFn:  () => fetch(apiUrl).then((r) => { if (!r.ok) throw new Error('取得に失敗しました'); return r.json() }),
   })
   const { data: catRes } = useQuery<{ data: Category[] }>({
@@ -213,7 +214,10 @@ export function TransactionsView({ month, initialView = 'list' }: Props) {
     queryFn:  () => fetch('/api/categories').then((r) => { if (!r.ok) throw new Error('取得に失敗しました'); return r.json() }),
   })
 
-  const transactions = txRes?.data ?? []
+  const rawTransactions = txRes?.data ?? []
+  const transactions = filters.dir
+    ? rawTransactions.filter((tx) => filters.dir === 'expense' ? tx.amount < 0 : tx.amount > 0)
+    : rawTransactions
   const allCats      = catRes?.data ?? []
 
   const totalIncome  = transactions.filter((tx) => tx.amount > 0).reduce((s, tx) => s + tx.amount, 0)
@@ -229,7 +233,7 @@ export function TransactionsView({ month, initialView = 'list' }: Props) {
   const categories = Object.entries(actualByCategory)
     .map(([name, used], i) => {
       const catMeta = allCats.find((c) => c.name === name)
-      return { name, color: catMeta?.color ?? CAT_COLORS[i % CAT_COLORS.length], used }
+      return { id: catMeta?.id ?? '', name, color: catMeta?.color ?? CAT_COLORS[i % CAT_COLORS.length], used }
     })
     .sort((a, b) => b.used - a.used)
 
@@ -301,15 +305,34 @@ export function TransactionsView({ month, initialView = 'list' }: Props) {
 
       {/* ══════ Header Area ══════ */}
 
-      {/* Title + View Toggle */}
+      {/* Title + view toggle */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ fontSize: 20, fontWeight: 700, color: KAI.text1 }}>収支</div>
         <ViewToggle view={view} onChange={setView} />
       </div>
 
-      {/* Search (list view only) */}
+      {/* Search bar (always visible) */}
+      {view === 'list' && (
+        <div
+          onClick={() => setShowFilters((v) => !v)}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 8,
+            background: showFilters ? KAI.border2 : KAI.overlayWeak,
+            border: `1px solid ${showFilters ? KAI.borderStrong : KAI.border}`,
+            borderRadius: 12, padding: '9px 13px', cursor: 'pointer',
+          }}
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={KAI.text3} strokeWidth="1.8"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+          <span style={{ flex: 1, fontSize: 13, color: KAI.text4 }}>取引を検索…</span>
+          {showFilters && (
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={KAI.text4} strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          )}
+        </div>
+      )}
+
+      {/* Filters (expanded) */}
       {view === 'list' && <DuplicateChecker />}
-      {view === 'list' && <TransactionFilters categories={allCats} />}
+      {view === 'list' && showFilters && <TransactionFilters categories={allCats} />}
 
       {/* Month Switcher */}
       <div style={{ display: 'flex', justifyContent: 'center' }}>
@@ -318,6 +341,41 @@ export function TransactionsView({ month, initialView = 'list' }: Props) {
 
       {/* Summary Chips */}
       <SummaryChips income={totalIncome} expense={totalExpense} balance={balance} />
+
+      {/* Category filter chips */}
+      {view === 'list' && categories.length > 0 && (
+        <div style={{ display: 'flex', gap: 6, overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: 2 }}>
+          {[
+            { key: 'all', label: 'すべて', color: KAI.coral, param: 'cat', value: '' },
+            { key: 'expense', label: '支出', color: KAI.danger, param: 'dir', value: 'expense' },
+            { key: 'income', label: '収入', color: KAI.success, param: 'dir', value: 'income' },
+            ...categories.slice(0, 8).map(c => ({ key: c.id, label: c.name, color: c.color, param: 'cat', value: c.id })),
+          ].map(chip => {
+            const isActive = chip.key === 'all'
+              ? !filters.cat && !filters.dir
+              : chip.param === 'dir' ? filters.dir === chip.value : filters.cat === chip.value
+            return (
+              <button
+                key={chip.key}
+                onClick={() => {
+                  const sp = new URLSearchParams(searchParams.toString())
+                  if (chip.key === 'all') { sp.delete('cat'); sp.delete('dir') }
+                  else if (isActive) { sp.delete(chip.param) }
+                  else { sp.set(chip.param, chip.value); if (chip.param === 'dir') sp.delete('cat'); else sp.delete('dir') }
+                  router.push(`?${sp.toString()}`, { scroll: false })
+                }}
+                style={{
+                  borderRadius: 20, padding: '5px 12px', fontSize: 11, fontWeight: 600,
+                  whiteSpace: 'nowrap', cursor: 'pointer', fontFamily: 'inherit',
+                  background: isActive ? `${chip.color}1c` : KAI.overlayWeak,
+                  border: `1px solid ${isActive ? `${chip.color}66` : KAI.border}`,
+                  color: isActive ? chip.color : KAI.text3,
+                }}
+              >{chip.label}</button>
+            )
+          })}
+        </div>
+      )}
 
       {/* ══════ Content ══════ */}
 
@@ -436,12 +494,18 @@ export function TransactionsView({ month, initialView = 'list' }: Props) {
                                 <div style={{ fontSize: 13, fontWeight: 500, color: KAI.text1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                   {t.payee}
                                 </div>
-                                <div style={{ fontSize: 10, color: KAI.text3, marginTop: 2, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <div style={{ fontSize: 10, color: KAI.text3, marginTop: 2, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                                   <span>{t.categories?.name ?? '未分類'}</span>
                                   {t.source === 'auto' && (
                                     <>
                                       <span style={{ width: 3, height: 3, borderRadius: '50%', background: KAI.text4, display: 'inline-block' }} />
                                       <span style={{ ...MONO }}>MF同期</span>
+                                    </>
+                                  )}
+                                  {t.source === 'csv' && (
+                                    <>
+                                      <span style={{ width: 3, height: 3, borderRadius: '50%', background: KAI.text4, display: 'inline-block' }} />
+                                      <span style={{ background: `${KAI.violet}1c`, border: `1px solid ${KAI.violet}4d`, borderRadius: 4, padding: '1px 5px', color: KAI.violet, fontSize: 9, fontWeight: 700 }}>CSV</span>
                                     </>
                                   )}
                                 </div>

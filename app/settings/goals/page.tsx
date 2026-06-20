@@ -8,10 +8,10 @@ import { KAI, yen } from '@/lib/kai-tokens'
 import type { FinancialGoal } from '@/components/dashboard/GoalProgressCard'
 
 const panel = {
-  background:           'rgba(20,22,32,0.75)',
+  background:           KAI.bgPanel,
   backdropFilter:       'blur(24px) saturate(160%)',
   WebkitBackdropFilter: 'blur(24px) saturate(160%)',
-  border:               '1px solid rgba(255,255,255,0.08)',
+  border:               `1px solid ${KAI.border}`,
   borderRadius:         18,
 } as const
 
@@ -80,7 +80,7 @@ function DeadlineInput({ value, onChange, initialMode = 'years' }: DeadlineInput
             style={{
               padding: '5px 14px', borderRadius: 7, fontSize: 11, fontWeight: 600,
               cursor: 'pointer', border: 'none',
-              background: mode === m ? `${KAI.coral}20` : 'rgba(255,255,255,.04)',
+              background: mode === m ? `${KAI.coral}20` : KAI.overlayWeak,
               color: mode === m ? KAI.coral : KAI.text3,
               outline: mode === m ? `1px solid ${KAI.coral}40` : 'none',
             }}
@@ -99,7 +99,7 @@ function DeadlineInput({ value, onChange, initialMode = 'years' }: DeadlineInput
             inputMode="numeric"
             style={{
               width: 80, padding: '10px 12px', borderRadius: 9,
-              background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.12)',
+              background: KAI.overlayWeak, border: `1px solid ${KAI.borderStrong}`,
               color: KAI.text1, fontSize: 18, fontWeight: 700, outline: 'none', textAlign: 'center',
               fontFamily: 'var(--font-jetbrains),JetBrains Mono,monospace',
             }}
@@ -123,8 +123,8 @@ function DeadlineInput({ value, onChange, initialMode = 'years' }: DeadlineInput
           onChange={(e) => applyDate(e.target.value)}
           style={{
             padding: '10px 12px', borderRadius: 9,
-            background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.12)',
-            color: KAI.text1, fontSize: 13, outline: 'none', colorScheme: 'dark',
+            background: KAI.overlayWeak, border: `1px solid ${KAI.borderStrong}`,
+            color: KAI.text1, fontSize: 13, outline: 'none',
           }}
         />
       )}
@@ -196,7 +196,7 @@ function CreateForm({ onCancel, onCreated }: CreateFormProps) {
             maxLength={50}
             style={{
               width: '100%', padding: '10px 12px', borderRadius: 9,
-              background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.12)',
+              background: KAI.overlayWeak, border: `1px solid ${KAI.borderStrong}`,
               color: KAI.text1, fontSize: 13, outline: 'none', boxSizing: 'border-box',
             }}
           />
@@ -214,7 +214,7 @@ function CreateForm({ onCancel, onCreated }: CreateFormProps) {
             inputMode="numeric"
             style={{
               width: '100%', padding: '10px 12px', borderRadius: 9,
-              background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.12)',
+              background: KAI.overlayWeak, border: `1px solid ${KAI.borderStrong}`,
               color: KAI.text1, fontSize: 13, outline: 'none', boxSizing: 'border-box',
               fontFamily: 'var(--font-jetbrains),JetBrains Mono,monospace',
             }}
@@ -244,7 +244,7 @@ function CreateForm({ onCancel, onCreated }: CreateFormProps) {
             disabled={createMut.isPending}
             style={{
               padding: '8px 18px', borderRadius: 8, fontSize: 13, fontWeight: 600,
-              cursor: 'pointer', border: '1px solid rgba(255,255,255,.12)',
+              cursor: 'pointer', border: `1px solid ${KAI.borderStrong}`,
               background: 'transparent', color: KAI.text3,
             }}
           >
@@ -358,7 +358,7 @@ function GoalCard({ goal, onDeleted, onUpdated }: GoalCardProps) {
               maxLength={50}
               style={{
                 width: '100%', padding: '6px 10px', borderRadius: 7,
-                background: 'rgba(255,255,255,.07)', border: '1px solid rgba(255,255,255,.15)',
+                background: KAI.border2, border: `1px solid ${KAI.borderStrong}`,
                 color: KAI.text1, fontSize: 13, fontWeight: 700, outline: 'none',
               }}
             />
@@ -409,7 +409,7 @@ function GoalCard({ goal, onDeleted, onUpdated }: GoalCardProps) {
               onChange={(e) => setAmount(e.target.value.replace(/[^\d]/g, ''))}
               style={{
                 width: '100%', padding: '6px 10px', borderRadius: 7,
-                background: 'rgba(255,255,255,.07)', border: '1px solid rgba(255,255,255,.15)',
+                background: KAI.border2, border: `1px solid ${KAI.borderStrong}`,
                 color: KAI.text1, fontSize: 13, outline: 'none', boxSizing: 'border-box',
                 fontFamily: 'var(--font-jetbrains),JetBrains Mono,monospace',
               }}
@@ -537,14 +537,14 @@ export default function GoalsPage() {
   const goals = data?.goals ?? []
 
   return (
-    <div className="min-h-screen" style={{ background: '#0c0a14' }}>
+    <div className="min-h-screen" style={{ background: KAI.bg }}>
       <div aria-hidden className="pointer-events-none fixed inset-0" style={{ zIndex: 0, backgroundImage: `radial-gradient(ellipse 600px 400px at 80% 20%, rgba(251,148,119,.09), transparent 55%),radial-gradient(ellipse 500px 300px at 20% 80%, rgba(122,167,255,.06), transparent 55%)` }} />
 
       <div className="relative min-h-screen" style={{ zIndex: 2 }}>
         {/* header */}
         <header
           className="sticky top-0 z-30 flex items-center gap-3 px-4 py-[14px]"
-          style={{ background: 'rgba(8,8,14,.55)', backdropFilter: 'blur(24px)', borderBottom: '1px solid rgba(255,255,255,0.10)' }}
+          style={{ background: KAI.headerBg, backdropFilter: 'blur(24px)', borderBottom: `1px solid ${KAI.border2}` }}
         >
           <Link href="/settings" style={{ color: KAI.text3, display: 'flex', alignItems: 'center' }}>
             <ChevronLeftIcon size={20} />

@@ -4,7 +4,7 @@ export function inlineMarkdown(text: string): React.ReactNode {
   const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g)
   return parts.map((part, i) => {
     if (part.startsWith('**') && part.endsWith('**')) {
-      return <strong key={i} style={{ fontWeight: 700, color: '#f0f0f5' }}>{part.slice(2, -2)}</strong>
+      return <strong key={i} style={{ fontWeight: 700, color: 'var(--kai-text1)' }}>{part.slice(2, -2)}</strong>
     }
     if (part.startsWith('`') && part.endsWith('`')) {
       return <code key={i} className="mono" style={{ fontSize: 13, color: '#fb9477', background: 'rgba(251,148,119,0.10)', borderRadius: 4, padding: '1px 5px' }}>{part.slice(1, -1)}</code>
@@ -28,7 +28,7 @@ export function renderMarkdown(content: string) {
 
     if (line.startsWith('# ')) {
       elements.push(
-        <h1 key={key++} style={{ fontSize: 20, fontWeight: 700, color: '#f0f0f5', marginBottom: 12, marginTop: 20, letterSpacing: '-.01em' }}>
+        <h1 key={key++} style={{ fontSize: 20, fontWeight: 700, color: 'var(--kai-text1)', marginBottom: 12, marginTop: 20, letterSpacing: '-.01em' }}>
           {inlineMarkdown(line.slice(2))}
         </h1>
       )
@@ -58,14 +58,14 @@ export function renderMarkdown(content: string) {
       elements.push(
         <div key={key++} style={{ display: 'flex', gap: 10, marginBottom: 6, paddingLeft: 4 }}>
           <span style={{ color: '#fb9477', fontWeight: 700, flexShrink: 0, marginTop: 2 }}>·</span>
-          <p style={{ fontSize: 14, lineHeight: 1.75, color: '#c4c4d0' }}>{inlineMarkdown(line.slice(2))}</p>
+          <p style={{ fontSize: 14, lineHeight: 1.75, color: 'var(--kai-text2)' }}>{inlineMarkdown(line.slice(2))}</p>
         </div>
       )
       continue
     }
 
     elements.push(
-      <p key={key++} style={{ fontSize: 14, lineHeight: 1.85, color: '#c4c4d0', marginBottom: 4 }}>
+      <p key={key++} style={{ fontSize: 14, lineHeight: 1.85, color: 'var(--kai-text2)', marginBottom: 4 }}>
         {inlineMarkdown(line)}
       </p>
     )

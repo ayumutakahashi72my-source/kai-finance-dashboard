@@ -22,11 +22,11 @@ function SheetChrome({ onBackdropClick, children }: { onBackdropClick: () => voi
         style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)', animation: 'kai-rise 0.18s ease-out both' }}
       />
       <div
-        style={{ position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 51, background: BG, backdropFilter: 'blur(28px) saturate(160%)', WebkitBackdropFilter: 'blur(28px) saturate(160%)', border: '1px solid rgba(255,255,255,0.12)', borderBottomWidth: 0, borderRadius: '24px 24px 0 0', padding: '20px 20px calc(env(safe-area-inset-bottom, 20px) + 28px)', animation: 'kai-sheet-up 0.22s cubic-bezier(.16,1,.3,1) both', boxShadow: '0 -16px 48px rgba(0,0,0,0.6)', maxHeight: '92dvh', overflowY: 'auto' }}
+        style={{ position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 51, background: BG, backdropFilter: 'blur(28px) saturate(160%)', WebkitBackdropFilter: 'blur(28px) saturate(160%)', border: '1px solid var(--kai-border-strong)', borderBottomWidth: 0, borderRadius: '24px 24px 0 0', padding: '20px 20px calc(env(safe-area-inset-bottom, 20px) + 28px)', animation: 'kai-sheet-up 0.22s cubic-bezier(.16,1,.3,1) both', boxShadow: '0 -16px 48px rgba(0,0,0,0.6)', maxHeight: '92dvh', overflowY: 'auto' }}
         role="dialog"
         aria-modal="true"
       >
-        <div style={{ width: 36, height: 4, borderRadius: 99, background: 'rgba(255,255,255,.15)', margin: '0 auto 20px' }} />
+        <div style={{ width: 36, height: 4, borderRadius: 99, background: 'var(--kai-border-strong)', margin: '0 auto 20px' }} />
         {children}
       </div>
     </>
@@ -68,7 +68,7 @@ function PickerStep({ onPick, onClose, isDemo }: { onPick: (s: Step) => void; on
           <p style={{ fontSize: 16, fontWeight: 700, color: TEXT1 }}>支出を追加</p>
           <p style={{ fontSize: 12, color: TEXT4, marginTop: 2 }}>どの方法で記録しますか？</p>
         </div>
-        <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,.07)', border: '1px solid rgba(255,255,255,.10)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: TEXT3, cursor: 'pointer' }} aria-label="閉じる">
+        <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--kai-overlay-border)', border: '1px solid var(--kai-border2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: TEXT3, cursor: 'pointer' }} aria-label="閉じる">
           <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M2 2L13 13M13 2L2 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
         </button>
       </div>

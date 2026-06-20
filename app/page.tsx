@@ -93,22 +93,35 @@ export default async function DashboardPage({
       <div className="relative min-h-screen lg:pl-[220px]" style={{ zIndex: 2 }}>
         {/* ── Mobile header ── */}
         <header
-          className="flex items-center justify-between px-[18px] py-[14px] lg:hidden"
+          className="lg:hidden"
           style={{ borderBottom: `1px solid var(--kai-border)`, paddingTop: 'calc(env(safe-area-inset-top, 14px) + 14px)' }}
         >
-          <KaiSystemBrand size="sm"/>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            {streak > 0 && (
-              <span style={{
-                display: 'inline-flex', alignItems: 'center', gap: 4,
-                background: 'rgba(251,148,119,.12)', border: '1px solid rgba(251,148,119,.25)',
-                borderRadius: 99, padding: '4px 9px', fontSize: 11, color: CORAL, fontWeight: 700,
-              }}>
-                <svg width="11" height="11" viewBox="0 0 12 14" fill="none" style={{ flexShrink: 0 }}><path d="M6 1C6 1 9.5 4.5 9.5 7.5C9.5 9.5 8 11 6 11C4 11 2.5 9.5 2.5 7.5C2.5 5.5 4 3.5 4 3.5C4 3.5 4.5 5 5.5 5C5.5 5 5.5 3 6 1Z" stroke={CORAL} strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                <span style={{ fontFamily: 'var(--font-mono),monospace' }}>{streak}日</span>
-              </span>
-            )}
-            <ProfileDropdown displayName={displayName} avatarUrl={avatarUrl} />
+          <div className="flex items-center justify-between px-5 py-[14px]">
+            <KaiSystemBrand size="sm"/>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              {streak > 0 && (
+                <span style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 4,
+                  background: 'rgba(251,148,119,.1)', border: '1px solid rgba(251,148,119,.25)',
+                  borderRadius: 99, padding: '5px 9px', fontSize: 11, color: CORAL, fontWeight: 700,
+                }}>
+                  <svg width="11" height="11" viewBox="0 0 12 14" fill="none" style={{ flexShrink: 0 }}><path d="M6 1C6 1 9.5 4.5 9.5 7.5C9.5 9.5 8 11 6 11C4 11 2.5 9.5 2.5 7.5C2.5 5.5 4 3.5 4 3.5C4 3.5 4.5 5 5.5 5C5.5 5 5.5 3 6 1Z" stroke={CORAL} strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  <span style={{ fontFamily: 'var(--font-mono),monospace' }}>{streak}日</span>
+                </span>
+              )}
+              <ProfileDropdown displayName={displayName} avatarUrl={avatarUrl} />
+            </div>
+          </div>
+          <div className="flex items-baseline justify-between px-[18px] py-2" style={{ fontSize: 12.5, color: 'var(--kai-text2)' }}>
+            <span>
+              {greeting}、<span style={{ color: 'var(--kai-text1)', fontWeight: 600 }}>{firstName}さん</span>
+            </span>
+            <span style={{ fontSize: 10, color: 'var(--kai-text4)', fontFamily: 'var(--font-mono),monospace', letterSpacing: '.1em' }}>
+              {dateStr}
+            </span>
+          </div>
+          <div className="flex justify-center items-center gap-[14px] px-[18px] py-2">
+            <MonthSwitcher currentMonth={month} />
           </div>
         </header>
 
@@ -139,19 +152,6 @@ export default async function DashboardPage({
             )}
             <ProfileDropdown displayName={displayName} avatarUrl={avatarUrl} />
           </div>
-        </div>
-
-        {/* ── Mobile greeting row ── */}
-        <div
-          className="flex items-baseline justify-between px-[18px] py-2 lg:hidden"
-          style={{ fontSize: 12.5, color: 'var(--kai-text2)' }}
-        >
-          <span>
-            {greeting}、<span style={{ color: 'var(--kai-text1)', fontWeight: 600 }}>{firstName}さん</span>
-          </span>
-          <span style={{ fontSize: 10, color: 'var(--kai-text4)', fontFamily: 'var(--font-mono),monospace', letterSpacing: '.1em' }}>
-            {dateStr}
-          </span>
         </div>
 
         {/* ── Dashboard content ── */}

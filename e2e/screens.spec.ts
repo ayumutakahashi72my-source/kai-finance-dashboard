@@ -140,17 +140,16 @@ test.describe('ダッシュボード', () => {
     // 挨拶文
     await expect(page.getByText(/おはようございます|こんにちは|こんばんは/)).toBeVisible()
 
-    // 3タブ
-    await expect(page.getByRole('button', { name: 'NOW' })).toBeVisible()
-    await expect(page.getByRole('button', { name: '分析' })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'AI戦略' })).toBeVisible()
+    // 2タブ
+    await expect(page.getByRole('button', { name: '今月' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'AI' })).toBeVisible()
   })
 
   test('BottomBar の全リンクが存在し48px以上のタップ領域を持つ', async ({ page }) => {
     await page.goto('/')
     await page.waitForLoadState('networkidle')
 
-    const labels = ['ホーム', 'カレンダー', '収支', 'AI']
+    const labels = ['ホーム', '収支', '分析', 'AI']
     for (const label of labels) {
       const link = page.locator(`a[aria-label="${label}"]`)
       await expect(link).toBeVisible()
@@ -331,8 +330,8 @@ test.describe('画面遷移', () => {
 
     // BottomBar のリンクを順に巡回
     const navPaths = [
-      { label: 'カレンダー', path: '/calendar' },
       { label: '収支', path: '/transactions' },
+      { label: '分析', path: '/analytics' },
       { label: 'AI', path: '/summary' },
       { label: 'ホーム', path: '/' },
     ]

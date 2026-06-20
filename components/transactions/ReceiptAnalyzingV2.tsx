@@ -179,7 +179,7 @@ export function ReceiptAnalyzingV2({ image, onDone, onError, onCancel }: Props) 
           aria-label="閉じる"
           style={{
             width: 34, height: 34, borderRadius: 11,
-            background: 'rgba(255,255,255,.04)',
+            background: KAI.overlayWeak,
             border: `1px solid ${KAI.border2}`,
             color: KAI.text1, fontSize: 16,
             cursor: 'pointer', fontFamily: 'inherit',
@@ -211,7 +211,7 @@ export function ReceiptAnalyzingV2({ image, onDone, onError, onCancel }: Props) 
 
       {/* hairline progress */}
       <div style={{ padding: '10px 22px 0', position: 'relative', zIndex: 2 }}>
-        <div style={{ height: 2, background: 'rgba(255,255,255,.06)', borderRadius: 99, overflow: 'hidden' }}>
+        <div style={{ height: 2, background: KAI.border, borderRadius: 99, overflow: 'hidden' }}>
           <div
             style={{
               height: '100%', width: `${pct}%`,

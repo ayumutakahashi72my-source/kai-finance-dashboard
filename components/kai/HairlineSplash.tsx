@@ -192,7 +192,7 @@ function HairlineSplashInner({
             kai
           </p>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ width: 24, height: 1, background: 'rgba(255,255,255,.22)' }} />
+            <span style={{ width: 24, height: 1, background: 'rgba(240,240,245,.22)' }} />
             <p
               style={{
                 margin: 0,
@@ -205,7 +205,7 @@ function HairlineSplashInner({
             >
               家計簿管理
             </p>
-            <span style={{ width: 24, height: 1, background: 'rgba(255,255,255,.22)' }} />
+            <span style={{ width: 24, height: 1, background: 'rgba(240,240,245,.22)' }} />
           </div>
         </div>
       </div>

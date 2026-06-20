@@ -69,7 +69,7 @@ export function LeaveHouseholdButton({ isOwner }: Props) {
           onClick={(e) => { if (e.target === e.currentTarget && !loading) setOpen(false) }}
         >
           <div style={{
-            background: '#13111e', border: '1px solid rgba(255,255,255,0.10)',
+            background: KAI.bgPanelSolid, border: `1px solid ${KAI.border2}`,
             borderRadius: 20, padding: '28px 24px', maxWidth: 380, width: '100%',
           }}>
             <div style={{
@@ -105,8 +105,8 @@ export function LeaveHouseholdButton({ isOwner }: Props) {
                 disabled={loading}
                 style={{
                   flex: 1, padding: '11px 0', borderRadius: 11,
-                  border: '1px solid rgba(255,255,255,0.12)',
-                  background: 'rgba(255,255,255,0.06)',
+                  border: `1px solid ${KAI.borderStrong}`,
+                  background: KAI.overlayWeak,
                   color: KAI.text3, fontSize: 13, fontWeight: 600,
                   cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.5 : 1,
                 }}

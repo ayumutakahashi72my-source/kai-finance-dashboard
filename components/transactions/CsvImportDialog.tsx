@@ -122,12 +122,12 @@ export function CsvImportDialog({ onImported, defaultOpen = false }: { onImporte
         CSV
       </DialogTrigger>
 
-      <DialogContent className="bg-[#14161f] border-white/10 text-[#f0f0f5] sm:max-w-md">
+      <DialogContent className="bg-[var(--kai-dropdown-bg)] border-[var(--kai-border2)] text-[var(--kai-text1)] sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-[#f0f0f5]">CSVインポート</DialogTitle>
+          <DialogTitle className="text-[var(--kai-text1)]">CSVインポート</DialogTitle>
         </DialogHeader>
 
-        <p className="text-xs text-[#8b8ba0]">
+        <p className="text-xs text-[var(--kai-text3)]">
           マネーフォワードMeからエクスポートしたCSVファイルを選択してください。
         </p>
 
@@ -146,7 +146,7 @@ export function CsvImportDialog({ onImported, defaultOpen = false }: { onImporte
             className={`flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-8 transition-colors ${
               dragOver
                 ? 'border-[#a78bfa]/60 bg-[#a78bfa]/10'
-                : 'border-white/10 hover:border-[#a78bfa]/40 hover:bg-[#a78bfa]/5'
+                : 'border-[var(--kai-border2)] hover:border-[#a78bfa]/40 hover:bg-[#a78bfa]/5'
             }`}
           >
             <input
@@ -162,17 +162,17 @@ export function CsvImportDialog({ onImported, defaultOpen = false }: { onImporte
             {file ? (
               <>
                 <FileTextIcon className="size-8 text-[#a78bfa]" />
-                <p className="text-sm font-medium text-[#f0f0f5]">{file.name}</p>
+                <p className="text-sm font-medium text-[var(--kai-text1)]">{file.name}</p>
                 {preview && (
-                  <p className="text-xs text-[#8b8ba0]">
+                  <p className="text-xs text-[var(--kai-text3)]">
                     {preview.count}件の取引を検出
                   </p>
                 )}
               </>
             ) : (
               <>
-                <UploadIcon className="size-8 text-[#5e5e72]" />
-                <p className="text-sm text-[#8b8ba0]">ここにCSVをドロップ、またはクリック</p>
+                <UploadIcon className="size-8 text-[var(--kai-text4)]" />
+                <p className="text-sm text-[var(--kai-text3)]">ここにCSVをドロップ、またはクリック</p>
               </>
             )}
           </div>
@@ -199,11 +199,11 @@ export function CsvImportDialog({ onImported, defaultOpen = false }: { onImporte
             <div className="rounded-xl border border-[#4ade80]/20 bg-[#4ade80]/5 px-4 py-5 text-center">
               <CheckCircleIcon className="mx-auto mb-2 size-8 text-[#4ade80]" />
               <p className="font-semibold text-[#4ade80]">インポート完了</p>
-              <p className="mt-1 text-sm text-[#8b8ba0]">
-                新規追加: <span className="text-[#f0f0f5]">{result.inserted}件</span>
-                　スキップ: <span className="text-[#f0f0f5]">{result.skipped}件</span>
+              <p className="mt-1 text-sm text-[var(--kai-text3)]">
+                新規追加: <span className="text-[var(--kai-text1)]">{result.inserted}件</span>
+                　スキップ: <span className="text-[var(--kai-text1)]">{result.skipped}件</span>
               </p>
-              <p className="mt-0.5 text-xs text-[#8b8ba0]">
+              <p className="mt-0.5 text-xs text-[var(--kai-text3)]">
                 カテゴリ分類: <span className="text-[#fb9477]">{result.classified}件</span>
                 {result.categoriesCreated > 0 && (
                   <span className="ml-2 text-[#a78bfa]">（{result.categoriesCreated}カテゴリを自動作成）</span>
@@ -213,7 +213,7 @@ export function CsvImportDialog({ onImported, defaultOpen = false }: { onImporte
           </div>
         )}
 
-        <DialogFooter className="border-white/10 -mx-4 -mb-4 px-4 pb-4 pt-2">
+        <DialogFooter className="border-[var(--kai-border2)] -mx-4 -mb-4 px-4 pb-4 pt-2">
           {result ? (
             <Button
               onClick={() => setOpen(false)}

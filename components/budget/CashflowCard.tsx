@@ -57,8 +57,8 @@ export function CashflowCard({ month }: { month: string }) {
   return (
     <section
       style={{
-        background: 'rgba(255,255,255,.02)',
-        border: '1px solid rgba(255,255,255,.06)',
+        background: KAI.overlayWeak,
+        border: `1px solid ${KAI.border}`,
         borderRadius: 18,
         padding: '14px 18px',
         animation: 'kai-rise .5s .05s ease-out both',

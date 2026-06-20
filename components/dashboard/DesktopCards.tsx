@@ -3,7 +3,7 @@
 import { CategoryIcon } from '@/components/ui/CategoryIcon'
 import { Icon } from '@/components/kai/shared'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars -- used conditionally
-import { yen } from '@/lib/kai-tokens'
+import { KAI, yen } from '@/lib/kai-tokens'
 import type { Transaction } from '@/lib/types'
 import {
   pickColor, UP, DOWN,
@@ -62,7 +62,7 @@ export function DesktopRecentTx({ transactions }: { transactions: Transaction[] 
         <div key={t.id} style={{
           display: 'flex', alignItems: 'center', gap: 11,
           padding: '8px 0',
-          borderBottom: i < recent.length - 1 ? '1px solid rgba(255,255,255,.04)' : 'none',
+          borderBottom: i < recent.length - 1 ? `1px solid ${KAI.overlayWeak}` : 'none',
           animation: `kai-rise .3s ${.08 + i * .025}s ease-out both`,
         }}>
           <div style={{ width: 30, height: 30, borderRadius: 9, flexShrink: 0, background: `${t.categories?.color ?? pickColor(t.categories?.name ?? '')}18`, border: `1px solid ${t.categories?.color ?? pickColor(t.categories?.name ?? '')}2a`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -103,7 +103,7 @@ export function DesktopCategoryCard({ categoryData }: { categoryData: CategoryDa
                 ¥{amount.toLocaleString('ja-JP')} <span style={{ color: TEXT3 }}>· {Math.round(pct)}%</span>
               </span>
             </div>
-            <div style={{ height: 4, borderRadius: 99, background: 'rgba(255,255,255,.05)', overflow: 'hidden' }}>
+            <div style={{ height: 4, borderRadius: 99, background: KAI.overlayWeak, overflow: 'hidden' }}>
               <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: 99 }}/>
             </div>
           </div>

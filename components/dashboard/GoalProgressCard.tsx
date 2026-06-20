@@ -169,7 +169,7 @@ export function GoalProgressCard({ goal, currentMonthExpense, currentMonthIncome
               color: KAI.text3, display: 'flex', alignItems: 'center',
               padding: 4, borderRadius: 6, transition: 'background .15s',
             }}
-            className="hover:bg-white/[0.06]"
+            className="hover:bg-[var(--kai-border)]"
           >
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
               <path d="M9 2l3 3-7 7H2v-3z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
@@ -243,7 +243,7 @@ export function GoalProgressCard({ goal, currentMonthExpense, currentMonthIncome
             />
 
             {/* 縦区切り */}
-            <div style={{ width: 1, alignSelf: 'center', height: 80, background: 'rgba(255,255,255,.06)' }} />
+            <div style={{ width: 1, alignSelf: 'center', height: 80, background: KAI.border }} />
 
             {/* 貯蓄リング */}
             <MiniRing

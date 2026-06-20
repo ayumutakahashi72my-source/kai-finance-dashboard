@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Skeleton } from '@/components/ui/Skeleton'
+import { KAI } from '@/lib/kai-tokens'
 import { renderMarkdown } from '@/lib/markdown'
 
 interface QuarterlyInsight {
@@ -54,7 +55,7 @@ export function QuarterlyInsightCard() {
           </svg>
         </span>
         <span className="text-[13px] font-bold text-[#c4b5fd]">四半期深層分析</span>
-        <span className="ml-auto text-[10px] text-[#5e5e72]">Opus</span>
+        <span className="ml-auto text-[10px]" style={{ color: KAI.text4 }}>Opus</span>
       </div>
 
       {isLoading ? (
@@ -74,9 +75,9 @@ export function QuarterlyInsightCard() {
                   onClick={() => { setSelected(i); setExpanded(false) }}
                   style={{
                     fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 7,
-                    background: selected === i ? 'rgba(167,139,250,0.18)' : 'rgba(255,255,255,0.04)',
-                    border: `1px solid ${selected === i ? 'rgba(167,139,250,0.40)' : 'rgba(255,255,255,0.08)'}`,
-                    color: selected === i ? '#c4b5fd' : '#5e5e72',
+                    background: selected === i ? 'rgba(167,139,250,0.18)' : KAI.overlayWeak,
+                    border: `1px solid ${selected === i ? 'rgba(167,139,250,0.40)' : KAI.border2}`,
+                    color: selected === i ? '#c4b5fd' : KAI.text4,
                     cursor: 'pointer',
                   }}
                 >
@@ -87,7 +88,7 @@ export function QuarterlyInsightCard() {
           )}
 
           {/* Period label */}
-          <p style={{ fontSize: 11, color: '#5e5e72', marginBottom: 8 }}>
+          <p style={{ fontSize: 11, color: KAI.text4, marginBottom: 8 }}>
             {current.year}年 第{current.quarter}四半期 レポート
           </p>
 

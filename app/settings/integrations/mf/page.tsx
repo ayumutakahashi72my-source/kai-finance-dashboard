@@ -41,7 +41,7 @@ export default async function MfSettingsPage() {
         className="pointer-events-none fixed inset-0"
         style={{
           zIndex: 1,
-          backgroundImage: `linear-gradient(rgba(255,255,255,.012) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.012) 1px,transparent 1px)`,
+          backgroundImage: `linear-gradient(${KAI.gridLine} 1px,transparent 1px),linear-gradient(90deg,${KAI.gridLine} 1px,transparent 1px)`,
           backgroundSize: '40px 40px',
         }}
       />
@@ -52,15 +52,15 @@ export default async function MfSettingsPage() {
         <header
           className="sticky top-0 z-30 flex items-center gap-3 px-4 py-[14px]"
           style={{
-            background: 'rgba(8,8,14,.55)',
+            background: KAI.headerBg,
             backdropFilter: 'blur(24px)',
-            borderBottom: '1px solid rgba(255,255,255,0.10)',
+            borderBottom: `1px solid ${KAI.border2}`,
           }}
         >
           <Link
             href="/settings"
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[9px] transition-colors hover:bg-white/[0.07]"
-            style={{ color: '#8b8ba0' }}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[9px] transition-colors hover:bg-[var(--kai-overlay-weak)]"
+            style={{ color: KAI.text3 }}
           >
             <ChevronLeftIcon className="size-5" />
           </Link>

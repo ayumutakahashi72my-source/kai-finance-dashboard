@@ -1,31 +1,12 @@
 'use client'
 
 import { useState, useRef, useCallback } from 'react'
-import dynamic from 'next/dynamic'
+import Link from 'next/link'
 import { AiSummaryCard } from '@/components/dashboard/AiSummaryCard'
-import { AiChatPanel } from '@/components/dashboard/AiChatPanel'
 import { QuarterlyInsightCard } from '@/components/dashboard/QuarterlyInsightCard'
 import { NowTab } from '@/components/dashboard/NowTab'
-import { CORAL, CORALG, TEXT3, BORDER } from './dashboard-utils'
 import { KAI } from '@/lib/kai-tokens'
 import type { Transaction } from '@/lib/types'
-
-const AnalyticsTab = dynamic(
-  () => import('@/components/dashboard/AnalyticsTab').then((m) => m.AnalyticsTab),
-  { ssr: false, loading: () => <div style={{ minHeight: 300 }} /> }
-)
-
-function StrategyTab() {
-  return (
-    <div className="space-y-3">
-      <AiSummaryCard />
-      <QuarterlyInsightCard />
-      <div className="kai-rise" style={{ animationDelay: '140ms' }}>
-        <AiChatPanel />
-      </div>
-    </div>
-  )
-}
 
 interface Props {
   transactions: Transaction[]
@@ -34,7 +15,11 @@ interface Props {
   streak?: number
 }
 
-const TABS = ['NOW', '分析', 'AI戦略'] as const
+const TABS = ['今月', 'AI'] as const
+const GRADIENTS = [
+  'linear-gradient(135deg,var(--kai-coral,#fb9477),var(--kai-blue,#7aa7ff))',
+  'linear-gradient(135deg,var(--kai-violet,#a78bfa),var(--kai-blue,#7aa7ff))',
+] as const
 
 export function DashboardTabs({ transactions, allTransactions, month, streak: streakProp = 0 }: Props) {
   const [tab, setTab] = useState(0)
@@ -62,8 +47,7 @@ export function DashboardTabs({ transactions, allTransactions, month, streak: st
     <div className="px-[18px] py-4 lg:px-[30px]">
       <div
         role="tablist"
-        className="mb-4 inline-flex gap-1 rounded-[12px] p-1"
-        style={{ background: KAI.overlayWeak, border: `1px solid ${BORDER}` }}
+        style={{ display: 'flex', gap: 6, padding: '0 0 10px' }}
         onKeyDown={handleKeyDown}
       >
         {TABS.map((t, i) => {
@@ -79,25 +63,66 @@ export function DashboardTabs({ transactions, allTransactions, month, streak: st
               tabIndex={active ? 0 : -1}
               onClick={() => setTab(i)}
               style={{
-                fontFamily: 'var(--font-mono),monospace',
-                background: active ? 'rgba(251,148,119,0.12)' : 'transparent',
-                color: active ? CORAL : TEXT3,
-                boxShadow: active ? `0 0 8px ${CORALG}` : 'none',
-                border: 'none', borderRadius: 9, padding: '8px 18px',
-                fontSize: 12, fontWeight: 700, letterSpacing: '.04em',
-                cursor: 'pointer', minHeight: 38, transition: 'all .18s',
+                flex: 1,
+                padding: 9,
+                fontSize: 13,
+                fontWeight: active ? 700 : 600,
+                color: active ? '#0c0a14' : KAI.text3,
+                background: active ? GRADIENTS[i] : KAI.overlayWeak,
+                border: `1px solid ${active ? 'transparent' : KAI.border}`,
+                borderRadius: 12,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                transition: 'all .18s',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 6,
               }}
             >
+              {i === 1 && (
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5z"/>
+                </svg>
+              )}
               {t}
             </button>
           )
         })}
       </div>
 
-      <div role="tabpanel" id={`dash-tabpanel-${tab}`} aria-labelledby={`dash-tab-${tab}`}>
+      <div
+        role="tabpanel"
+        id={`dash-tabpanel-${tab}`}
+        aria-labelledby={`dash-tab-${tab}`}
+        className="space-y-3"
+        style={{ animation: 'kai-rise .4s ease-out both' }}
+        key={tab}
+      >
         {tab === 0 && <NowTab transactions={transactions} allTransactions={allTransactions} month={month} streak={streakProp} />}
-        {tab === 1 && <AnalyticsTab allTransactions={allTransactions} month={month} />}
-        {tab === 2 && <StrategyTab />}
+        {tab === 1 && (
+          <div className="space-y-3">
+            <AiSummaryCard />
+            <QuarterlyInsightCard />
+            <Link
+              href="/summary"
+              style={{
+                display: 'block',
+                padding: '14px 16px',
+                background: 'linear-gradient(135deg,rgba(167,139,250,.14),rgba(122,167,255,.1))',
+                border: '1px solid rgba(167,139,250,.3)',
+                borderRadius: 16,
+                textAlign: 'center',
+                fontSize: 14,
+                fontWeight: 700,
+                color: KAI.violet,
+                textDecoration: 'none',
+              }}
+            >
+              AIに相談する →
+            </Link>
+          </div>
+        )}
       </div>
     </div>
   )
