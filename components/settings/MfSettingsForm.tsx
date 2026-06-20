@@ -63,7 +63,7 @@ export function MfSettingsForm({ initialEmail, initialEnabled }: Props) {
             padding: '4px 10px', borderRadius: 99,
             ...(enabled
               ? { background: 'rgba(74,222,128,.08)', border: '1px solid rgba(74,222,128,.28)', color: KAI.success }
-              : { background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.12)', color: KAI.text3 }
+              : { background: KAI.overlayWeak, border: `1px solid ${KAI.borderStrong}`, color: KAI.text3 }
             ),
           }}
         >
@@ -85,8 +85,8 @@ export function MfSettingsForm({ initialEmail, initialEnabled }: Props) {
           MF ME ログイン情報
         </div>
 
-        <div style={{ background: 'rgba(255,255,255,.02)', border: '1px solid rgba(255,255,255,.08)', borderRadius: 16, overflow: 'hidden' }}>
-          <div style={{ padding: '12px 14px', borderBottom: '1px solid rgba(255,255,255,.06)' }}>
+        <div style={{ background: KAI.overlayWeak, border: `1px solid ${KAI.border2}`, borderRadius: 16, overflow: 'hidden' }}>
+          <div style={{ padding: '12px 14px', borderBottom: `1px solid ${KAI.border}` }}>
             <div style={{ fontSize: 11, color: KAI.text3, fontWeight: 600, marginBottom: 7 }}>メールアドレス</div>
             <input
               type="email"

@@ -8,7 +8,7 @@ export function StreakCard({ streak }: { streak: number }) {
   return (
     <div
       className="kai-rise rounded-[18px] p-4"
-      style={{ background: 'linear-gradient(135deg,rgba(251,148,119,0.10),rgba(20,22,32,0.66))', backdropFilter: 'blur(24px) saturate(160%)', border: '1px solid rgba(251,148,119,0.22)', animationDelay: '200ms', borderRadius: 18 }}
+      style={{ background: `linear-gradient(135deg,rgba(251,148,119,0.10),${KAI.bgPanel})`, backdropFilter: 'blur(24px) saturate(160%)', border: '1px solid rgba(251,148,119,0.22)', animationDelay: '200ms', borderRadius: 18 }}
     >
       <div className="flex items-center justify-between">
         <div>

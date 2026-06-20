@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
+import { KAI } from '@/lib/kai-tokens'
 import AcceptPanel from './AcceptPanel'
 import LoginToAccept from './LoginToAccept'
 
@@ -15,7 +16,7 @@ export default async function InvitePage({
   return (
     <div style={{
       minHeight: '100vh',
-      background: '#0c0a14',
+      background: KAI.bgCard,
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -46,12 +47,12 @@ async function AuthenticatedInviteView({ token, userId }: { token: string; userI
   if (!info) {
     return (
       <div style={{
-        background: 'rgba(20,22,32,0.75)', backdropFilter: 'blur(24px)',
-        border: '1px solid rgba(255,255,255,0.08)', borderRadius: 20,
+        background: KAI.overlayBg, backdropFilter: 'blur(24px)',
+        border: `1px solid ${KAI.border}`, borderRadius: 20,
         padding: '36px 32px', textAlign: 'center', maxWidth: 400, width: '100%',
       }}>
-        <p style={{ fontSize: 16, fontWeight: 700, color: '#f87171', marginBottom: 8 }}>招待リンクが見つかりません</p>
-        <p style={{ fontSize: 13, color: '#8b8ba0' }}>リンクが正しいか確認してください。</p>
+        <p style={{ fontSize: 16, fontWeight: 700, color: KAI.danger, marginBottom: 8 }}>招待リンクが見つかりません</p>
+        <p style={{ fontSize: 13, color: KAI.text3 }}>リンクが正しいか確認してください。</p>
       </div>
     )
   }
@@ -67,16 +68,16 @@ async function AuthenticatedInviteView({ token, userId }: { token: string; userI
   if (existing) {
     return (
       <div style={{
-        background: 'rgba(20,22,32,0.75)', backdropFilter: 'blur(24px)',
-        border: '1px solid rgba(255,255,255,0.08)', borderRadius: 20,
+        background: KAI.overlayBg, backdropFilter: 'blur(24px)',
+        border: `1px solid ${KAI.border}`, borderRadius: 20,
         padding: '36px 32px', textAlign: 'center', maxWidth: 400, width: '100%',
       }}>
-        <p style={{ fontSize: 16, fontWeight: 700, color: '#34d399', marginBottom: 8 }}>すでに参加しています</p>
-        <p style={{ fontSize: 13, color: '#8b8ba0', marginBottom: 20 }}>「{info.household_name}」のメンバーです。</p>
+        <p style={{ fontSize: 16, fontWeight: 700, color: KAI.success, marginBottom: 8 }}>すでに参加しています</p>
+        <p style={{ fontSize: 13, color: KAI.text3, marginBottom: 20 }}>「{info.household_name}」のメンバーです。</p>
         <Link href="/" style={{
           display: 'inline-block', padding: '10px 24px', borderRadius: 10,
-          background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
-          color: '#f0f0f5', fontSize: 13, textDecoration: 'none',
+          background: KAI.overlayWeak, border: `1px solid ${KAI.borderStrong}`,
+          color: KAI.text1, fontSize: 13, textDecoration: 'none',
         }}>
           ダッシュボードへ
         </Link>

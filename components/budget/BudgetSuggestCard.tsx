@@ -10,7 +10,7 @@ interface Props {
 }
 
 function bar(actual: number, suggested: number) {
-  if (suggested === 0) return { pct: 100, color: '#5e5e72' }
+  if (suggested === 0) return { pct: 100, color: 'var(--kai-text4)' }
   const pct = Math.min((actual / suggested) * 100, 100)
   const over = actual > suggested
   const close = !over && pct >= 80
@@ -45,15 +45,15 @@ export function BudgetSuggestCard({ suggestions, actualByCategory }: Props) {
           return (
             <div key={s.category_name}>
               <div className="mb-1 flex items-baseline justify-between gap-2">
-                <span className="text-[13px] font-medium text-[#f0f0f5]">{s.category_name}</span>
+                <span className="text-[13px] font-medium text-[var(--kai-text1)]">{s.category_name}</span>
                 <span className="mono whitespace-nowrap text-[12px]" style={{ color }}>
                   ¥{actual.toLocaleString()}
-                  <span className="text-[#5e5e72]"> / ¥{s.suggested_amount.toLocaleString()}</span>
+                  <span className="text-[var(--kai-text4)]"> / ¥{s.suggested_amount.toLocaleString()}</span>
                 </span>
               </div>
 
               {/* progress bar */}
-              <div className="h-[5px] w-full overflow-hidden rounded-full bg-white/5">
+              <div className="h-[5px] w-full overflow-hidden rounded-full bg-[var(--kai-overlay-weak)]">
                 <div
                   className="h-full rounded-full transition-all duration-500"
                   style={{ width: `${pct}%`, background: color, boxShadow: `0 0 8px ${color}55` }}
@@ -67,7 +67,7 @@ export function BudgetSuggestCard({ suggestions, actualByCategory }: Props) {
               )}
 
               {/* reason tooltip-like */}
-              <p className="mt-0.5 text-[11px] text-[#5e5e72]">{s.reason}</p>
+              <p className="mt-0.5 text-[11px] text-[var(--kai-text4)]">{s.reason}</p>
             </div>
           )
         })}

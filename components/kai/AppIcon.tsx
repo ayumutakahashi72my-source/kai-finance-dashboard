@@ -71,7 +71,7 @@ export function AppIcon({ size = 96, idPrefix = 'kai-app-icon', glow = false }: 
             left: 0,
             right: 0,
             height: '42%',
-            background: 'linear-gradient(180deg, rgba(255,255,255,.06), transparent)',
+            background: `linear-gradient(180deg, ${KAI.overlayBorder}, transparent)`,
           }}
         />
 

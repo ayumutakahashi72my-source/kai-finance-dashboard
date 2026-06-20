@@ -78,13 +78,13 @@ function EditDialog({ tx, categories, onClose, onSaved }: {
 
   return (
     <Dialog open onOpenChange={(o) => { if (!o) onClose() }}>
-      <DialogContent className="bg-[#14161f] border-white/10 text-[#f0f0f5] sm:max-w-md">
+      <DialogContent className="bg-[var(--kai-dropdown-bg)] border-[var(--kai-border2)] text-[var(--kai-text1)] sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-[#f0f0f5]">取引を編集</DialogTitle>
+          <DialogTitle className="text-[var(--kai-text1)]">取引を編集</DialogTitle>
         </DialogHeader>
         <div className="grid gap-4 pt-2">
           <div className="grid gap-1.5">
-            <Label className="text-[#8b8ba0] text-xs">種別</Label>
+            <Label className="text-[var(--kai-text3)] text-xs">種別</Label>
             <div className="grid grid-cols-2 gap-2">
               {[false, true].map((inc) => (
                 <button key={String(inc)} type="button" onClick={() => setIsIncome(inc)}
@@ -92,36 +92,36 @@ function EditDialog({ tx, categories, onClose, onSaved }: {
                     isIncome === inc
                       ? inc ? 'border-[#4ade80]/40 bg-[#4ade80]/10 text-[#4ade80]'
                              : 'border-[#fb7185]/40 bg-[#fb7185]/10 text-[#fb7185]'
-                      : 'border-white/10 text-[#8b8ba0] hover:border-white/20'
+                      : 'border-[var(--kai-border2)] text-[var(--kai-text3)] hover:border-[var(--kai-border-strong)]'
                   }`}>{inc ? '収入' : '支出'}</button>
               ))}
             </div>
           </div>
           <div className="grid gap-1.5">
-            <Label className="text-[#8b8ba0] text-xs">日付</Label>
+            <Label className="text-[var(--kai-text3)] text-xs">日付</Label>
             <Input type="date" value={occurredOn} onChange={(e) => setOccurredOn(e.target.value)}
-              className="bg-[#0a0a10] border-white/10 text-[#f0f0f5] focus-visible:border-[#fb9477]/50 focus-visible:ring-[#fb9477]/20"/>
+              className="bg-[var(--kai-bg)] border-[var(--kai-border2)] text-[var(--kai-text1)] focus-visible:border-[#fb9477]/50 focus-visible:ring-[#fb9477]/20"/>
           </div>
           <div className="grid gap-1.5">
-            <Label className="text-[#8b8ba0] text-xs">金額（円）</Label>
+            <Label className="text-[var(--kai-text3)] text-xs">金額（円）</Label>
             <Input type="number" min="1" value={amount} onChange={(e) => setAmount(e.target.value)}
-              className="bg-[#0a0a10] border-white/10 text-[#f0f0f5] focus-visible:border-[#fb9477]/50 focus-visible:ring-[#fb9477]/20"/>
+              className="bg-[var(--kai-bg)] border-[var(--kai-border2)] text-[var(--kai-text1)] focus-visible:border-[#fb9477]/50 focus-visible:ring-[#fb9477]/20"/>
           </div>
           <div className="grid gap-1.5">
-            <Label className="text-[#8b8ba0] text-xs">カテゴリ</Label>
+            <Label className="text-[var(--kai-text3)] text-xs">カテゴリ</Label>
             <Select value={categoryId} onValueChange={(v) => setCategoryId(v ?? '')}>
-              <SelectTrigger className="w-full bg-[#0a0a10] border-white/10 text-[#f0f0f5]">
+              <SelectTrigger className="w-full bg-[var(--kai-bg)] border-[var(--kai-border2)] text-[var(--kai-text1)]">
                 <SelectValue placeholder="選択なし"/>
               </SelectTrigger>
-              <SelectContent className="bg-[#14161f] border-white/10 text-[#f0f0f5]">
+              <SelectContent className="bg-[var(--kai-dropdown-bg)] border-[var(--kai-border2)] text-[var(--kai-text1)]">
                 {sortedCategoryOptions(categories).map(({ cat, indent, parentName }) => (
-                  <SelectItem key={cat.id} value={cat.id} className="focus:bg-white/5">
+                  <SelectItem key={cat.id} value={cat.id} className="focus:bg-[var(--kai-overlay-weak)]">
                     <span className="flex items-center gap-1.5">
-                      {indent && <span style={{ color: '#5e5e72', fontSize: 11 }}>└</span>}
+                      {indent && <span style={{ color: KAI.text4, fontSize: 11 }}>└</span>}
                       <CategoryIcon name={cat.icon} size={13} />
                       <span>{cat.name}</span>
                       {indent && parentName && (
-                        <span style={{ color: '#5e5e72', fontSize: 10 }}>{parentName}</span>
+                        <span style={{ color: KAI.text4, fontSize: 10 }}>{parentName}</span>
                       )}
                     </span>
                   </SelectItem>
@@ -130,14 +130,14 @@ function EditDialog({ tx, categories, onClose, onSaved }: {
             </Select>
           </div>
           <div className="grid gap-1.5">
-            <Label className="text-[#8b8ba0] text-xs">支払先</Label>
+            <Label className="text-[var(--kai-text3)] text-xs">支払先</Label>
             <Input type="text" maxLength={100} value={payee} onChange={(e) => setPayee(e.target.value)}
-              className="bg-[#0a0a10] border-white/10 text-[#f0f0f5] focus-visible:border-[#fb9477]/50 focus-visible:ring-[#fb9477]/20"/>
+              className="bg-[var(--kai-bg)] border-[var(--kai-border2)] text-[var(--kai-text1)] focus-visible:border-[#fb9477]/50 focus-visible:ring-[#fb9477]/20"/>
           </div>
           {error && <p className="rounded-lg border border-[#fb7185]/20 bg-[#fb7185]/5 px-3 py-2 text-xs text-[#fb7185]">{error}</p>}
         </div>
-        <DialogFooter className="border-white/10 bg-transparent -mx-4 -mb-4 px-4 pb-4 pt-2 gap-2">
-          <Button variant="ghost" onClick={onClose} className="text-[#8b8ba0] hover:text-[#f0f0f5] hover:bg-white/5">キャンセル</Button>
+        <DialogFooter className="border-[var(--kai-border2)] bg-transparent -mx-4 -mb-4 px-4 pb-4 pt-2 gap-2">
+          <Button variant="ghost" onClick={onClose} className="text-[var(--kai-text3)] hover:text-[var(--kai-text1)] hover:bg-[var(--kai-overlay-weak)]">キャンセル</Button>
           <Button onClick={handleSave} disabled={saving} className="bg-[#fb9477] text-[#0a0a10] font-semibold hover:bg-[#fb9477]/90 disabled:opacity-50">
             {saving ? '保存中…' : '保存'}
           </Button>
@@ -164,15 +164,15 @@ function DeleteConfirmDialog({ tx, onClose, onDeleted }: {
 
   return (
     <Dialog open onOpenChange={(o) => { if (!o) onClose() }}>
-      <DialogContent className="bg-[#14161f] border-white/10 text-[#f0f0f5] sm:max-w-sm">
+      <DialogContent className="bg-[var(--kai-dropdown-bg)] border-[var(--kai-border2)] text-[var(--kai-text1)] sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle className="text-[#f0f0f5]">取引を削除</DialogTitle>
+          <DialogTitle className="text-[var(--kai-text1)]">取引を削除</DialogTitle>
         </DialogHeader>
-        <p className="text-[14px] text-[#c4c4d0]">
+        <p className="text-[14px] text-[var(--kai-text2)]">
           「{tx.payee}」(¥{Math.abs(tx.amount).toLocaleString()}) を削除しますか？この操作は取り消せません。
         </p>
-        <DialogFooter className="border-white/10 bg-transparent -mx-4 -mb-4 px-4 pb-4 pt-2 gap-2">
-          <Button variant="ghost" onClick={onClose} className="text-[#8b8ba0] hover:text-[#f0f0f5] hover:bg-white/5">キャンセル</Button>
+        <DialogFooter className="border-[var(--kai-border2)] bg-transparent -mx-4 -mb-4 px-4 pb-4 pt-2 gap-2">
+          <Button variant="ghost" onClick={onClose} className="text-[var(--kai-text3)] hover:text-[var(--kai-text1)] hover:bg-[var(--kai-overlay-weak)]">キャンセル</Button>
           <Button onClick={handleDelete} disabled={deleting}
             className="bg-[#fb7185]/20 text-[#fb7185] border border-[#fb7185]/30 font-semibold hover:bg-[#fb7185]/30 disabled:opacity-50">
             {deleting ? '削除中…' : '削除する'}
@@ -258,8 +258,8 @@ export function CategoryTransactionsPage({ catName, color, month, initialTxs, ca
           </span>
         </div>
         <div style={{
-          background: 'rgba(20,22,32,0.66)',
-          border: '1px solid rgba(255,255,255,.08)',
+          background: KAI.bgPanel,
+          border: `1px solid ${KAI.border2}`,
           borderRadius: 14, overflow: 'hidden',
         }}>
           {txs.map((tx, i) => {
@@ -267,7 +267,7 @@ export function CategoryTransactionsPage({ catName, color, month, initialTxs, ca
               <div key={tx.id} style={{
                 display: 'flex', alignItems: 'center', gap: 12,
                 padding: '12px 14px', position: 'relative',
-                borderBottom: i < txs.length - 1 ? '1px solid rgba(255,255,255,.05)' : 'none',
+                borderBottom: i < txs.length - 1 ? `1px solid ${KAI.border}` : 'none',
               }}>
                 <div style={{
                   width: 34, height: 34, borderRadius: 10, flexShrink: 0,
@@ -323,21 +323,21 @@ export function CategoryTransactionsPage({ catName, color, month, initialTxs, ca
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0c0a14', color: KAI.text1 }}>
+    <div style={{ minHeight: '100vh', background: KAI.bg, color: KAI.text1 }}>
       {/* ヘッダー */}
       <header style={{
         position: 'sticky', top: 0, zIndex: 30,
         display: 'flex', alignItems: 'center', gap: 12,
         padding: '14px 18px',
-        background: 'rgba(8,8,14,.75)', backdropFilter: 'blur(24px)',
-        borderBottom: '1px solid rgba(255,255,255,.08)',
+        background: KAI.headerBg, backdropFilter: 'blur(24px)',
+        borderBottom: `1px solid ${KAI.border2}`,
       }}>
         <button
           type="button"
           onClick={() => router.back()}
           style={{
             width: 34, height: 34, borderRadius: '50%',
-            background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.10)',
+            background: KAI.border, border: `1px solid ${KAI.border2}`,
             color: KAI.text3, display: 'flex', alignItems: 'center', justifyContent: 'center',
             cursor: 'pointer',
           }}
@@ -457,15 +457,15 @@ export function CategoryTransactionsPage({ catName, color, month, initialTxs, ca
           <div style={{
             position: 'fixed', top: menuPos.top, right: menuPos.right, zIndex: 50,
             minWidth: 120, borderRadius: 12, overflow: 'hidden',
-            background: 'rgba(20,22,32,.98)',
-            border: '1px solid rgba(255,255,255,.12)',
+            background: KAI.overlayBg,
+            border: `1px solid ${KAI.borderStrong}`,
             boxShadow: '0 8px 32px rgba(0,0,0,.6)',
           }}>
             <button
               onClick={() => { setMenuId(null); setEditingTx(menuTx) }}
-              style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '12px 16px', fontSize: 14, color: '#c4c4d0', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+              style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '12px 16px', fontSize: 14, color: KAI.text2, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
             ><Pencil size={14}/> 編集</button>
-            <div style={{ height: 1, background: 'rgba(255,255,255,.06)' }}/>
+            <div style={{ height: 1, background: KAI.border }}/>
             <button
               onClick={() => { setMenuId(null); setDeletingTx(menuTx) }}
               style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '12px 16px', fontSize: 14, color: '#fb7185', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}

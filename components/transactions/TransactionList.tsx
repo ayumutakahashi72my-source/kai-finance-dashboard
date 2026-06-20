@@ -29,7 +29,7 @@ import { sortedCategoryOptions } from '@/lib/utils'
 function categoryColor(tx: Transaction): string {
   if (tx.categories?.color) return tx.categories.color
   if (tx.categories?.parent?.color) return tx.categories.parent.color
-  if (tx.categories?.name) return DEFAULT_CATEGORY_COLORS[tx.categories.name] ?? '#8b8ba0'
+  if (tx.categories?.name) return DEFAULT_CATEGORY_COLORS[tx.categories.name] ?? KAI.text3
   return tx.amount >= 0 ? '#4ade80' : '#fb7185'
 }
 
@@ -131,14 +131,14 @@ export function EditDialog({
 
   return (
     <Dialog open onOpenChange={(o) => { if (!o) onClose() }}>
-      <DialogContent className="bg-[#14161f] border-white/10 text-[#f0f0f5] sm:max-w-md">
+      <DialogContent className="bg-[var(--kai-dropdown-bg)] border-[var(--kai-border2)] text-[var(--kai-text1)] sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-[#f0f0f5]">取引を編集</DialogTitle>
+          <DialogTitle className="text-[var(--kai-text1)]">取引を編集</DialogTitle>
         </DialogHeader>
 
         <div className="grid gap-4 pt-2">
           <div className="grid gap-1.5">
-            <Label className="text-[#8b8ba0] text-xs">種別</Label>
+            <Label className="text-[var(--kai-text3)] text-xs">種別</Label>
             <div className="grid grid-cols-2 gap-2">
               {[false, true].map((inc) => (
                 <button
@@ -150,7 +150,7 @@ export function EditDialog({
                       ? inc
                         ? 'border-[#4ade80]/40 bg-[#4ade80]/10 text-[#4ade80]'
                         : 'border-[#fb7185]/40 bg-[#fb7185]/10 text-[#fb7185]'
-                      : 'border-white/10 text-[#8b8ba0] hover:border-white/20'
+                      : 'border-[var(--kai-border2)] text-[var(--kai-text3)] hover:border-[var(--kai-border-strong)]'
                   }`}
                 >
                   {inc ? '収入' : '支出'}
@@ -160,18 +160,18 @@ export function EditDialog({
           </div>
 
           <div className="grid gap-1.5">
-            <Label className="text-[#8b8ba0] text-xs">日付</Label>
+            <Label className="text-[var(--kai-text3)] text-xs">日付</Label>
             <Input
               type="date"
               value={occurredOn}
               onChange={(e) => setOccurredOn(e.target.value)}
               required
-              className="bg-[#0a0a10] border-white/10 text-[#f0f0f5] focus-visible:border-[#fb9477]/50 focus-visible:ring-[#fb9477]/20"
+              className="bg-[var(--kai-bg)] border-[var(--kai-border2)] text-[var(--kai-text1)] focus-visible:border-[#fb9477]/50 focus-visible:ring-[#fb9477]/20"
             />
           </div>
 
           <div className="grid gap-1.5">
-            <Label className="text-[#8b8ba0] text-xs">金額（円）</Label>
+            <Label className="text-[var(--kai-text3)] text-xs">金額（円）</Label>
             <Input
               type="number"
               min="1"
@@ -179,35 +179,35 @@ export function EditDialog({
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               required
-              className="bg-[#0a0a10] border-white/10 text-[#f0f0f5] placeholder:text-[#5e5e72] focus-visible:border-[#fb9477]/50 focus-visible:ring-[#fb9477]/20"
+              className="bg-[var(--kai-bg)] border-[var(--kai-border2)] text-[var(--kai-text1)] placeholder:text-[var(--kai-text4)] focus-visible:border-[#fb9477]/50 focus-visible:ring-[#fb9477]/20"
             />
           </div>
 
           <div className="grid gap-1.5">
-            <Label className="text-[#8b8ba0] text-xs">カテゴリ</Label>
+            <Label className="text-[var(--kai-text3)] text-xs">カテゴリ</Label>
             <Select value={categoryId} onValueChange={(v) => setCategoryId(v ?? '')}>
-              <SelectTrigger className="w-full bg-[#0a0a10] border-white/10 text-[#f0f0f5] focus-visible:border-[#fb9477]/50">
+              <SelectTrigger className="w-full bg-[var(--kai-bg)] border-[var(--kai-border2)] text-[var(--kai-text1)] focus-visible:border-[#fb9477]/50">
                 {(() => {
-                  if (!categoryId) return <span className="text-[#5e5e72]">選択なし</span>
+                  if (!categoryId) return <span className="text-[var(--kai-text4)]">選択なし</span>
                   const found = categories.find((c) => c.id === categoryId)
-                  if (!found) return <span className="text-[#5e5e72]">選択なし</span>
+                  if (!found) return <span className="text-[var(--kai-text4)]">選択なし</span>
                   const parent = found.parent_id ? categories.find((c) => c.id === found.parent_id) : null
                   return <span>{parent ? `${parent.name} › ${found.name}` : found.name}</span>
                 })()}
               </SelectTrigger>
-              <SelectContent className="bg-[#14161f] border-white/10 text-[#f0f0f5]">
+              <SelectContent className="bg-[var(--kai-dropdown-bg)] border-[var(--kai-border2)] text-[var(--kai-text1)]">
                 {sortedCategoryOptions(categories).map(({ cat, indent, parentName }) => (
                   <SelectItem
                     key={cat.id}
                     value={cat.id}
-                    className="focus:bg-white/5 focus:text-[#f0f0f5]"
+                    className="focus:bg-[var(--kai-overlay-weak)] focus:text-[var(--kai-text1)]"
                   >
                     <span className="flex items-center gap-1.5">
-                      {indent && <span style={{ color: '#5e5e72', fontSize: 11 }}>└</span>}
+                      {indent && <span style={{ color: KAI.text4, fontSize: 11 }}>└</span>}
                       <CategoryIcon name={cat.icon} size={13} />
                       <span>{cat.name}</span>
                       {indent && parentName && (
-                        <span style={{ color: '#5e5e72', fontSize: 10 }}>{parentName}</span>
+                        <span style={{ color: KAI.text4, fontSize: 10 }}>{parentName}</span>
                       )}
                     </span>
                   </SelectItem>
@@ -217,14 +217,14 @@ export function EditDialog({
           </div>
 
           <div className="grid gap-1.5">
-            <Label className="text-[#8b8ba0] text-xs">支払先</Label>
+            <Label className="text-[var(--kai-text3)] text-xs">支払先</Label>
             <Input
               type="text"
               maxLength={100}
               value={payee}
               onChange={(e) => setPayee(e.target.value)}
               required
-              className="bg-[#0a0a10] border-white/10 text-[#f0f0f5] placeholder:text-[#5e5e72] focus-visible:border-[#fb9477]/50 focus-visible:ring-[#fb9477]/20"
+              className="bg-[var(--kai-bg)] border-[var(--kai-border2)] text-[var(--kai-text1)] placeholder:text-[var(--kai-text4)] focus-visible:border-[#fb9477]/50 focus-visible:ring-[#fb9477]/20"
             />
           </div>
 
@@ -235,12 +235,12 @@ export function EditDialog({
           )}
         </div>
 
-        <DialogFooter className="border-white/10 bg-transparent -mx-4 -mb-4 px-4 pb-4 pt-2 gap-2">
+        <DialogFooter className="border-[var(--kai-border2)] bg-transparent -mx-4 -mb-4 px-4 pb-4 pt-2 gap-2">
           <Button
             type="button"
             variant="ghost"
             onClick={onClose}
-            className="text-[#8b8ba0] hover:text-[#f0f0f5] hover:bg-white/5"
+            className="text-[var(--kai-text3)] hover:text-[var(--kai-text1)] hover:bg-[var(--kai-overlay-weak)]"
           >
             キャンセル
           </Button>
@@ -282,19 +282,19 @@ export function DeleteConfirmDialog({
 
   return (
     <Dialog open onOpenChange={(o) => { if (!o) onClose() }}>
-      <DialogContent className="bg-[#14161f] border-white/10 text-[#f0f0f5] sm:max-w-sm">
+      <DialogContent className="bg-[var(--kai-dropdown-bg)] border-[var(--kai-border2)] text-[var(--kai-text1)] sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle className="text-[#f0f0f5]">取引を削除</DialogTitle>
+          <DialogTitle className="text-[var(--kai-text1)]">取引を削除</DialogTitle>
         </DialogHeader>
-        <p className="text-[14px] text-[#c4c4d0]">
+        <p className="text-[14px] text-[var(--kai-text2)]">
           「{tx.payee}」(¥{Math.abs(tx.amount).toLocaleString()}) を削除しますか？この操作は取り消せません。
         </p>
-        <DialogFooter className="border-white/10 bg-transparent -mx-4 -mb-4 px-4 pb-4 pt-2 gap-2">
+        <DialogFooter className="border-[var(--kai-border2)] bg-transparent -mx-4 -mb-4 px-4 pb-4 pt-2 gap-2">
           <Button
             type="button"
             variant="ghost"
             onClick={onClose}
-            className="text-[#8b8ba0] hover:text-[#f0f0f5] hover:bg-white/5"
+            className="text-[var(--kai-text3)] hover:text-[var(--kai-text1)] hover:bg-[var(--kai-overlay-weak)]"
           >
             キャンセル
           </Button>
@@ -399,11 +399,11 @@ export function TransactionList({ initial, categories, uncategorizedCount = 0 }:
           >
             <button
               onClick={() => { setActionMenuId(null); setEditingTx(menuTx) }}
-              className="flex w-full items-center gap-2 px-4 py-3 text-[14px] text-[#c4c4d0] transition-colors hover:bg-white/5"
+              className="flex w-full items-center gap-2 px-4 py-3 text-[14px] text-[var(--kai-text2)] transition-colors hover:bg-[var(--kai-overlay-weak)]"
             >
               <Pencil className="size-3.5" /> 編集
             </button>
-            <div className="h-px bg-white/5" />
+            <div className="h-px bg-[var(--kai-overlay-weak)]" />
             <button
               onClick={async () => {
                 setActionMenuId(null)
@@ -421,7 +421,7 @@ export function TransactionList({ initial, categories, uncategorizedCount = 0 }:
                 : <><Pin className="size-3.5" /> 固定費にする</>
               }
             </button>
-            <div className="h-px bg-white/5" />
+            <div className="h-px bg-[var(--kai-overlay-weak)]" />
             <button
               onClick={() => { setActionMenuId(null); setDeletingTx(menuTx) }}
               className="flex w-full items-center gap-2 px-4 py-3 text-[14px] text-[#fb7185] transition-colors hover:bg-[#fb7185]/10"
@@ -461,7 +461,7 @@ export function TransactionList({ initial, categories, uncategorizedCount = 0 }:
           <div className="flex gap-2">
             <button
               onClick={exitSelectMode}
-              className="rounded-[8px] px-3 py-1.5 text-[12px] text-[#8b8ba0] hover:bg-white/5"
+              className="rounded-[8px] px-3 py-1.5 text-[12px] text-[var(--kai-text3)] hover:bg-[var(--kai-overlay-weak)]"
             >
               キャンセル
             </button>
@@ -505,7 +505,7 @@ export function TransactionList({ initial, categories, uncategorizedCount = 0 }:
           )}
           <button
             onClick={() => selectMode ? exitSelectMode() : setSelectMode(true)}
-            className="flex items-center gap-1.5 rounded-[10px] border border-white/10 px-3 py-2 text-[12px] text-[#8b8ba0] transition-colors hover:bg-white/5 hover:text-[#f0f0f5]"
+            className="flex items-center gap-1.5 rounded-[10px] border border-[var(--kai-border2)] px-3 py-2 text-[12px] text-[var(--kai-text3)] transition-colors hover:bg-[var(--kai-overlay-weak)] hover:text-[var(--kai-text1)]"
           >
             <CheckSquare className="size-3.5" />
             {selectMode ? 'キャンセル' : '選択'}
@@ -527,12 +527,12 @@ export function TransactionList({ initial, categories, uncategorizedCount = 0 }:
           return (
             <div key={date} className="mb-3.5 reveal-up" style={{ animationDelay: `${gi * 50}ms` }}>
               <div className="flex items-center justify-between px-1 py-2">
-                <p className="text-[12px] font-bold tracking-[0.04em] text-[#8b8ba0]">
+                <p className="text-[12px] font-bold tracking-[0.04em] text-[var(--kai-text3)]">
                   {formatDateLabel(date)}
                 </p>
                 <p
                   className="mono text-[12px] font-semibold"
-                  style={{ color: dayTotal >= 0 ? '#4ade80' : '#8b8ba0' }}
+                  style={{ color: dayTotal >= 0 ? '#4ade80' : KAI.text3 }}
                 >
                   {dayTotal >= 0 ? '+' : ''}¥{Math.abs(dayTotal).toLocaleString()}
                 </p>
@@ -558,14 +558,14 @@ export function TransactionList({ initial, categories, uncategorizedCount = 0 }:
                         <div className="shrink-0 text-[#fb7185]">
                           {isSelected
                             ? <CheckSquare className="size-5" />
-                            : <Square className="size-5 text-[#5e5e72]" />
+                            : <Square className="size-5 text-[var(--kai-text4)]" />
                           }
                         </div>
                       )}
                       <div
                         className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px] text-[15px]"
                         style={{
-                          background: tx.amount >= 0 ? 'rgba(74,222,128,0.10)' : 'rgba(255,255,255,0.04)',
+                          background: tx.amount >= 0 ? 'rgba(74,222,128,0.10)' : KAI.overlayWeak,
                           border: `1px solid ${tx.amount >= 0 ? 'rgba(74,222,128,0.25)' : KAI.border2}`,
                           color: tx.amount >= 0 ? '#4ade80' : color,
                         }}
@@ -576,8 +576,8 @@ export function TransactionList({ initial, categories, uncategorizedCount = 0 }:
                         }
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-[14px] font-medium text-[#f0f0f5]">{tx.payee}</p>
-                        <p className="mono mt-0.5 text-[12px] text-[#8b8ba0]">
+                        <p className="truncate text-[14px] font-medium text-[var(--kai-text1)]">{tx.payee}</p>
+                        <p className="mono mt-0.5 text-[12px] text-[var(--kai-text3)]">
                           {categoryLabel(tx)}
                           {tx.source === 'csv' && (
                             <span className="ml-1.5 rounded bg-[#a78bfa]/10 px-1 py-px text-[10px] text-[#a78bfa]">CSV</span>
@@ -608,7 +608,7 @@ export function TransactionList({ initial, categories, uncategorizedCount = 0 }:
                               setMenuTx(tx)
                               setActionMenuId(tx.id)
                             }}
-                            className="flex h-9 w-9 items-center justify-center rounded-full text-[#5e5e72] transition-colors hover:bg-white/5 hover:text-[#8b8ba0]"
+                            className="flex h-9 w-9 items-center justify-center rounded-full text-[var(--kai-text4)] transition-colors hover:bg-[var(--kai-overlay-weak)] hover:text-[var(--kai-text3)]"
                             aria-label="アクション"
                           >
                             ⋯

@@ -175,7 +175,7 @@ export function KaiSystemBrand({ size = 'sm' }: KaiSystemBrandProps) {
             width: av,
             height: av,
             borderRadius: 11,
-            background: '#0c0a14',
+            background: KAI.bg,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -184,7 +184,7 @@ export function KaiSystemBrand({ size = 'sm' }: KaiSystemBrandProps) {
           }}>
             <div style={{
               position: 'absolute', top: 0, left: 0, right: 0, height: '42%',
-              background: 'linear-gradient(180deg, rgba(255,255,255,.07), transparent)',
+              background: 'linear-gradient(180deg, var(--kai-overlay-border), transparent)',
             }} />
             <KaiLogo size={Math.round(av * 0.46)} gradientId={`c-brand-${size}`} />
             <span aria-hidden style={{ position: 'absolute', top: 3, left: 3, width: 4, height: 4, borderTop: `1px solid ${KAI.coral}99`, borderLeft: `1px solid ${KAI.coral}99` }} />
@@ -194,7 +194,7 @@ export function KaiSystemBrand({ size = 'sm' }: KaiSystemBrandProps) {
         <span style={{
           position: 'absolute', top: -2, right: -2,
           width: 9, height: 9, borderRadius: '50%',
-          background: '#4ade80', border: '2px solid #0c0a14',
+          background: '#4ade80', border: `2px solid ${KAI.bg}`,
           boxShadow: '0 0 6px rgba(74,222,128,.7)',
           animation: 'kai-pulse-mint 2.4s ease-in-out infinite',
           display: 'block',
@@ -202,23 +202,23 @@ export function KaiSystemBrand({ size = 'sm' }: KaiSystemBrandProps) {
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-          <span style={{ fontSize: titleSize, fontWeight: 700, color: '#f0f0f5', letterSpacing: '-.02em', lineHeight: 1 }}>kai</span>
+          <span style={{ fontSize: titleSize, fontWeight: 700, color: KAI.text1, letterSpacing: '-.02em', lineHeight: 1 }}>kai</span>
           <span style={{
             fontSize: 8,
             fontFamily: 'var(--font-jetbrains), JetBrains Mono, monospace',
-            color: '#8b8ba0',
+            color: KAI.text3,
             fontWeight: 700,
             letterSpacing: '.14em',
             padding: '1px 5px',
-            background: 'rgba(255,255,255,.04)',
-            border: '1px solid rgba(255,255,255,.10)',
+            background: KAI.overlayWeak,
+            border: `1px solid ${KAI.border2}`,
             borderRadius: 4,
           }}>v2.4</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 9, fontFamily: 'var(--font-jetbrains), JetBrains Mono, monospace', letterSpacing: '.14em', fontWeight: 700, marginTop: 2 }}>
           <span style={{ color: KAI.coral }}>家計簿管理</span>
-          <span style={{ color: '#3e3e55' }}>/</span>
-          <span style={{ color: '#8b8ba0' }}>HH-072</span>
+          <span style={{ color: KAI.text5 }}>/</span>
+          <span style={{ color: KAI.text3 }}>HH-072</span>
         </div>
       </div>
     </div>
@@ -244,7 +244,7 @@ export function Ring({
   size = 160,
   stroke = 14,
   color = KAI.coral,
-  track = 'rgba(255,255,255,.07)',
+  track = KAI.overlayBorder,
   delayMs = 200,
 }: RingProps) {
   const r = (size - stroke) / 2
@@ -316,8 +316,8 @@ export function PhoneShell({
         background: bg,
         borderRadius: radius,
         overflow: 'hidden',
-        border: '1px solid rgba(255,255,255,.10)',
-        boxShadow: '0 20px 60px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.04)',
+        border: `1px solid ${KAI.border2}`,
+        boxShadow: `0 20px 60px rgba(0,0,0,.45), inset 0 0 0 1px ${KAI.overlayWeak}`,
         position: 'relative',
         display: 'flex',
         flexDirection: 'column',

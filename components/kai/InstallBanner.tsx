@@ -95,7 +95,7 @@ export function InstallBanner() {
           display: 'flex',
           alignItems: 'center',
           gap: 12,
-          background: 'rgba(14,12,22,0.97)',
+          background: 'var(--kai-bg-card)',
           border: '1px solid rgba(251,148,119,0.35)',
           borderRadius: 16,
           padding: '12px 16px',
@@ -110,17 +110,17 @@ export function InstallBanner() {
           style={{ borderRadius: 10, flexShrink: 0 }} />
 
         <div style={{ flex: 1, minWidth: 0 }}>
-          <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#f0f0f5' }}>
+          <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: 'var(--kai-text1)' }}>
             kai をインストール
           </p>
-          <p style={{ margin: 0, fontSize: 11, color: '#8b8ba0', marginTop: 2 }}>
+          <p style={{ margin: 0, fontSize: 11, color: 'var(--kai-text3)', marginTop: 2 }}>
             ホーム画面に追加して素早くアクセス
           </p>
         </div>
 
         <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
           <button onClick={dismiss}
-            style={{ background: 'transparent', border: 'none', color: '#6b6b80',
+            style={{ background: 'transparent', border: 'none', color: 'var(--kai-text4)',
               fontSize: 12, cursor: 'pointer', padding: '6px 8px' }}>
             後で
           </button>
@@ -146,16 +146,16 @@ export function InstallBanner() {
           <div
             onClick={e => e.stopPropagation()}
             style={{
-              background: '#16141f', border: '1px solid rgba(255,255,255,0.1)',
+              background: 'var(--kai-bg-card)', border: '1px solid var(--kai-border2)',
               borderRadius: 20, padding: '24px 20px', width: '100%', maxWidth: 400,
             }}
           >
-            <p style={{ margin: '0 0 16px', fontSize: 15, fontWeight: 700, color: '#f0f0f5' }}>
+            <p style={{ margin: '0 0 16px', fontSize: 15, fontWeight: 700, color: 'var(--kai-text1)' }}>
               ホーム画面へ追加する方法
             </p>
             <ol style={{ margin: 0, padding: '0 0 0 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
               {(guideText[platform] ?? guideText.other).map((step, i) => (
-                <li key={i} style={{ fontSize: 14, color: '#c4c4d0', lineHeight: 1.5 }}>{step}</li>
+                <li key={i} style={{ fontSize: 14, color: 'var(--kai-text2)', lineHeight: 1.5 }}>{step}</li>
               ))}
             </ol>
             <button

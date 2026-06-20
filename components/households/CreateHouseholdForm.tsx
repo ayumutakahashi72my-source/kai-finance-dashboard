@@ -27,7 +27,7 @@ export function CreateHouseholdForm() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a10] flex items-center justify-center px-4">
+    <div className="min-h-screen bg-[var(--kai-bg)] flex items-center justify-center px-4">
       <div aria-hidden className="pointer-events-none fixed inset-0 overflow-hidden">
         <div className="absolute -top-40 left-1/2 h-[600px] w-[600px] -translate-x-1/2 rounded-full bg-[#fb9477]/5 blur-[120px]" />
         <div className="absolute bottom-0 right-0 h-[400px] w-[400px] rounded-full bg-[#a78bfa]/5 blur-[100px]" />
@@ -38,18 +38,18 @@ export function CreateHouseholdForm() {
           <span className="bg-gradient-to-r from-[#fb9477] to-[#22d3ee] bg-clip-text font-mono text-4xl font-bold tracking-tight text-transparent">
             KAI
           </span>
-          <p className="mt-2 text-sm text-[#8b8ba0]">家計簿管理システム</p>
+          <p className="mt-2 text-sm text-[var(--kai-text3)]">家計簿管理システム</p>
         </div>
 
-        <div className="rounded-[18px] border border-white/10 bg-[rgba(20,22,32,0.66)] p-8 shadow-2xl backdrop-blur-[24px]">
-          <h1 className="mb-1 text-lg font-semibold text-[#f0f0f5]">世帯を作成</h1>
-          <p className="mb-6 text-sm text-[#8b8ba0]">
+        <div className="rounded-[18px] border border-[var(--kai-border2)] bg-[var(--kai-bg-panel)] p-8 shadow-2xl backdrop-blur-[24px]">
+          <h1 className="mb-1 text-lg font-semibold text-[var(--kai-text1)]">世帯を作成</h1>
+          <p className="mb-6 text-sm text-[var(--kai-text3)]">
             家計管理をはじめるために、世帯名を設定してください。
           </p>
 
           <form onSubmit={handleSubmit} className="grid gap-4">
             <div className="grid gap-1.5">
-              <Label htmlFor="name" className="text-[#8b8ba0] text-xs">
+              <Label htmlFor="name" className="text-[var(--kai-text3)] text-xs">
                 世帯名
               </Label>
               <Input
@@ -61,7 +61,7 @@ export function CreateHouseholdForm() {
                 onChange={(e) => setName(e.target.value)}
                 required
                 autoFocus
-                className="bg-[#0a0a10] border-white/10 text-[#f0f0f5] placeholder:text-[#5e5e72] focus-visible:border-[#fb9477]/50 focus-visible:ring-[#fb9477]/20"
+                className="bg-[var(--kai-bg)] border-[var(--kai-border2)] text-[var(--kai-text1)] placeholder:text-[var(--kai-text4)] focus-visible:border-[#fb9477]/50 focus-visible:ring-[#fb9477]/20"
               />
             </div>
 

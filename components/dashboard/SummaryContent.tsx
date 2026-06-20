@@ -139,7 +139,7 @@ export function SummaryContent() {
           <div
             className="flex items-center justify-between rounded-[14px] px-4 py-3"
             style={{
-              background: 'linear-gradient(135deg,rgba(167,139,250,0.10),rgba(20,22,32,0.66))',
+              background: `linear-gradient(135deg,rgba(167,139,250,0.10),${KAI.bgPanel})`,
               backdropFilter: 'blur(24px)',
               border: '1px solid rgba(167,139,250,0.22)',
             }}

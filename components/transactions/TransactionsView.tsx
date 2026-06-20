@@ -317,7 +317,7 @@ export function TransactionsView({ month, initialView = 'list' }: Props) {
           onClick={() => setShowFilters((v) => !v)}
           style={{
             display: 'flex', alignItems: 'center', gap: 8,
-            background: showFilters ? 'rgba(255,255,255,.08)' : 'rgba(255,255,255,.05)',
+            background: showFilters ? KAI.border2 : KAI.overlayWeak,
             border: `1px solid ${showFilters ? KAI.borderStrong : KAI.border}`,
             borderRadius: 12, padding: '9px 13px', cursor: 'pointer',
           }}
@@ -367,7 +367,7 @@ export function TransactionsView({ month, initialView = 'list' }: Props) {
                 style={{
                   borderRadius: 20, padding: '5px 12px', fontSize: 11, fontWeight: 600,
                   whiteSpace: 'nowrap', cursor: 'pointer', fontFamily: 'inherit',
-                  background: isActive ? `${chip.color}1c` : 'rgba(255,255,255,.04)',
+                  background: isActive ? `${chip.color}1c` : KAI.overlayWeak,
                   border: `1px solid ${isActive ? `${chip.color}66` : KAI.border}`,
                   color: isActive ? chip.color : KAI.text3,
                 }}

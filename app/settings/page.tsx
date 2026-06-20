@@ -271,16 +271,16 @@ export default async function SettingsPage() {
           </Panel>
           <div style={{ marginTop: 8 }}>
             <Panel>
-              <Row icon={<TimerIcon />} iconBg="rgba(255,255,255,.05)" title="通貨・週開始日" value="¥ JPY · 月" />
+              <Row icon={<TimerIcon />} iconBg="var(--kai-overlay-weak)" title="通貨・週開始日" value="¥ JPY · 月" />
             </Panel>
           </div>
 
           {/* ── データ・その他 ── */}
           <GrpLabel>データ・その他</GrpLabel>
           <Panel>
-            <Row icon={<DownloadIcon />} iconBg="rgba(255,255,255,.05)" title="データをエクスポート" subtitle="CSV / JSON" href="/legal/data" />
+            <Row icon={<DownloadIcon />} iconBg="var(--kai-overlay-weak)" title="データをエクスポート" subtitle="CSV / JSON" href="/legal/data" />
             <RowDivider />
-            <Row icon={<InfoIcon />} iconBg="rgba(255,255,255,.05)" title="プライバシー・データ取扱い" href="/legal/privacy" />
+            <Row icon={<InfoIcon />} iconBg="var(--kai-overlay-weak)" title="プライバシー・データ取扱い" href="/legal/privacy" />
           </Panel>
 
           {/* ── メンテナンス（管理者のみ） ── */}

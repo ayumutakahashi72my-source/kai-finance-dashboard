@@ -43,7 +43,7 @@ export function CleanupCardTransfersButton() {
         <p style={{ color: '#4ade80', fontSize: 14, fontWeight: 600 }}>
           ✓ {deletedCount} 件のカード引き落とし重複データを削除しました
         </p>
-        <p style={{ color: '#5e5e72', fontSize: 12, marginTop: 4 }}>
+        <p style={{ color: 'var(--kai-text4)', fontSize: 12, marginTop: 4 }}>
           CSVを再インポートすると正しいデータが取り込まれます
         </p>
       </div>
@@ -60,10 +60,10 @@ export function CleanupCardTransfersButton() {
           <Trash2 className="size-[18px]" style={{ color: '#fb9477' }} />
         </div>
         <div className="flex-1">
-          <p className="text-[14px] font-medium" style={{ color: '#e8e8f0' }}>
+          <p className="text-[14px] font-medium" style={{ color: 'var(--kai-text1)' }}>
             カード引き落とし重複データを削除
           </p>
-          <p className="mt-0.5 text-[12px]" style={{ color: '#5e5e72' }}>
+          <p className="mt-0.5 text-[12px]" style={{ color: 'var(--kai-text4)' }}>
             振替フラグの読み取りバグにより、カード引き落とし行が二重計上されている場合に削除します
           </p>
 
@@ -82,7 +82,7 @@ export function CleanupCardTransfersButton() {
           )}
 
           {phase === 'loading' && (
-            <p className="mt-3 text-[12px]" style={{ color: '#5e5e72' }}>確認中...</p>
+            <p className="mt-3 text-[12px]" style={{ color: 'var(--kai-text4)' }}>確認中...</p>
           )}
 
           {phase === 'confirm' && (
@@ -98,7 +98,7 @@ export function CleanupCardTransfersButton() {
                     style={{ background: 'rgba(251,148,119,.08)', border: '1px solid rgba(251,148,119,.15)' }}
                   >
                     <AlertTriangle className="size-4 shrink-0" style={{ color: '#fb9477' }} />
-                    <p className="text-[13px]" style={{ color: '#e8e8f0' }}>
+                    <p className="text-[13px]" style={{ color: 'var(--kai-text1)' }}>
                       <strong>{previewCount} 件</strong>のカード引き落とし取引が見つかりました。削除しますか？
                     </p>
                   </div>
@@ -113,7 +113,7 @@ export function CleanupCardTransfersButton() {
                     <button
                       onClick={() => { setPhase('idle'); setPreviewCount(null) }}
                       className="rounded-lg px-4 py-1.5 text-[13px] font-medium transition-colors hover:opacity-80"
-                      style={{ background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.10)', color: '#8e8ea0' }}
+                      style={{ background: 'var(--kai-overlay-weak)', border: '1px solid var(--kai-border2)', color: 'var(--kai-text3)' }}
                     >
                       キャンセル
                     </button>

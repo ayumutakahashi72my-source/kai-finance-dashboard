@@ -75,15 +75,15 @@ export default function AdminMembersPage() {
   })
 
   const panel: React.CSSProperties = {
-    background: 'rgba(20,22,32,0.75)',
+    background: KAI.bgPanel,
     backdropFilter: 'blur(24px) saturate(160%)',
-    border: '1px solid rgba(255,255,255,0.08)',
+    border: `1px solid ${KAI.border}`,
     borderRadius: 18,
     overflow: 'hidden',
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0c0a14', color: KAI.text1 }}>
+    <div style={{ minHeight: '100vh', background: KAI.bg, color: KAI.text1 }}>
       <div style={{ maxWidth: 640, margin: '0 auto', padding: '32px 20px 80px' }}>
 
         {/* ヘッダー */}
@@ -126,8 +126,8 @@ export default function AdminMembersPage() {
 
         {/* 招待セクション */}
         <div style={{
-          background: 'rgba(20,22,32,0.75)', backdropFilter: 'blur(24px)',
-          border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14,
+          background: KAI.bgPanel, backdropFilter: 'blur(24px)',
+          border: `1px solid ${KAI.border}`, borderRadius: 14,
           padding: '16px 18px', marginBottom: 20,
         }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
@@ -155,7 +155,7 @@ export default function AdminMembersPage() {
             <div style={{ marginTop: 12 }}>
               <div style={{
                 display: 'flex', alignItems: 'center', gap: 8,
-                background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+                background: KAI.overlayWeak, border: `1px solid ${KAI.border}`,
                 borderRadius: 9, padding: '8px 12px',
               }}>
                 <p style={{ fontSize: 11, color: KAI.text3, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: 'monospace' }}>
@@ -164,8 +164,8 @@ export default function AdminMembersPage() {
                 <button
                   onClick={handleCopy}
                   style={{
-                    padding: '4px 10px', borderRadius: 7, border: `1px solid ${copied ? KAI.success + '44' : 'rgba(255,255,255,0.12)'}`,
-                    background: copied ? `${KAI.success}10` : 'rgba(255,255,255,0.06)',
+                    padding: '4px 10px', borderRadius: 7, border: `1px solid ${copied ? KAI.success + '44' : KAI.borderStrong}`,
+                    background: copied ? `${KAI.success}10` : KAI.overlayWeak,
                     color: copied ? KAI.success : KAI.text3, fontSize: 11, fontWeight: 600,
                     cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0,
                   }}
@@ -185,7 +185,7 @@ export default function AdminMembersPage() {
         {isLoading ? (
           <div style={{ ...panel, padding: '16px' }}>
             {[0, 1].map(i => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: i === 0 ? '1px solid rgba(255,255,255,.05)' : 'none' }}>
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: i === 0 ? `1px solid ${KAI.border}` : 'none' }}>
                 <Skeleton variant="block" className="!h-9 !w-9 !rounded-[10px] shrink-0"/>
                 <div style={{ flex: 1 }}>
                   <Skeleton variant="line-md" className="mb-1.5"/>
@@ -206,15 +206,15 @@ export default function AdminMembersPage() {
               <div key={m.user_id} style={{
                 display: 'flex', alignItems: 'center', gap: 12,
                 padding: '14px 18px',
-                borderBottom: i < (members.length - 1) ? '1px solid rgba(255,255,255,.05)' : 'none',
+                borderBottom: i < (members.length - 1) ? `1px solid ${KAI.border}` : 'none',
                 opacity: pendingId === m.user_id ? 0.6 : 1,
                 transition: 'opacity .2s',
               }}>
                 {/* アバター */}
                 <div style={{
                   width: 36, height: 36, borderRadius: 10, flexShrink: 0,
-                  background: m.is_admin ? `${KAI.coral}18` : 'rgba(255,255,255,.05)',
-                  border: `1px solid ${m.is_admin ? KAI.coral + '30' : 'rgba(255,255,255,.08)'}`,
+                  background: m.is_admin ? `${KAI.coral}18` : KAI.overlayWeak,
+                  border: `1px solid ${m.is_admin ? KAI.coral + '30' : KAI.border}`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 14, fontWeight: 700,
                   color: m.is_admin ? KAI.coral : KAI.text3,
@@ -270,7 +270,7 @@ export default function AdminMembersPage() {
         )}
 
         <p style={{ fontSize: 11, color: KAI.text4, marginTop: 16, paddingLeft: 4, lineHeight: 1.7 }}>
-          最初の管理者はデータベースで直接 <code style={{ ...MONO, fontSize: 10, background: 'rgba(255,255,255,.06)', padding: '1px 5px', borderRadius: 4 }}>is_admin = true</code> に設定してください。
+          最初の管理者はデータベースで直接 <code style={{ ...MONO, fontSize: 10, background: KAI.overlayWeak, padding: '1px 5px', borderRadius: 4 }}>is_admin = true</code> に設定してください。
         </p>
       </div>
     </div>

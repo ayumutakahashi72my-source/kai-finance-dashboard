@@ -21,7 +21,10 @@ export default function SignInWithGoogle() {
     <button
       onClick={handleSignIn}
       disabled={loading}
-      className="flex min-h-[44px] w-full items-center justify-center gap-3 rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-medium text-[#f0f0f5] transition-all hover:border-[#fb9477]/40 hover:bg-[#fb9477]/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#fb9477] disabled:cursor-not-allowed disabled:opacity-50"
+      className="flex min-h-[44px] w-full items-center justify-center gap-3 rounded-xl border px-5 py-3 text-sm font-medium transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#fb9477] disabled:cursor-not-allowed disabled:opacity-50"
+      style={{ borderColor: 'var(--kai-border2)', background: 'var(--kai-overlay-weak)', color: 'var(--kai-text1)' }}
+      onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(251,148,119,.4)'; e.currentTarget.style.background = 'rgba(251,148,119,.1)' }}
+      onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--kai-border2)'; e.currentTarget.style.background = 'var(--kai-overlay-weak)' }}
     >
       {loading ? (
         <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#fb9477] border-t-transparent" />

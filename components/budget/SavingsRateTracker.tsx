@@ -40,7 +40,7 @@ function RateBar({ data }: { data: MonthData[] }) {
   return (
     <svg width={width} height={CHART_H} style={{ overflow: 'visible', display: 'block' }}>
       {/* baseline */}
-      <line x1={0} y1={baseline} x2={width} y2={baseline} stroke="rgba(255,255,255,.08)" strokeWidth={1}/>
+      <line x1={0} y1={baseline} x2={width} y2={baseline} stroke={KAI.border2} strokeWidth={1}/>
       {data.map((d, i) => {
         const rate = d.savings_rate ?? 0
         const { h, y, isPos } = barProps(rate)
@@ -96,8 +96,8 @@ export function SavingsRateTracker({ currentMonth }: { currentMonth: string }) {
   return (
     <section
       style={{
-        background: 'rgba(255,255,255,.02)',
-        border: '1px solid rgba(255,255,255,.06)',
+        background: KAI.overlayWeak,
+        border: `1px solid ${KAI.border}`,
         borderRadius: 18,
         padding: '14px 18px',
         animation: 'kai-rise .5s .35s ease-out both',

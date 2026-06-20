@@ -69,13 +69,13 @@ function EditDialog({
 
   return (
     <Dialog open onOpenChange={(o) => { if (!o) onClose() }}>
-      <DialogContent className="bg-[#14161f] border-white/10 text-[#f0f0f5] sm:max-w-md">
+      <DialogContent className="bg-[var(--kai-bg-card)] border-[var(--kai-border2)] text-[var(--kai-text1)] sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-[#f0f0f5]">取引を編集</DialogTitle>
+          <DialogTitle className="text-[var(--kai-text1)]">取引を編集</DialogTitle>
         </DialogHeader>
         <div className="grid gap-4 pt-2">
           <div className="grid gap-1.5">
-            <Label className="text-[#8b8ba0] text-xs">種別</Label>
+            <Label className="text-[var(--kai-text3)] text-xs">種別</Label>
             <div className="grid grid-cols-2 gap-2">
               {[false, true].map((inc) => (
                 <button key={String(inc)} type="button" onClick={() => setIsIncome(inc)}
@@ -83,30 +83,30 @@ function EditDialog({
                     isIncome === inc
                       ? inc ? 'border-[#4ade80]/40 bg-[#4ade80]/10 text-[#4ade80]'
                              : 'border-[#fb7185]/40 bg-[#fb7185]/10 text-[#fb7185]'
-                      : 'border-white/10 text-[#8b8ba0] hover:border-white/20'
+                      : 'border-[var(--kai-border2)] text-[var(--kai-text3)] hover:border-[var(--kai-border-strong)]'
                   }`}>{inc ? '収入' : '支出'}</button>
               ))}
             </div>
           </div>
           <div className="grid gap-1.5">
-            <Label className="text-[#8b8ba0] text-xs">日付</Label>
+            <Label className="text-[var(--kai-text3)] text-xs">日付</Label>
             <Input type="date" value={occurredOn} onChange={(e) => setOccurredOn(e.target.value)}
-              className="bg-[#0a0a10] border-white/10 text-[#f0f0f5] focus-visible:border-[#fb9477]/50 focus-visible:ring-[#fb9477]/20"/>
+              className="bg-[var(--kai-bg)] border-[var(--kai-border2)] text-[var(--kai-text1)] focus-visible:border-[#fb9477]/50 focus-visible:ring-[#fb9477]/20"/>
           </div>
           <div className="grid gap-1.5">
-            <Label className="text-[#8b8ba0] text-xs">金額（円）</Label>
+            <Label className="text-[var(--kai-text3)] text-xs">金額（円）</Label>
             <Input type="number" min="1" value={amount} onChange={(e) => setAmount(e.target.value)}
-              className="bg-[#0a0a10] border-white/10 text-[#f0f0f5] focus-visible:border-[#fb9477]/50 focus-visible:ring-[#fb9477]/20"/>
+              className="bg-[var(--kai-bg)] border-[var(--kai-border2)] text-[var(--kai-text1)] focus-visible:border-[#fb9477]/50 focus-visible:ring-[#fb9477]/20"/>
           </div>
           <div className="grid gap-1.5">
-            <Label className="text-[#8b8ba0] text-xs">カテゴリ</Label>
+            <Label className="text-[var(--kai-text3)] text-xs">カテゴリ</Label>
             <Select value={categoryId} onValueChange={(v) => setCategoryId(v ?? '')}>
-              <SelectTrigger className="w-full bg-[#0a0a10] border-white/10 text-[#f0f0f5]">
+              <SelectTrigger className="w-full bg-[var(--kai-bg)] border-[var(--kai-border2)] text-[var(--kai-text1)]">
                 <SelectValue placeholder="選択なし"/>
               </SelectTrigger>
-              <SelectContent className="bg-[#14161f] border-white/10 text-[#f0f0f5]">
+              <SelectContent className="bg-[var(--kai-bg-card)] border-[var(--kai-border2)] text-[var(--kai-text1)]">
                 {categories.map((cat) => (
-                  <SelectItem key={cat.id} value={cat.id} className="focus:bg-white/5">
+                  <SelectItem key={cat.id} value={cat.id} className="focus:bg-[var(--kai-overlay-weak)]">
                     <span className="flex items-center gap-2">
                       <CategoryIcon name={cat.icon} size={13} />{cat.name}
                     </span>
@@ -116,14 +116,14 @@ function EditDialog({
             </Select>
           </div>
           <div className="grid gap-1.5">
-            <Label className="text-[#8b8ba0] text-xs">支払先</Label>
+            <Label className="text-[var(--kai-text3)] text-xs">支払先</Label>
             <Input type="text" maxLength={100} value={payee} onChange={(e) => setPayee(e.target.value)}
-              className="bg-[#0a0a10] border-white/10 text-[#f0f0f5] focus-visible:border-[#fb9477]/50 focus-visible:ring-[#fb9477]/20"/>
+              className="bg-[var(--kai-bg)] border-[var(--kai-border2)] text-[var(--kai-text1)] focus-visible:border-[#fb9477]/50 focus-visible:ring-[#fb9477]/20"/>
           </div>
           {error && <p className="rounded-lg border border-[#fb7185]/20 bg-[#fb7185]/5 px-3 py-2 text-xs text-[#fb7185]">{error}</p>}
         </div>
-        <DialogFooter className="border-white/10 bg-transparent -mx-4 -mb-4 px-4 pb-4 pt-2 gap-2">
-          <Button variant="ghost" onClick={onClose} className="text-[#8b8ba0] hover:text-[#f0f0f5] hover:bg-white/5">キャンセル</Button>
+        <DialogFooter className="border-[var(--kai-border2)] bg-transparent -mx-4 -mb-4 px-4 pb-4 pt-2 gap-2">
+          <Button variant="ghost" onClick={onClose} className="text-[var(--kai-text3)] hover:text-[var(--kai-text1)] hover:bg-[var(--kai-overlay-weak)]">キャンセル</Button>
           <Button onClick={handleSave} disabled={saving} className="bg-[#fb9477] text-[#0a0a10] font-semibold hover:bg-[#fb9477]/90 disabled:opacity-50">
             {saving ? '保存中…' : '保存'}
           </Button>
@@ -152,15 +152,15 @@ function DeleteConfirmDialog({
 
   return (
     <Dialog open onOpenChange={(o) => { if (!o) onClose() }}>
-      <DialogContent className="bg-[#14161f] border-white/10 text-[#f0f0f5] sm:max-w-sm">
+      <DialogContent className="bg-[var(--kai-bg-card)] border-[var(--kai-border2)] text-[var(--kai-text1)] sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle className="text-[#f0f0f5]">取引を削除</DialogTitle>
+          <DialogTitle className="text-[var(--kai-text1)]">取引を削除</DialogTitle>
         </DialogHeader>
-        <p className="text-[14px] text-[#c4c4d0]">
+        <p className="text-[14px] text-[var(--kai-text2)]">
           「{tx.payee}」(¥{Math.abs(tx.amount).toLocaleString()}) を削除しますか？この操作は取り消せません。
         </p>
-        <DialogFooter className="border-white/10 bg-transparent -mx-4 -mb-4 px-4 pb-4 pt-2 gap-2">
-          <Button variant="ghost" onClick={onClose} className="text-[#8b8ba0] hover:text-[#f0f0f5] hover:bg-white/5">キャンセル</Button>
+        <DialogFooter className="border-[var(--kai-border2)] bg-transparent -mx-4 -mb-4 px-4 pb-4 pt-2 gap-2">
+          <Button variant="ghost" onClick={onClose} className="text-[var(--kai-text3)] hover:text-[var(--kai-text1)] hover:bg-[var(--kai-overlay-weak)]">キャンセル</Button>
           <Button onClick={handleDelete} disabled={deleting}
             className="bg-[#fb7185]/20 text-[#fb7185] border border-[#fb7185]/30 font-semibold hover:bg-[#fb7185]/30 disabled:opacity-50">
             {deleting ? '削除中…' : '削除する'}
@@ -226,8 +226,8 @@ export function CategoryTransactionDrawer({
         className="fixed bottom-0 left-0 right-0 z-50 flex flex-col"
         style={{
           maxHeight: '82dvh',
-          background: 'rgba(14,12,22,0.98)',
-          border: '1px solid rgba(255,255,255,0.10)',
+          background: KAI.overlayBg,
+          border: `1px solid ${KAI.border2}`,
           borderBottom: 'none',
           borderRadius: '20px 20px 0 0',
           boxShadow: '0 -8px 40px rgba(0,0,0,0.6)',
@@ -236,14 +236,14 @@ export function CategoryTransactionDrawer({
       >
         {/* ハンドル */}
         <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 4px' }}>
-          <div style={{ width: 36, height: 4, borderRadius: 99, background: 'rgba(255,255,255,0.15)' }}/>
+          <div style={{ width: 36, height: 4, borderRadius: 99, background: KAI.borderStrong }}/>
         </div>
 
         {/* ヘッダー */}
         <div style={{
           display: 'flex', alignItems: 'center', gap: 10,
           padding: '8px 18px 12px',
-          borderBottom: '1px solid rgba(255,255,255,0.07)',
+          borderBottom: `1px solid ${KAI.overlayBorder}`,
         }}>
           <div style={{
             width: 28, height: 28, borderRadius: 8, flexShrink: 0,
@@ -262,7 +262,7 @@ export function CategoryTransactionDrawer({
             onClick={onClose}
             style={{
               width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
-              background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)',
+              background: KAI.border, border: `1px solid ${KAI.border2}`,
               color: KAI.text3, display: 'flex', alignItems: 'center', justifyContent: 'center',
               cursor: 'pointer',
             }}
@@ -296,8 +296,8 @@ export function CategoryTransactionDrawer({
 
                 {/* 取引カード */}
                 <div style={{
-                  background: 'rgba(20,22,32,0.66)',
-                  border: '1px solid rgba(255,255,255,0.08)',
+                  background: KAI.bgPanel,
+                  border: `1px solid ${KAI.overlayBorder}`,
                   borderRadius: 14, overflow: 'hidden',
                 }}>
                   {txs.map((tx, i) => {
@@ -309,14 +309,14 @@ export function CategoryTransactionDrawer({
                         style={{
                           display: 'flex', alignItems: 'center', gap: 10,
                           padding: '11px 12px', position: 'relative',
-                          borderBottom: i < txs.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none',
+                          borderBottom: i < txs.length - 1 ? `1px solid ${KAI.border}` : 'none',
                         }}
                       >
                         {/* アイコン */}
                         <div style={{
                           width: 34, height: 34, borderRadius: 10, flexShrink: 0,
-                          background: tx.amount >= 0 ? 'rgba(74,222,128,0.10)' : 'rgba(255,255,255,0.04)',
-                          border: `1px solid ${tx.amount >= 0 ? 'rgba(74,222,128,0.25)' : 'rgba(255,255,255,0.10)'}`,
+                          background: tx.amount >= 0 ? 'rgba(74,222,128,0.10)' : KAI.overlayWeak,
+                          border: `1px solid ${tx.amount >= 0 ? 'rgba(74,222,128,0.25)' : KAI.border2}`,
                           color: tx.amount >= 0 ? '#4ade80' : color,
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                         }}>
@@ -365,13 +365,13 @@ export function CategoryTransactionDrawer({
                               <div style={{
                                 position: 'absolute', right: 0, top: 34, zIndex: 20,
                                 minWidth: 110, borderRadius: 12, overflow: 'hidden',
-                                background: 'rgba(20,22,32,0.98)',
-                                border: '1px solid rgba(255,255,255,0.12)',
+                                background: KAI.overlayBg,
+                                border: `1px solid ${KAI.borderStrong}`,
                                 boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
                               }}>
                                 <button
                                   onClick={() => { setMenuId(null); setEditingTx(tx) }}
-                                  style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '10px 14px', fontSize: 13, color: '#c4c4d0', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+                                  style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '10px 14px', fontSize: 13, color: KAI.text2, background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
                                 >
                                   <Pencil size={13}/> 編集
                                 </button>

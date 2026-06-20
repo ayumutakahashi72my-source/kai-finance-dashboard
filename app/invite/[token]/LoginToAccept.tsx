@@ -27,9 +27,9 @@ export default function LoginToAccept({ token }: Props) {
 
   return (
     <div style={{
-      background: 'rgba(20,22,32,0.75)',
+      background: KAI.overlayBg,
       backdropFilter: 'blur(24px) saturate(160%)',
-      border: '1px solid rgba(255,255,255,0.08)',
+      border: `1px solid ${KAI.border}`,
       borderRadius: 20,
       padding: '36px 32px',
       textAlign: 'center',
@@ -45,8 +45,8 @@ export default function LoginToAccept({ token }: Props) {
         <LogIn size={24} strokeWidth={2}/>
       </div>
 
-      <p style={{ fontSize: 20, fontWeight: 800, color: '#f0f0f5', marginBottom: 8 }}>KAI 家計簿</p>
-      <p style={{ fontSize: 13, color: '#8b8ba0', marginBottom: 28, lineHeight: 1.7 }}>
+      <p style={{ fontSize: 20, fontWeight: 800, color: KAI.text1, marginBottom: 8 }}>KAI 家計簿</p>
+      <p style={{ fontSize: 13, color: KAI.text3, marginBottom: 28, lineHeight: 1.7 }}>
         家計簿への招待が届いています。<br/>
         Googleアカウントでログインして参加してください。
       </p>
@@ -56,9 +56,9 @@ export default function LoginToAccept({ token }: Props) {
         disabled={loading}
         style={{
           width: '100%', padding: '12px 0', borderRadius: 12,
-          border: '1px solid rgba(255,255,255,0.12)',
-          background: 'rgba(255,255,255,0.06)',
-          color: '#f0f0f5', fontSize: 14, fontWeight: 600,
+          border: `1px solid ${KAI.borderStrong}`,
+          background: KAI.overlayWeak,
+          color: KAI.text1, fontSize: 14, fontWeight: 600,
           cursor: loading ? 'not-allowed' : 'pointer',
           opacity: loading ? 0.6 : 1,
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,

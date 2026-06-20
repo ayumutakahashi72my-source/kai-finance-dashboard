@@ -21,7 +21,7 @@ export default function AdminAnalyticsPage() {
   })
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0c0a14', color: KAI.text1 }}>
+    <div style={{ minHeight: '100vh', background: KAI.bg, color: KAI.text1 }}>
       <div aria-hidden className="pointer-events-none fixed inset-0" style={{
         zIndex: 0,
         backgroundImage: `radial-gradient(ellipse 700px 500px at 18% -4%, rgba(167,139,250,.07), transparent 60%),
@@ -29,7 +29,7 @@ export default function AdminAnalyticsPage() {
       }} />
       <div aria-hidden className="pointer-events-none fixed inset-0" style={{
         zIndex: 1,
-        backgroundImage: `linear-gradient(rgba(255,255,255,.01) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.01) 1px,transparent 1px)`,
+        backgroundImage: `linear-gradient(${KAI.gridLine} 1px,transparent 1px),linear-gradient(90deg,${KAI.gridLine} 1px,transparent 1px)`,
         backgroundSize: '40px 40px',
       }} />
 
@@ -41,7 +41,7 @@ export default function AdminAnalyticsPage() {
           {/* Error */}
           {isError && (
             <div style={{
-              background: 'rgba(20,22,32,0.88)', border: '1px solid rgba(251,113,133,.25)',
+              background: KAI.bgPanelSolid, border: '1px solid rgba(251,113,133,.25)',
               borderRadius: 16, padding: '28px 24px', textAlign: 'center',
             }}>
               <p style={{ fontSize: 13, color: KAI.danger, fontWeight: 600, marginBottom: 8 }}>
@@ -53,7 +53,7 @@ export default function AdminAnalyticsPage() {
                 <p style={{ fontSize: 12, color: KAI.text4, lineHeight: 1.6 }}>
                   Supabase で <code style={{
                     fontFamily: 'var(--font-jetbrains), monospace',
-                    background: 'rgba(255,255,255,.06)', padding: '1px 5px', borderRadius: 4,
+                    background: KAI.overlayWeak, padding: '1px 5px', borderRadius: 4,
                   }}>is_admin = true</code> に設定してください
                 </p>
               )}

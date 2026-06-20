@@ -37,8 +37,8 @@ function FixedRow({
   const isPending   = pendingId === item.id
 
   const iconColor = item.dismissed ? KAI.text4 : isConfirmed ? KAI.green : KAI.violet
-  const iconBg    = item.dismissed ? 'rgba(255,255,255,.04)' : isConfirmed ? `${KAI.green}18` : `${KAI.violet}18`
-  const iconBorder = item.dismissed ? 'rgba(255,255,255,.08)' : isConfirmed ? `${KAI.green}30` : `${KAI.violet}30`
+  const iconBg    = item.dismissed ? KAI.overlayWeak : isConfirmed ? `${KAI.green}18` : `${KAI.violet}18`
+  const iconBorder = item.dismissed ? KAI.border2 : isConfirmed ? `${KAI.green}30` : `${KAI.violet}30`
 
   return (
     <div style={{
@@ -96,7 +96,7 @@ function FixedRow({
           onClick={() => onRestore(item.id)}
           style={{
             fontSize: 10, fontWeight: 600, padding: '4px 9px', borderRadius: 7,
-            background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.12)',
+            background: KAI.overlayWeak, border: `1px solid ${KAI.borderStrong}`,
             color: KAI.text3, cursor: isPending ? 'not-allowed' : 'pointer',
             fontFamily: 'inherit', whiteSpace: 'nowrap', flexShrink: 0,
           }}
@@ -205,14 +205,14 @@ export function FixedExpenseCard() {
       </div>
 
       <div style={{
-        background: 'rgba(255,255,255,.02)', border: '1px solid rgba(255,255,255,.06)',
+        background: KAI.overlayWeak, border: `1px solid ${KAI.border}`,
         borderRadius: 14, overflow: 'hidden',
       }}>
         {/* 説明バー */}
         <div style={{
           padding: '9px 14px',
           background: `${KAI.violet}0a`,
-          borderBottom: '1px solid rgba(255,255,255,.05)',
+          borderBottom: `1px solid ${KAI.border}`,
           display: 'flex', alignItems: 'center', gap: 8,
         }}>
           <Pin size={13} strokeWidth={2} style={{ color: KAI.violet, flexShrink: 0 }}/>
@@ -225,7 +225,7 @@ export function FixedExpenseCard() {
         {confirmed.map((item, i) => (
           <div
             key={item.id}
-            style={{ borderBottom: i < confirmed.length - 1 || active.length > 0 || dismissed.length > 0 ? '1px solid rgba(255,255,255,.04)' : 'none' }}
+            style={{ borderBottom: i < confirmed.length - 1 || active.length > 0 || dismissed.length > 0 ? `1px solid ${KAI.border}` : 'none' }}
           >
             <FixedRow
               item={item}
@@ -242,7 +242,7 @@ export function FixedExpenseCard() {
           active.map((item, i) => (
             <div
               key={item.id}
-              style={{ borderBottom: i < active.length - 1 || dismissed.length > 0 ? '1px solid rgba(255,255,255,.04)' : 'none' }}
+              style={{ borderBottom: i < active.length - 1 || dismissed.length > 0 ? `1px solid ${KAI.border}` : 'none' }}
             >
               <FixedRow
                 item={item}
@@ -268,7 +268,7 @@ export function FixedExpenseCard() {
               style={{
                 width: '100%', padding: '8px 14px', textAlign: 'left',
                 background: 'transparent', border: 'none',
-                borderTop: '1px solid rgba(255,255,255,.04)',
+                borderTop: `1px solid ${KAI.border}`,
                 cursor: 'pointer', fontFamily: 'inherit',
                 display: 'flex', alignItems: 'center', gap: 6,
               }}
@@ -280,7 +280,7 @@ export function FixedExpenseCard() {
             {showDismissed && dismissed.map((item, i) => (
               <div
                 key={item.id}
-                style={{ borderTop: i === 0 ? '1px solid rgba(255,255,255,.04)' : 'none' }}
+                style={{ borderTop: i === 0 ? `1px solid ${KAI.border}` : 'none' }}
               >
                 <FixedRow
                   item={item}

@@ -11,7 +11,7 @@ import {
   today, OcrPrefill,
 } from './_shared'
 
-const BORDER = 'rgba(255,255,255,.08)'
+const BORDER = 'var(--kai-border2)'
 
 function Keypad({ onKey }: { onKey: (k: string) => void }) {
   const keys = ['1','2','3','4','5','6','7','8','9','00','0','del']
@@ -26,7 +26,7 @@ function Keypad({ onKey }: { onKey: (k: string) => void }) {
           onClick={() => onKey(k)}
           style={{
             height: 50, borderRadius: 12, border: 'none', cursor: 'pointer',
-            background: k === 'del' ? 'rgba(251,113,133,.10)' : 'rgba(255,255,255,.05)',
+            background: k === 'del' ? 'rgba(251,113,133,.10)' : 'var(--kai-overlay-weak)',
             color: k === 'del' ? RED : TEXT1,
             fontSize: k === 'del' ? 0 : 20, fontWeight: 600,
             fontFamily: 'var(--font-mono), monospace',
@@ -165,7 +165,7 @@ export function ManualEntryTab({ onBack, onDone, prefill }: {
         <span style={{ fontSize: 16, fontWeight: 700, color: TEXT1 }}>手入力</span>
         <button type="button" onClick={onBack} style={{
           width: 30, height: 30, borderRadius: 9,
-          background: 'rgba(255,255,255,.05)', border: `1px solid ${BORDER}`,
+          background: 'var(--kai-overlay-weak)', border: `1px solid ${BORDER}`,
           display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
         }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={TEXT3} strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
@@ -185,7 +185,7 @@ export function ManualEntryTab({ onBack, onDone, prefill }: {
       )}
 
       {/* 支出/収入 toggle */}
-      <div style={{ display: 'flex', background: 'rgba(255,255,255,.04)', borderRadius: 11, padding: 3, marginBottom: 8 }}>
+      <div style={{ display: 'flex', background: 'var(--kai-overlay-weak)', borderRadius: 11, padding: 3, marginBottom: 8 }}>
         {([false, true] as const).map(inc => {
           const active = isIncome === inc
           const color = inc ? GREEN : RED
@@ -211,7 +211,7 @@ export function ManualEntryTab({ onBack, onDone, prefill }: {
 
       {/* Fields: payee + date */}
       <div style={{ display: 'flex', gap: 7, marginBottom: 7 }}>
-        <div style={{ flex: 1, background: 'rgba(255,255,255,.04)', border: `1px solid ${BORDER}`, borderRadius: 11, padding: '9px 12px' }}>
+        <div style={{ flex: 1, background: 'var(--kai-overlay-weak)', border: `1px solid ${BORDER}`, borderRadius: 11, padding: '9px 12px' }}>
           <div style={{ fontSize: 9, color: TEXT4, fontWeight: 700, letterSpacing: '.06em', marginBottom: 2 }}>店舗名</div>
           <input
             type="text"
@@ -222,7 +222,7 @@ export function ManualEntryTab({ onBack, onDone, prefill }: {
             style={{ width: '100%', fontSize: 13, color: TEXT1, background: 'transparent', border: 'none', outline: 'none', padding: 0 }}
           />
         </div>
-        <div style={{ width: 96, background: 'rgba(255,255,255,.04)', border: `1px solid ${BORDER}`, borderRadius: 11, padding: '9px 12px', position: 'relative' }}>
+        <div style={{ width: 96, background: 'var(--kai-overlay-weak)', border: `1px solid ${BORDER}`, borderRadius: 11, padding: '9px 12px', position: 'relative' }}>
           <div style={{ fontSize: 9, color: TEXT4, fontWeight: 700, letterSpacing: '.06em', marginBottom: 2 }}>日付</div>
           <div style={{ fontSize: 13, color: TEXT1 }}>{dateLabel}</div>
           <input
@@ -238,7 +238,7 @@ export function ManualEntryTab({ onBack, onDone, prefill }: {
       <div
         style={{
           display: 'flex', alignItems: 'center', gap: 10,
-          background: 'rgba(255,255,255,.04)', border: `1px solid ${BORDER}`,
+          background: 'var(--kai-overlay-weak)', border: `1px solid ${BORDER}`,
           borderRadius: 11, padding: '8px 12px', marginBottom: 12, cursor: 'pointer',
           position: 'relative',
         }}
@@ -296,7 +296,7 @@ export function ManualEntryTab({ onBack, onDone, prefill }: {
           style={{
             width: '100%', padding: 14,
             background: (saving || amountNumber <= 0 || !memo.trim())
-              ? 'rgba(255,255,255,.08)'
+              ? 'var(--kai-border2)'
               : `linear-gradient(135deg, ${CORAL}, #7aa7ff)`,
             border: 'none', borderRadius: 14,
             fontSize: 15, fontWeight: 800,

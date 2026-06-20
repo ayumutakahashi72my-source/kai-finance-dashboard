@@ -108,7 +108,7 @@ export function TransactionFilters({ categories }: Props) {
         <div
           style={{
             flex: 1, display: 'flex', alignItems: 'center', gap: 8,
-            background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)',
+            background: KAI.overlayWeak, border: `1px solid ${KAI.border2}`,
             borderRadius: 10, padding: '8px 12px',
           }}
         >
@@ -139,8 +139,8 @@ export function TransactionFilters({ categories }: Props) {
           onClick={() => setShowAdv((v) => !v)}
           style={{
             display: 'flex', alignItems: 'center', gap: 5,
-            background: showAdv || active ? `${KAI.coral}18` : 'rgba(255,255,255,.04)',
-            border: `1px solid ${showAdv || active ? `${KAI.coral}40` : 'rgba(255,255,255,.08)'}`,
+            background: showAdv || active ? `${KAI.coral}18` : KAI.overlayWeak,
+            border: `1px solid ${showAdv || active ? `${KAI.coral}40` : KAI.border2}`,
             borderRadius: 10, padding: '8px 12px', cursor: 'pointer',
             color: showAdv || active ? KAI.coral : KAI.text3,
             fontSize: 12, fontWeight: 600,
@@ -155,7 +155,7 @@ export function TransactionFilters({ categories }: Props) {
       {showAdv && (
         <div
           style={{
-            background: 'rgba(255,255,255,.02)', border: '1px solid rgba(255,255,255,.06)',
+            background: KAI.overlayWeak, border: `1px solid ${KAI.border}`,
             borderRadius: 12, padding: '12px 14px',
             display: 'flex', flexDirection: 'column', gap: 12,
           }}
@@ -176,8 +176,8 @@ export function TransactionFilters({ categories }: Props) {
                       fontSize: 13,
                       padding: '6px 14px',
                       borderRadius: 99,
-                      background: selected ? `${color}28` : 'rgba(255,255,255,.05)',
-                      border: `1px solid ${selected ? `${color}70` : 'rgba(255,255,255,.10)'}`,
+                      background: selected ? `${color}28` : KAI.overlayWeak,
+                      border: `1px solid ${selected ? `${color}70` : KAI.border2}`,
                       color: selected ? color : KAI.text2,
                       cursor: 'pointer',
                       fontWeight: selected ? 700 : 500,
@@ -201,8 +201,8 @@ export function TransactionFilters({ categories }: Props) {
                 onChange={(e) => { setFilters((f) => ({ ...f, from: e.target.value })); applyToUrl({ from: e.target.value }) }}
                 style={{
                   width: '100%', padding: '6px 10px', borderRadius: 7,
-                  background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.10)',
-                  color: KAI.text1, fontSize: 12, outline: 'none', colorScheme: 'dark', boxSizing: 'border-box',
+                  background: KAI.overlayWeak, border: `1px solid ${KAI.border2}`,
+                  color: KAI.text1, fontSize: 12, outline: 'none', boxSizing: 'border-box',
                 }}
               />
             </div>
@@ -214,8 +214,8 @@ export function TransactionFilters({ categories }: Props) {
                 onChange={(e) => { setFilters((f) => ({ ...f, to: e.target.value })); applyToUrl({ to: e.target.value }) }}
                 style={{
                   width: '100%', padding: '6px 10px', borderRadius: 7,
-                  background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.10)',
-                  color: KAI.text1, fontSize: 12, outline: 'none', colorScheme: 'dark', boxSizing: 'border-box',
+                  background: KAI.overlayWeak, border: `1px solid ${KAI.border2}`,
+                  color: KAI.text1, fontSize: 12, outline: 'none', boxSizing: 'border-box',
                 }}
               />
             </div>
@@ -233,7 +233,7 @@ export function TransactionFilters({ categories }: Props) {
                 placeholder="500"
                 style={{
                   width: '100%', padding: '6px 10px', borderRadius: 7,
-                  background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.10)',
+                  background: KAI.overlayWeak, border: `1px solid ${KAI.border2}`,
                   color: KAI.text1, fontSize: 12, outline: 'none', boxSizing: 'border-box',
                   fontFamily: 'var(--font-jetbrains),JetBrains Mono,monospace',
                 }}
@@ -249,7 +249,7 @@ export function TransactionFilters({ categories }: Props) {
                 placeholder="50000"
                 style={{
                   width: '100%', padding: '6px 10px', borderRadius: 7,
-                  background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.10)',
+                  background: KAI.overlayWeak, border: `1px solid ${KAI.border2}`,
                   color: KAI.text1, fontSize: 12, outline: 'none', boxSizing: 'border-box',
                   fontFamily: 'var(--font-jetbrains),JetBrains Mono,monospace',
                 }}

@@ -8,6 +8,7 @@ import { KaiSystemBrand } from '@/components/kai/shared'
 import { AnalyticsPageTabs } from '@/components/analytics/AnalyticsPageTabs'
 import { getTransactions } from '@/app/actions/transactions'
 import { getHousehold } from '@/app/actions/households'
+import { KAI } from '@/lib/kai-tokens'
 import type { Transaction } from '@/lib/types'
 
 function currentMonthStr() {
@@ -46,24 +47,24 @@ export default async function AnalyticsPage({
   })()
 
   return (
-    <div className="min-h-screen" style={{ background: '#0c0a14' }}>
+    <div className="min-h-screen" style={{ background: KAI.bg }}>
       <div aria-hidden className="mesh-bg pointer-events-none fixed inset-0" style={{ zIndex: 0, backgroundImage: `radial-gradient(ellipse 700px 500px at 80% 8%, rgba(122,167,255,.09), transparent 55%),radial-gradient(ellipse 500px 400px at 12% 78%, rgba(251,148,119,.06), transparent 55%)` }} />
-      <div aria-hidden className="pointer-events-none fixed inset-0" style={{ zIndex: 1, backgroundImage: `linear-gradient(rgba(255,255,255,.012) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.012) 1px,transparent 1px)`, backgroundSize: '40px 40px' }} />
+      <div aria-hidden className="pointer-events-none fixed inset-0" style={{ zIndex: 1, backgroundImage: `linear-gradient(${KAI.gridLine} 1px,transparent 1px),linear-gradient(90deg,${KAI.gridLine} 1px,transparent 1px)`, backgroundSize: '40px 40px' }} />
 
       <Sidebar />
 
       <div className="relative min-h-screen lg:pl-[220px]" style={{ zIndex: 2 }}>
         <header
           className="sticky top-0 z-30 flex items-center justify-between px-6 py-[14px]"
-          style={{ background: 'rgba(8,8,14,.55)', backdropFilter: 'blur(24px)', borderBottom: '1px solid rgba(255,255,255,0.10)' }}
+          style={{ background: KAI.headerBg, backdropFilter: 'blur(24px)', borderBottom: `1px solid ${KAI.border2}` }}
         >
           <div className="flex items-center gap-3">
             <div className="lg:hidden">
               <KaiSystemBrand size="sm"/>
             </div>
             <div className="hidden lg:block">
-              <h1 className="text-[17px] font-bold" style={{ color: '#f0f0f5' }}>分析</h1>
-              <p style={{ fontSize: 11, color: '#5e5e72', marginTop: 1 }}>
+              <h1 className="text-[17px] font-bold" style={{ color: KAI.text1 }}>分析</h1>
+              <p style={{ fontSize: 11, color: KAI.text4, marginTop: 1 }}>
                 {month.replace('-', '年') + '月'}
                 {daysLeft > 0 && ` · 残り${daysLeft}日`}
               </p>
@@ -78,7 +79,7 @@ export default async function AnalyticsPage({
 
         <div
           className="lg:hidden sticky top-[57px] z-20 flex justify-center py-2"
-          style={{ background: 'rgba(8,8,14,.72)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(255,255,255,0.07)' }}
+          style={{ background: KAI.headerBg, backdropFilter: 'blur(20px)', borderBottom: `1px solid ${KAI.border}` }}
         >
           <MonthSwitcher currentMonth={month} />
         </div>

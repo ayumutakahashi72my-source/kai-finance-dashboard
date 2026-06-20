@@ -5,6 +5,7 @@ import { parseMfCsv, decodeCsvBuffer } from '@/lib/csv-parser'
 import {
   CORAL, BLUE, VIOLET, GREEN, AMBER,
   TEXT1, TEXT3, TEXT4, TEXT5,
+  OVERLAY_WEAK, BORDER, BORDER2, BORDER_STRONG,
   ImportResult, BackBtn,
 } from './_shared'
 
@@ -21,12 +22,12 @@ function CsvStepIndicator({ activeStep }: { activeStep: 1 | 2 | 3 }) {
         return (
           <React.Fragment key={s.n}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10, fontWeight: 700, letterSpacing: '.08em', fontFamily: 'var(--font-mono),monospace', color: state === 'active' ? CORAL : state === 'done' ? GREEN : TEXT4 }}>
-              <span style={{ width: 16, height: 16, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, background: state === 'active' ? `${CORAL}38` : state === 'done' ? 'rgba(74,222,128,.2)' : 'rgba(255,255,255,.04)', border: `1px solid ${state === 'active' ? CORAL : state === 'done' ? 'rgba(74,222,128,.4)' : 'rgba(255,255,255,.1)'}` }}>
+              <span style={{ width: 16, height: 16, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, background: state === 'active' ? `${CORAL}38` : state === 'done' ? 'rgba(74,222,128,.2)' : OVERLAY_WEAK, border: `1px solid ${state === 'active' ? CORAL : state === 'done' ? 'rgba(74,222,128,.4)' : BORDER2}` }}>
                 {state === 'done' ? '✓' : s.n}
               </span>
               {s.label}
             </div>
-            {i < steps.length - 1 && <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,.08)' }}/>}
+            {i < steps.length - 1 && <div style={{ flex: 1, height: 1, background: BORDER2 }}/>}
           </React.Fragment>
         )
       })}
@@ -36,7 +37,7 @@ function CsvStepIndicator({ activeStep }: { activeStep: 1 | 2 | 3 }) {
 
 function SmallStat({ label, value, color }: { label: string; value: number; color: string }) {
   return (
-    <div style={{ background: 'rgba(255,255,255,.02)', border: '1px solid rgba(255,255,255,.07)', borderRadius: 11, padding: '8px 10px', textAlign: 'center' }}>
+    <div style={{ background: OVERLAY_WEAK, border: `1px solid ${BORDER2}`, borderRadius: 11, padding: '8px 10px', textAlign: 'center' }}>
       <div style={{ fontSize: 9, color: TEXT3, letterSpacing: '.08em', fontWeight: 600, textTransform: 'uppercase' as const }}>{label}</div>
       <div style={{ fontSize: 17, fontWeight: 800, fontFamily: 'var(--font-mono),monospace', color, marginTop: 2, letterSpacing: '-.01em' }}>{value}</div>
     </div>
@@ -127,7 +128,7 @@ export function CsvImportTab({ onBack, onDone }: { onBack: () => void; onDone: (
           onDragLeave={() => setDragOver(false)}
           onDrop={e => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer.files[0]; if (f) handleFile(f) }}
           onClick={() => inputRef.current?.click()}
-          style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 14, padding: '32px 20px', cursor: 'pointer', border: `2px dashed ${dragOver ? BLUE + '88' : 'rgba(255,255,255,.12)'}`, background: dragOver ? `${BLUE}08` : 'rgba(255,255,255,.02)', transition: 'all .15s', animation: 'kai-rise .4s .08s ease-out both' }}
+          style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 14, padding: '32px 20px', cursor: 'pointer', border: `2px dashed ${dragOver ? BLUE + '88' : BORDER_STRONG}`, background: dragOver ? `${BLUE}08` : OVERLAY_WEAK, transition: 'all .15s', animation: 'kai-rise .4s .08s ease-out both' }}
         >
           <input ref={inputRef} type="file" accept=".csv,text/csv" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f) }}/>
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={TEXT4} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>

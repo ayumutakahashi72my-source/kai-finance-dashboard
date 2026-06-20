@@ -12,8 +12,8 @@ function BlurredPlaceholder() {
         <div
           key={i}
           style={{
-            background: 'rgba(255,255,255,.03)',
-            border: '1px solid rgba(255,255,255,.06)',
+            background: KAI.overlayWeak,
+            border: `1px solid ${KAI.border}`,
             borderRadius: 14,
             padding: '10px 12px',
             minHeight: 80,
@@ -21,10 +21,10 @@ function BlurredPlaceholder() {
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
             <div style={{ width: 22, height: 22, borderRadius: 7, background: `${color}22`, border: `1px solid ${color}44` }} />
-            <div style={{ height: 10, width: 60, borderRadius: 4, background: 'rgba(255,255,255,.08)' }} />
+            <div style={{ height: 10, width: 60, borderRadius: 4, background: KAI.border2 }} />
           </div>
-          <div style={{ height: 14, width: 80, borderRadius: 4, background: 'rgba(255,255,255,.08)', marginBottom: 8 }} />
-          <div style={{ height: 3, borderRadius: 99, background: 'rgba(255,255,255,.06)', overflow: 'hidden' }}>
+          <div style={{ height: 14, width: 80, borderRadius: 4, background: KAI.border2, marginBottom: 8 }} />
+          <div style={{ height: 3, borderRadius: 99, background: KAI.border, overflow: 'hidden' }}>
             <div style={{ height: '100%', width: `${40 + i * 12}%`, background: color, borderRadius: 99 }} />
           </div>
         </div>

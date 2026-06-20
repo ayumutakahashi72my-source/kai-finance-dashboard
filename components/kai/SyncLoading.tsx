@@ -129,7 +129,7 @@ export function SyncLoading({
             gap: 10,
             padding: '8px 14px',
             borderRadius: 99,
-            background: 'rgba(255,255,255,.04)',
+            background: KAI.overlayWeak,
             border: `1px solid ${KAI.border2}`,
           }}
         >
@@ -197,7 +197,7 @@ export function SyncLoading({
           style={{
             width: '100%',
             height: 3,
-            background: 'rgba(255,255,255,.06)',
+            background: KAI.border,
             borderRadius: 99,
             overflow: 'hidden',
             position: 'relative',
@@ -253,7 +253,7 @@ export function SyncLoading({
               gap: 12,
               padding: '12px 14px',
               borderRadius: 14,
-              background: 'rgba(255,255,255,.035)',
+              background: KAI.overlayWeak,
               border: `1px solid ${KAI.border2}`,
               animation: 'kai-splash-fade .4s 0s both ease-out',
             }}

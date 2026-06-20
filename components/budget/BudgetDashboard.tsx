@@ -82,7 +82,7 @@ function OverallBar({
       {/* 横棒（全幅） */}
       <div style={{
         width: '100%', height: 12, borderRadius: 99,
-        background: 'rgba(255,255,255,.05)', overflow: 'hidden',
+        background: KAI.overlayWeak, overflow: 'hidden',
       }}>
         <div style={{
           height: '100%',
@@ -157,7 +157,7 @@ function CategoryBar({
       </div>
 
       {/* 下段: 横棒グラフ */}
-      <div style={{ height: 7, borderRadius: 99, background: 'rgba(255,255,255,.05)', overflow: 'hidden' }}>
+      <div style={{ height: 7, borderRadius: 99, background: KAI.overlayWeak, overflow: 'hidden' }}>
         <div style={{
           height: '100%',
           width: `${Math.min(100, animatedPct)}%`,
@@ -327,7 +327,7 @@ export function BudgetDashboard({ month: monthProp }: { month?: string } = {}) {
 
       {/* ── 1. 全体収支横棒グラフ ── */}
       <section style={{
-        background: 'rgba(255,255,255,.02)', border: '1px solid rgba(255,255,255,.06)',
+        background: KAI.overlayWeak, border: `1px solid ${KAI.border}`,
         borderRadius: 18, padding: '16px 18px',
         animation: 'kai-rise .5s ease-out both',
       }}>
@@ -382,7 +382,7 @@ export function BudgetDashboard({ month: monthProp }: { month?: string } = {}) {
               }}
               style={{
                 fontSize: 10, fontWeight: 600, color: KAI.text4,
-                background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.10)',
+                background: KAI.overlayWeak, border: `1px solid ${KAI.border2}`,
                 borderRadius: 8, padding: '8px 12px', cursor: 'pointer', fontFamily: 'inherit',
                 display: 'flex', alignItems: 'center', gap: 4,
               }}
@@ -394,7 +394,7 @@ export function BudgetDashboard({ month: monthProp }: { month?: string } = {}) {
                 onClick={() => setEditMode(false)}
                 style={{
                   fontSize: 10, fontWeight: 600, color: KAI.text4,
-                  background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.10)',
+                  background: KAI.overlayWeak, border: `1px solid ${KAI.border2}`,
                   borderRadius: 6, padding: '3px 10px', cursor: 'pointer', fontFamily: 'inherit',
                   display: 'flex', alignItems: 'center', gap: 4,
                 }}
@@ -423,11 +423,11 @@ export function BudgetDashboard({ month: monthProp }: { month?: string } = {}) {
 
         {categories.length > 0 ? (
           <div style={{
-            background: 'rgba(255,255,255,.02)', border: '1px solid rgba(255,255,255,.06)',
+            background: KAI.overlayWeak, border: `1px solid ${KAI.border}`,
             borderRadius: 14, overflow: 'hidden',
           }}>
             {categories.map((c, i) => (
-              <div key={c.name} style={{ borderBottom: i < categories.length - 1 ? '1px solid rgba(255,255,255,.04)' : 'none' }}>
+              <div key={c.name} style={{ borderBottom: i < categories.length - 1 ? `1px solid ${KAI.overlayWeak}` : 'none' }}>
                 {editMode ? (
                   <div style={{ padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
                     <span style={{ fontSize: 12.5, fontWeight: 600, color: KAI.text1, flex: 1 }}>{c.name}</span>
@@ -441,7 +441,7 @@ export function BudgetDashboard({ month: monthProp }: { month?: string } = {}) {
                       placeholder="未設定"
                       style={{
                         width: 100, fontSize: 13, fontWeight: 600, textAlign: 'right',
-                        background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.12)',
+                        background: KAI.border, border: `1px solid ${KAI.borderStrong}`,
                         borderRadius: 8, padding: '4px 8px', color: KAI.text1, fontFamily: 'var(--font-jetbrains), monospace',
                         outline: 'none',
                       }}
@@ -459,7 +459,7 @@ export function BudgetDashboard({ month: monthProp }: { month?: string } = {}) {
           </div>
         ) : (
           <div style={{
-            background: 'rgba(255,255,255,.02)', border: '1px solid rgba(255,255,255,.06)',
+            background: KAI.overlayWeak, border: `1px solid ${KAI.border}`,
             borderRadius: 14, padding: '32px 20px', textAlign: 'center',
           }}>
             <p style={{ fontSize: 14, color: KAI.text3 }}>支出データがありません</p>
@@ -494,7 +494,7 @@ export function BudgetDashboard({ month: monthProp }: { month?: string } = {}) {
 
           {budget?.spending_pattern ? (
             <>
-              <div style={{ fontSize: 12, color: '#e8e8f0', marginTop: 3, lineHeight: 1.55 }}>
+              <div style={{ fontSize: 12, color: KAI.text2, marginTop: 3, lineHeight: 1.55 }}>
                 {overCat ? (
                   <>
                     <span style={{ color: KAI.amber, fontWeight: 700 }}>{overCat.name}</span>
@@ -535,7 +535,7 @@ export function BudgetDashboard({ month: monthProp }: { month?: string } = {}) {
                   type="button"
                   style={{
                     fontSize: 11, padding: '5px 10px', borderRadius: 8,
-                    background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.12)',
+                    background: KAI.overlayWeak, border: `1px solid ${KAI.borderStrong}`,
                     color: KAI.text2, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
                   }}
                 >後で</button>
@@ -543,7 +543,7 @@ export function BudgetDashboard({ month: monthProp }: { month?: string } = {}) {
             </>
           ) : (
             <>
-              <div style={{ fontSize: 12, color: '#e8e8f0', marginTop: 3, lineHeight: 1.55 }}>
+              <div style={{ fontSize: 12, color: KAI.text2, marginTop: 3, lineHeight: 1.55 }}>
                 {prevMonthIncome > 0
                   ? <>先月の収入 <span style={{ color: KAI.success, fontWeight: 700 }}>¥{prevMonthIncome.toLocaleString('ja-JP')}</span> をもとに今月の予算を提案します</>
                   : '過去の支出を分析して今月の予算を提案します'}

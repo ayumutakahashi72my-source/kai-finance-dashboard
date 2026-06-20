@@ -94,13 +94,13 @@ export function NotificationToggle() {
 
   if (!supported) {
     return (
-      <p className="text-sm text-[#5e5e72]">このブラウザはプッシュ通知に対応していません</p>
+      <p className="text-sm text-[var(--kai-text4)]">このブラウザはプッシュ通知に対応していません</p>
     )
   }
 
   if (permission === 'denied') {
     return (
-      <p className="text-sm text-[#8b8ba0]">
+      <p className="text-sm text-[var(--kai-text3)]">
         通知がブロックされています。ブラウザのサイト設定から許可してください。
       </p>
     )
@@ -110,8 +110,8 @@ export function NotificationToggle() {
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium text-[#f0f0f5]">月次レポート通知</p>
-          <p className="mt-0.5 text-xs text-[#8b8ba0]">
+          <p className="text-sm font-medium text-[var(--kai-text1)]">月次レポート通知</p>
+          <p className="mt-0.5 text-xs text-[var(--kai-text3)]">
             {subscribed
               ? '毎月1日に家計レポートの通知が届きます'
               : '月初の家計レポートをプッシュ通知で受け取ります'}

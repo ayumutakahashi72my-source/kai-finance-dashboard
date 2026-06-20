@@ -34,7 +34,7 @@ function ColorPicker({ value, onChange }: { value: string; onChange: (c: string)
           aria-label={c}
           className={cn(
             'h-6 w-6 rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white',
-            value === c && 'ring-2 ring-white ring-offset-2 ring-offset-[#0a0a10]'
+            value === c && 'ring-2 ring-white ring-offset-2 ring-offset-[var(--kai-bg)]'
           )}
           style={{ backgroundColor: c }}
           onClick={() => onChange(c)}
@@ -90,13 +90,13 @@ function CategoryDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-[#14161e] border-white/10 text-[#f0f0f5]">
+      <DialogContent className="bg-[var(--kai-bg-panel-solid)] border-[var(--kai-border2)] text-[var(--kai-text1)]">
         <DialogHeader>
-          <DialogTitle className="text-[#f0f0f5]">{title}</DialogTitle>
+          <DialogTitle className="text-[var(--kai-text1)]">{title}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="grid gap-4 mt-2">
           <div className="grid gap-1.5">
-            <Label htmlFor="cat-name" className="text-[#8b8ba0] text-xs">
+            <Label htmlFor="cat-name" className="text-[var(--kai-text3)] text-xs">
               カテゴリ名
             </Label>
             <Input
@@ -107,11 +107,11 @@ function CategoryDialog({
               maxLength={30}
               required
               autoFocus
-              className="bg-[#0a0a10] border-white/10 text-[#f0f0f5] placeholder:text-[#5e5e72] focus-visible:border-[#fb9477]/50 focus-visible:ring-[#fb9477]/20"
+              className="bg-[var(--kai-bg)] border-[var(--kai-border2)] text-[var(--kai-text1)] placeholder:text-[var(--kai-text4)] focus-visible:border-[#fb9477]/50 focus-visible:ring-[#fb9477]/20"
             />
           </div>
           <div className="grid gap-1.5">
-            <Label className="text-[#8b8ba0] text-xs">色</Label>
+            <Label className="text-[var(--kai-text3)] text-xs">色</Label>
             <ColorPicker value={color} onChange={setColor} />
           </div>
           {displayError && (
@@ -124,7 +124,7 @@ function CategoryDialog({
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
-              className="border-white/10 text-[#8b8ba0] hover:text-[#f0f0f5]"
+              className="border-[var(--kai-border2)] text-[var(--kai-text3)] hover:text-[var(--kai-text1)]"
             >
               キャンセル
             </Button>
@@ -153,7 +153,7 @@ function DeleteConfirm({ cat, isPending, onConfirm, onCancel }: DeleteConfirmPro
   const hasChildren = (cat.children?.length ?? 0) > 0
   return (
     <div className="flex items-center gap-2">
-      <span className="text-xs text-[#8b8ba0]">
+      <span className="text-xs text-[var(--kai-text3)]">
         {hasChildren
           ? `${cat.children!.length}件のサブカテゴリが親なしになりますが削除しますか？`
           : '削除しますか？'}
@@ -170,7 +170,7 @@ function DeleteConfirm({ cat, isPending, onConfirm, onCancel }: DeleteConfirmPro
         size="xs"
         variant="ghost"
         onClick={onCancel}
-        className="text-[#8b8ba0]"
+        className="text-[var(--kai-text3)]"
       >
         キャンセル
       </Button>
@@ -252,7 +252,7 @@ export function CategoryList({ initial, showTitle = true }: { initial: Category[
   return (
     <>
       <div className="flex items-center justify-between mb-4">
-        {showTitle && <h1 className="text-lg font-semibold text-[#f0f0f5]">カテゴリ管理</h1>}
+        {showTitle && <h1 className="text-lg font-semibold text-[var(--kai-text1)]">カテゴリ管理</h1>}
         <Button
           onClick={() => {
             setFormError(null)
@@ -267,7 +267,7 @@ export function CategoryList({ initial, showTitle = true }: { initial: Category[
       </div>
 
       {roots.length === 0 ? (
-        <p className="text-center text-sm text-[#8b8ba0] py-8">カテゴリがありません</p>
+        <p className="text-center text-sm text-[var(--kai-text3)] py-8">カテゴリがありません</p>
       ) : (
         <ul className="space-y-2">
           {roots.map((cat) => {
@@ -276,7 +276,7 @@ export function CategoryList({ initial, showTitle = true }: { initial: Category[
             return (
               <li key={cat.id}>
                 {/* 親カテゴリ行 */}
-                <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-[#0a0a10]/40 px-4 py-3">
+                <div className="flex items-center gap-3 rounded-xl border border-[var(--kai-border2)] bg-[var(--kai-bg)]/40 px-4 py-3">
                   <button
                     type="button"
                     onClick={() => hasChildren && toggleExpand(cat.id)}
@@ -287,11 +287,11 @@ export function CategoryList({ initial, showTitle = true }: { initial: Category[
                       className="h-3 w-3 shrink-0 rounded-full"
                       style={{ backgroundColor: cat.color ?? '#8b8ba0' }}
                     />
-                    <span className="flex-1 text-sm text-[#f0f0f5] text-left">{cat.name}</span>
+                    <span className="flex-1 text-sm text-[var(--kai-text1)] text-left">{cat.name}</span>
                     {hasChildren && (
                       isExpanded
-                        ? <ChevronDownIcon className="h-3.5 w-3.5 text-[#8b8ba0] shrink-0" />
-                        : <ChevronRightIcon className="h-3.5 w-3.5 text-[#8b8ba0] shrink-0" />
+                        ? <ChevronDownIcon className="h-3.5 w-3.5 text-[var(--kai-text3)] shrink-0" />
+                        : <ChevronRightIcon className="h-3.5 w-3.5 text-[var(--kai-text3)] shrink-0" />
                     )}
                   </button>
 
@@ -311,7 +311,7 @@ export function CategoryList({ initial, showTitle = true }: { initial: Category[
                           setFormError(null)
                           setAddSubParentId(cat.id)
                         }}
-                        className="text-[#8b8ba0] hover:text-[#f0f0f5] text-[10px] px-1.5"
+                        className="text-[var(--kai-text3)] hover:text-[var(--kai-text1)] text-[10px] px-1.5"
                       >
                         +サブ
                       </Button>
@@ -322,7 +322,7 @@ export function CategoryList({ initial, showTitle = true }: { initial: Category[
                           setFormError(null)
                           setEditTarget(cat)
                         }}
-                        className="text-[#8b8ba0] hover:text-[#f0f0f5]"
+                        className="text-[var(--kai-text3)] hover:text-[var(--kai-text1)]"
                       >
                         <PencilIcon />
                         <span className="sr-only">編集</span>
@@ -331,7 +331,7 @@ export function CategoryList({ initial, showTitle = true }: { initial: Category[
                         size="icon-sm"
                         variant="ghost"
                         onClick={() => setDeleteTargetId(cat.id)}
-                        className="text-[#8b8ba0] hover:text-[#fb7185]"
+                        className="text-[var(--kai-text3)] hover:text-[#fb7185]"
                       >
                         <Trash2Icon />
                         <span className="sr-only">削除</span>
@@ -346,17 +346,17 @@ export function CategoryList({ initial, showTitle = true }: { initial: Category[
                     {cat.children!.map((child) => (
                       <li
                         key={child.id}
-                        className="flex items-center gap-3 rounded-xl border border-white/5 bg-[#0a0a10]/20 px-4 py-2.5"
+                        className="flex items-center gap-3 rounded-xl border border-[var(--kai-border)] bg-[var(--kai-bg)]/20 px-4 py-2.5"
                       >
                         <span
                           className="h-2.5 w-2.5 shrink-0 rounded-full"
                           style={{ backgroundColor: child.color ?? '#8b8ba0' }}
                         />
-                        <span className="flex-1 text-sm text-[#c4c4d0]">{child.name}</span>
+                        <span className="flex-1 text-sm text-[var(--kai-text2)]">{child.name}</span>
 
                         {deleteTargetId === child.id ? (
                           <div className="flex items-center gap-2">
-                            <span className="text-xs text-[#8b8ba0]">削除しますか？</span>
+                            <span className="text-xs text-[var(--kai-text3)]">削除しますか？</span>
                             <Button
                               size="xs"
                               variant="destructive"
@@ -369,7 +369,7 @@ export function CategoryList({ initial, showTitle = true }: { initial: Category[
                               size="xs"
                               variant="ghost"
                               onClick={() => setDeleteTargetId(null)}
-                              className="text-[#8b8ba0]"
+                              className="text-[var(--kai-text3)]"
                             >
                               キャンセル
                             </Button>
@@ -383,7 +383,7 @@ export function CategoryList({ initial, showTitle = true }: { initial: Category[
                                 setFormError(null)
                                 setEditTarget(child)
                               }}
-                              className="text-[#8b8ba0] hover:text-[#f0f0f5]"
+                              className="text-[var(--kai-text3)] hover:text-[var(--kai-text1)]"
                             >
                               <PencilIcon />
                               <span className="sr-only">編集</span>
@@ -392,7 +392,7 @@ export function CategoryList({ initial, showTitle = true }: { initial: Category[
                               size="icon-sm"
                               variant="ghost"
                               onClick={() => setDeleteTargetId(child.id)}
-                              className="text-[#8b8ba0] hover:text-[#fb7185]"
+                              className="text-[var(--kai-text3)] hover:text-[#fb7185]"
                             >
                               <Trash2Icon />
                               <span className="sr-only">削除</span>

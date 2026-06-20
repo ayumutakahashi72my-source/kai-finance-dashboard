@@ -5,6 +5,7 @@ import {
   XAxis, YAxis, Tooltip, ResponsiveContainer,
 } from 'recharts'
 import type { Transaction } from '@/lib/types'
+import { KAI } from '@/lib/kai-tokens'
 import {
   UP, DOWN, TEXT, TEXT2, TEXT3, BORDER, MONO_FONT, panel,
   fmtK, buildMonthlyData, buildCategoryData, buildMoMData, TooltipDark,
@@ -61,7 +62,7 @@ export function AnalyticsTab({ allTransactions, month }: {
                     <span style={{ flex: 1, fontSize: 12, color: TEXT2, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>
                     <span style={{ fontFamily: MONO_FONT, fontSize: 11, color: TEXT, fontWeight: 600, flexShrink: 0 }}>¥{amount.toLocaleString('ja-JP')}</span>
                   </div>
-                  <div style={{ height: 3, background: 'rgba(255,255,255,.06)', borderRadius: 99, overflow: 'hidden', marginLeft: 20 }}>
+                  <div style={{ height: 3, background: KAI.border, borderRadius: 99, overflow: 'hidden', marginLeft: 20 }}>
                     <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: 99, opacity: i === 0 ? 1 : 0.7 }}/>
                   </div>
                 </div>

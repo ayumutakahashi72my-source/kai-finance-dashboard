@@ -247,6 +247,7 @@
  * ========================================================================== */
 
 :root {
+  color-scheme: dark;
   --kai-bg:              #0a0a10;
   --kai-bg-card:         #0c0a14;
   --kai-bg-panel:        rgba(20,22,32,0.66);
@@ -279,6 +280,7 @@
 }
 
 :root.light {
+  color-scheme: light;
   --kai-bg:              #faf9fc;
   --kai-bg-card:         #ffffff;
   --kai-bg-panel:        rgba(250,249,252,0.92);
@@ -301,7 +303,7 @@
   --kai-skeleton-lo:     rgba(0,0,0,0.04);
   --kai-header-bg:       rgba(250,249,252,0.72);
   --kai-header-bg-solid: rgba(250,249,252,0.88);
-  --kai-grid-line:       rgba(0,0,0,0.03);
+  --kai-grid-line:       transparent;
   --kai-overlay-bg:      rgba(250,249,252,0.95);
   --kai-overlay-weak:    rgba(0,0,0,0.03);
   --kai-overlay-border:  rgba(0,0,0,0.07);

@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react'
 import { ReceiptAnalyzingV2 } from '@/components/transactions/ReceiptAnalyzingV2'
+import { KAI } from '@/lib/kai-tokens'
 import type { OcrResult } from '@/lib/ocr'
 
 interface Props {
@@ -10,9 +11,6 @@ interface Props {
 }
 
 const CORAL = '#fb9477'
-const TEXT1 = '#f0f0f5'
-const TEXT3 = '#8b8ba0'
-const TEXT4 = '#5e5e72'
 
 export function ReceiptCapture({ onResult, onCancel }: Props) {
   const inputRef = useRef<HTMLInputElement>(null)
@@ -43,8 +41,8 @@ export function ReceiptCapture({ onResult, onCancel }: Props) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       <div style={{ marginTop: -6 }}>
-        <div style={{ fontSize: 9, color: TEXT3, fontWeight: 700, letterSpacing: '.14em', textTransform: 'uppercase', fontFamily: 'var(--font-mono),monospace' }}>ADD ENTRY / RECEIPT</div>
-        <div style={{ fontSize: 20, fontWeight: 700, color: TEXT1, letterSpacing: '-.02em', marginTop: 2 }}>レシート読取</div>
+        <div style={{ fontSize: 9, color: KAI.text3, fontWeight: 700, letterSpacing: '.14em', textTransform: 'uppercase', fontFamily: 'var(--font-mono),monospace' }}>ADD ENTRY / RECEIPT</div>
+        <div style={{ fontSize: 20, fontWeight: 700, color: KAI.text1, letterSpacing: '-.02em', marginTop: 2 }}>レシート読取</div>
       </div>
 
       <div
@@ -70,19 +68,19 @@ export function ReceiptCapture({ onResult, onCancel }: Props) {
           <circle cx="12" cy="13" r="3"/>
         </svg>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: TEXT1 }}>レシートを撮影</div>
-          <div style={{ fontSize: 11, color: TEXT3, marginTop: 4, lineHeight: 1.6 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: KAI.text1 }}>レシートを撮影</div>
+          <div style={{ fontSize: 11, color: KAI.text3, marginTop: 4, lineHeight: 1.6 }}>
             タップしてカメラを起動<br/>または画像ファイルを選択
           </div>
         </div>
       </div>
 
-      <div style={{ padding: '10px 14px', background: 'rgba(255,255,255,.02)', border: '1px solid rgba(255,255,255,.07)', borderRadius: 12 }}>
-        <div style={{ fontSize: 10, color: TEXT4, fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 6 }}>撮影のコツ</div>
+      <div style={{ padding: '10px 14px', background: KAI.overlayWeak, border: `1px solid ${KAI.border}`, borderRadius: 12 }}>
+        <div style={{ fontSize: 10, color: KAI.text4, fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 6 }}>撮影のコツ</div>
         {['明るい場所で平らに置く', '全体が収まるように撮影', '斜めにならないよう注意'].map((tip, i) => (
           <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 7, marginTop: 4 }}>
             <span style={{ width: 4, height: 4, borderRadius: '50%', background: CORAL, flexShrink: 0 }}/>
-            <span style={{ fontSize: 11, color: TEXT3 }}>{tip}</span>
+            <span style={{ fontSize: 11, color: KAI.text3 }}>{tip}</span>
           </div>
         ))}
       </div>
