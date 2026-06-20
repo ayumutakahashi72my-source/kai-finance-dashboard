@@ -9,7 +9,11 @@ self.addEventListener('activate', (event) => {
 })
 
 // fetch handler が存在しないと Android Chrome は installable と判断しない
-self.addEventListener('fetch', () => {})
+self.addEventListener('fetch', (event) => {
+  if (event.request.mode === 'navigate') {
+    event.respondWith(fetch(event.request))
+  }
+})
 
 // ── Push notifications ────────────────────────────────────────────
 

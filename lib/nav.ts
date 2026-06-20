@@ -17,7 +17,11 @@ export const BOTTOM_LEFT: NavItem[] = NAV_ITEMS.slice(0, 2)
 
 export const BOTTOM_RIGHT: NavItem[] = NAV_ITEMS.slice(2)
 
-export const SIDEBAR_NAV: NavItem[] = NAV_ITEMS
+export const SIDEBAR_NAV: NavItem[] = [
+  ...NAV_ITEMS.slice(0, 3),
+  { href: '/budget', icon: 'bag', label: '予算' },
+  NAV_ITEMS[3],
+]
 
 export function isNavActive(
   href: string,

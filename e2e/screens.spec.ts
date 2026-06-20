@@ -216,7 +216,7 @@ test.describe('予算ページ', () => {
 
   test('キャッシュフローカードと予算ダッシュボードが表示される', async ({ page }) => {
     const errors = collectConsoleErrors(page)
-    await page.goto('/analytics?tab=1')
+    await page.goto('/budget')
     await page.waitForLoadState('networkidle')
 
     expect(await page.textContent('body')).not.toContain('INTERNAL_SERVER_ERROR')
@@ -442,8 +442,8 @@ test.describe('画面遷移', () => {
     await page.waitForLoadState('networkidle')
     expect(await page.textContent('body')).not.toContain('INTERNAL_SERVER_ERROR')
 
-    // 分析ページ（予算タブ）
-    await page.goto('/analytics?tab=1')
+    // 予算ページ
+    await page.goto('/budget')
     await page.waitForLoadState('networkidle')
     expect(await page.textContent('body')).not.toContain('INTERNAL_SERVER_ERROR')
 
