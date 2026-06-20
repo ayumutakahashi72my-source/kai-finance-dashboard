@@ -3,16 +3,14 @@ import type { IconName } from '@/components/kai/shared'
 export interface NavItem {
   href: string
   icon: IconName
-  /** モバイル用のアイコン（デザイン仕様でデスクトップと異なる場合） */
-  mobileIcon?: IconName
   label: string
 }
 
 export const NAV_ITEMS: NavItem[] = [
   { href: '/',              icon: 'grid',     label: 'ホーム' },
-  { href: '/transactions',  icon: 'list',     mobileIcon: 'pie', label: '収支' },
+  { href: '/transactions',  icon: 'list',     label: '収支' },
   { href: '/analytics',     icon: 'barChart', label: '分析' },
-  { href: '/summary',       icon: 'sparkle',  mobileIcon: 'msg', label: 'AI' },
+  { href: '/summary',       icon: 'sparkle',  label: 'AI' },
 ]
 
 export const BOTTOM_LEFT: NavItem[] = NAV_ITEMS.slice(0, 2)
