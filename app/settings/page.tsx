@@ -14,6 +14,7 @@ import { FixCategoryColorsButton } from '@/components/settings/FixCategoryColors
 import { ThemeSegmented } from '@/components/settings/ThemeSegmented'
 import { PushNotificationToggle, StaticToggle } from '@/components/settings/SettingsToggle'
 import { LogoutButton } from '@/components/auth/LogoutButton'
+import { AdminAccordion } from '@/components/settings/AdminAccordion'
 
 const MONO: React.CSSProperties = { fontFamily: 'var(--font-mono), "JetBrains Mono", monospace' }
 
@@ -205,14 +206,14 @@ export default async function SettingsPage() {
             </div>
           </Panel>
 
-          {/* ── 世帯 ── */}
-          <GrpLabel>世帯</GrpLabel>
+          {/* ── 一般設定 ── */}
+          <GrpLabel>一般</GrpLabel>
           <Panel>
-            <Row icon={<HomeIcon />} iconBg="rgba(251,148,119,.12)" title="世帯管理" href="/settings/admin/members" value={householdName} />
-            <RowDivider />
-            <Row icon={<UsersIcon />} iconBg="rgba(122,167,255,.12)" title="メンバー管理" href="/settings/admin/members" value={`${memberCount}名`} />
-            <RowDivider />
             <Row icon={<ClockIcon />} iconBg="rgba(74,222,128,.12)" title="貯蓄目標" subtitle={`月次予算をAIが算出`} href="/settings/goals" value={`${goalCount}件`} />
+            <RowDivider />
+            <Row icon={<TagIcon2 />} iconBg="rgba(94,234,212,.12)" title="カテゴリ管理" subtitle={`${categoryCount}カテゴリ`} href="/settings/categories" />
+            <RowDivider />
+            <Row icon={<RefreshIcon />} iconBg="rgba(251,148,119,.12)" title="分類修正フィードバック" subtitle="あなたの修正がRAGに学習されます" href="/settings/corrections" value={`${correctionCount}件`} />
           </Panel>
 
           {/* ── 連携 ── */}
@@ -233,32 +234,6 @@ export default async function SettingsPage() {
             <Row icon={<BellIcon2 />} iconBg="rgba(251,191,36,.12)" title="プッシュ通知" subtitle="月次レポート・異常検知" rightSlot={<PushNotificationToggle />} />
             <RowDivider />
             <Row icon={<AlertIcon />} iconBg="rgba(251,113,133,.12)" title="予算超過アラート" subtitle="カテゴリ予算の90%到達時" rightSlot={<StaticToggle defaultOn />} />
-          </Panel>
-
-          {/* ── AI設定 ── */}
-          <GrpLabel color={KAI.violet}>AI設定</GrpLabel>
-          <Panel style={{
-            background: `linear-gradient(180deg,rgba(167,139,250,.06),${KAI.cardBg})`,
-            borderColor: 'rgba(167,139,250,.20)',
-          }}>
-            <div style={{ background: 'rgba(167,139,250,.06)' }}>
-              <Row
-                icon={<BarChartIcon />}
-                iconBg="rgba(167,139,250,.16)"
-                iconBorder="rgba(167,139,250,.3)"
-                title="AI運用分析"
-                titleColor={KAI.violet}
-                subtitle="キャッシュ率・分類精度・コスト"
-                href={isAdmin ? '/settings/ai-analytics' : undefined}
-                valueColor={KAI.mint}
-              />
-            </div>
-            <RowDivider />
-            <Row icon={<TagIcon2 />} iconBg="rgba(94,234,212,.12)" title="カテゴリ管理" subtitle={`${categoryCount}カテゴリ`} href="/settings/categories" />
-            <RowDivider />
-            <Row icon={<RefreshIcon />} iconBg="rgba(251,148,119,.12)" title="分類修正フィードバック" subtitle="あなたの修正がRAGに学習されます" href="/settings/corrections" value={`${correctionCount}件`} />
-            <RowDivider />
-            <Row icon={<OcrIcon />} iconBg="rgba(34,211,238,.12)" title="レシート自動分類" subtitle="OCR後にAIで自動カテゴリ付け" rightSlot={<StaticToggle defaultOn />} />
           </Panel>
 
           {/* ── 表示 ── */}
@@ -283,10 +258,38 @@ export default async function SettingsPage() {
             <Row icon={<InfoIcon />} iconBg="var(--kai-overlay-weak)" title="プライバシー・データ取扱い" href="/legal/privacy" />
           </Panel>
 
-          {/* ── メンテナンス（管理者のみ） ── */}
+          {/* ── 管理者（アコーディオン、管理者のみ表示） ── */}
           {isAdmin && (
-            <>
-              <GrpLabel>メンテナンス</GrpLabel>
+            <AdminAccordion>
+              <GrpLabel color={KAI.coral}>世帯管理</GrpLabel>
+              <Panel>
+                <Row icon={<HomeIcon />} iconBg="rgba(251,148,119,.12)" title="世帯管理" href="/settings/admin/members" value={householdName} />
+                <RowDivider />
+                <Row icon={<UsersIcon />} iconBg="rgba(122,167,255,.12)" title="メンバー管理" href="/settings/admin/members" value={`${memberCount}名`} />
+              </Panel>
+
+              <GrpLabel color={KAI.violet}>AI運用</GrpLabel>
+              <Panel style={{
+                background: `linear-gradient(180deg,rgba(167,139,250,.06),${KAI.cardBg})`,
+                borderColor: 'rgba(167,139,250,.20)',
+              }}>
+                <div style={{ background: 'rgba(167,139,250,.06)' }}>
+                  <Row
+                    icon={<BarChartIcon />}
+                    iconBg="rgba(167,139,250,.16)"
+                    iconBorder="rgba(167,139,250,.3)"
+                    title="AI運用分析"
+                    titleColor={KAI.violet}
+                    subtitle="キャッシュ率・分類精度・コスト"
+                    href="/settings/ai-analytics"
+                    valueColor={KAI.mint}
+                  />
+                </div>
+                <RowDivider />
+                <Row icon={<OcrIcon />} iconBg="rgba(34,211,238,.12)" title="レシート自動分類" subtitle="OCR後にAIで自動カテゴリ付け" rightSlot={<StaticToggle defaultOn />} />
+              </Panel>
+
+              <GrpLabel color={KAI.text3}>メンテナンス</GrpLabel>
               <Panel>
                 <FixCategoryColorsButton />
                 <div style={{ borderTop: `1px solid ${KAI.border}` }} />
@@ -298,7 +301,7 @@ export default async function SettingsPage() {
                   </>
                 )}
               </Panel>
-            </>
+            </AdminAccordion>
           )}
 
           {/* ── ログアウト ── */}

@@ -1,28 +1,19 @@
 'use client'
 
 import { useState, useRef, useCallback } from 'react'
-import dynamic from 'next/dynamic'
 import { BudgetDashboard } from '@/components/budget/BudgetDashboard'
-import { CashflowCard } from '@/components/budget/CashflowCard'
 import { SavingsRateTracker } from '@/components/budget/SavingsRateTracker'
 import { FixedExpenseCard } from '@/components/budget/FixedExpenseCard'
 import { KAI } from '@/lib/kai-tokens'
-import type { Transaction } from '@/lib/types'
 
-const AnalyticsTab = dynamic(
-  () => import('@/components/dashboard/AnalyticsTab').then((m) => m.AnalyticsTab),
-  { ssr: false, loading: () => <div style={{ minHeight: 300 }} /> }
-)
-
-const TABS = ['月次', '予算', '貯蓄', '固定費'] as const
+const TABS = ['予算', '貯蓄', '固定費'] as const
 
 interface Props {
   month: string
-  allTransactions: Transaction[]
   initialTab?: number
 }
 
-export function AnalyticsPageTabs({ month, allTransactions, initialTab = 0 }: Props) {
+export function BudgetPageTabs({ month, initialTab = 0 }: Props) {
   const [tab, setTab] = useState(initialTab)
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([])
 
@@ -60,17 +51,17 @@ export function AnalyticsPageTabs({ month, allTransactions, initialTab = 0 }: Pr
           <button
             key={t}
             ref={(el) => { tabRefs.current[i] = el }}
-            id={`analytics-tab-${i}`}
+            id={`budget-tab-${i}`}
             role="tab"
             aria-selected={tab === i}
-            aria-controls={`analytics-tabpanel-${i}`}
+            aria-controls={`budget-tabpanel-${i}`}
             tabIndex={tab === i ? 0 : -1}
             onClick={() => setTab(i)}
             style={{
               flex: 1, padding: '7px 4px',
               borderRadius: 9,
               background: tab === i ? KAI.bgCard : 'none',
-              border: tab === i ? `1px solid ${KAI.border2}` : 'none',
+              border: tab === i ? `1px solid ${KAI.border2}` : '1px solid transparent',
               fontSize: 11.5,
               fontWeight: tab === i ? 700 : 400,
               color: tab === i ? KAI.text1 : KAI.text3,
@@ -84,16 +75,10 @@ export function AnalyticsPageTabs({ month, allTransactions, initialTab = 0 }: Pr
         ))}
       </div>
 
-      <div role="tabpanel" id={`analytics-tabpanel-${tab}`} aria-labelledby={`analytics-tab-${tab}`} className="space-y-3" style={{ animation: 'kai-rise .4s ease-out both' }} key={tab}>
-        {tab === 0 && (
-          <>
-            <CashflowCard month={month} />
-            <AnalyticsTab allTransactions={allTransactions} month={month} />
-          </>
-        )}
-        {tab === 1 && <BudgetDashboard month={month} />}
-        {tab === 2 && <SavingsRateTracker currentMonth={month} />}
-        {tab === 3 && <FixedExpenseCard />}
+      <div role="tabpanel" id={`budget-tabpanel-${tab}`} aria-labelledby={`budget-tab-${tab}`} className="space-y-3" style={{ animation: 'kai-rise .4s ease-out both' }} key={tab}>
+        {tab === 0 && <BudgetDashboard month={month} />}
+        {tab === 1 && <SavingsRateTracker currentMonth={month} />}
+        {tab === 2 && <FixedExpenseCard />}
       </div>
     </div>
   )
