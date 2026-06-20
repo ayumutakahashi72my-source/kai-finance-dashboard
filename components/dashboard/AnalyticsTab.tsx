@@ -1,23 +1,30 @@
 'use client'
 
 import {
-  AreaChart, Area,
+  AreaChart, Area, BarChart, Bar, Cell,
+  PieChart, Pie,
   XAxis, YAxis, Tooltip, ResponsiveContainer,
 } from 'recharts'
 import type { Transaction } from '@/lib/types'
 import { KAI } from '@/lib/kai-tokens'
 import {
-  UP, DOWN, TEXT, TEXT2, TEXT3, BORDER, MONO_FONT, panel,
-  fmtK, buildMonthlyData, buildCategoryData, buildMoMData, TooltipDark,
+  UP, DOWN, CORAL, TEXT, TEXT2, TEXT3, BORDER, MONO_FONT, panel, pickColor,
+  fmt, fmtK, buildMonthlyData, buildCategoryData, buildMoMData,
+  buildPayeeData, buildDailyPattern, buildSavingsTrend, TooltipDark,
 } from './dashboard-utils'
 
 export function AnalyticsTab({ allTransactions, month }: {
   allTransactions: Transaction[]; month: string
 }) {
-  const monthlyData  = buildMonthlyData(allTransactions)
-  const categoryData = buildCategoryData(allTransactions.filter((t) => t.occurred_on.startsWith(month)))
-  const momData      = buildMoMData(allTransactions, month)
-  const rankData     = [...categoryData].slice(0, 6).map(([name, { amount, color }]) => ({ name, amount, color }))
+  const monthlyData   = buildMonthlyData(allTransactions)
+  const categoryData  = buildCategoryData(allTransactions.filter((t) => t.occurred_on.startsWith(month)))
+  const momData       = buildMoMData(allTransactions, month)
+  const rankData      = [...categoryData].slice(0, 6).map(([name, { amount, color }]) => ({ name, amount, color }))
+  const donutData     = categoryData.map(([name, { amount, color }]) => ({ name, value: amount, color }))
+  const donutTotal    = donutData.reduce((s, d) => s + d.value, 0)
+  const payeeData     = buildPayeeData(allTransactions, month)
+  const dailyPattern  = buildDailyPattern(allTransactions, month)
+  const savingsTrend  = buildSavingsTrend(allTransactions)
 
   return (
     <div className="space-y-3">
@@ -45,10 +52,99 @@ export function AnalyticsTab({ allTransactions, month }: {
         </ResponsiveContainer>
       </div>
 
+      {/* ── カテゴリ構成比 + 貯蓄率推移 ── */}
+      <div className="kai-rise grid grid-cols-1 gap-2.5 sm:grid-cols-2" style={{ animationDelay: '60ms' }}>
+        {/* donut chart */}
+        <div className="rounded-[18px] p-4" style={panel}>
+          <p style={{ fontSize: 11, color: TEXT3, letterSpacing: '.08em', fontWeight: 700, marginBottom: 8 }}>カテゴリ内訳</p>
+          {donutData.length === 0 ? (
+            <p style={{ padding: '16px 0', textAlign: 'center', fontSize: 13, color: TEXT3 }}>データなし</p>
+          ) : (
+            <div style={{ position: 'relative' }}>
+              <ResponsiveContainer width="100%" height={180}>
+                <PieChart>
+                  <Pie
+                    data={donutData}
+                    dataKey="value"
+                    innerRadius={50}
+                    outerRadius={75}
+                    paddingAngle={2}
+                    stroke="none"
+                  >
+                    {donutData.map((d, i) => (
+                      <Cell key={i} fill={d.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    content={({ active, payload }) => {
+                      if (!active || !payload?.length) return null
+                      const d = payload[0].payload as { name: string; value: number; color: string }
+                      const pct = donutTotal > 0 ? ((d.value / donutTotal) * 100).toFixed(1) : '0'
+                      return (
+                        <div style={{ background: KAI.overlayBg, backdropFilter: 'blur(20px)', border: `1px solid ${KAI.borderStrong}`, borderRadius: 10, padding: '8px 12px', fontSize: 12 }}>
+                          <p style={{ color: d.color, fontWeight: 600 }}>{d.name}</p>
+                          <p style={{ fontFamily: MONO_FONT, color: TEXT }}>{fmt(d.value)} ({pct}%)</p>
+                        </div>
+                      )
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+              <div style={{
+                position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
+                textAlign: 'center', pointerEvents: 'none',
+              }}>
+                <p style={{ fontFamily: MONO_FONT, fontSize: 15, fontWeight: 700, color: TEXT }}>{fmtK(donutTotal)}</p>
+                <p style={{ fontSize: 9, color: TEXT3 }}>支出合計</p>
+              </div>
+            </div>
+          )}
+          {/* legend */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 10px', marginTop: 4 }}>
+            {donutData.slice(0, 6).map((d) => (
+              <div key={d.name} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <div style={{ width: 7, height: 7, borderRadius: 2, background: d.color, flexShrink: 0 }} />
+                <span style={{ fontSize: 10, color: TEXT3 }}>{d.name}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* savings trend */}
+        <div className="rounded-[18px] p-4" style={panel}>
+          <p style={{ fontSize: 11, color: TEXT3, letterSpacing: '.08em', fontWeight: 700, marginBottom: 14 }}>貯蓄率推移 · 6M</p>
+          <ResponsiveContainer width="100%" height={160}>
+            <BarChart data={savingsTrend} margin={{ left: -10, right: 4 }}>
+              <XAxis dataKey="m" tick={{ fontSize: 10, fill: TEXT3, fontFamily: MONO_FONT }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 9, fill: TEXT3, fontFamily: MONO_FONT }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}%`} width={32} />
+              <Tooltip
+                content={({ active, payload, label }) => {
+                  if (!active || !payload?.length) return null
+                  const d = payload[0].payload as { m: string; rate: number; savings: number; inc: number; exp: number }
+                  return (
+                    <div style={{ background: KAI.overlayBg, backdropFilter: 'blur(20px)', border: `1px solid ${KAI.borderStrong}`, borderRadius: 10, padding: '8px 12px', fontSize: 12 }}>
+                      <p style={{ fontFamily: MONO_FONT, fontWeight: 700, color: TEXT, marginBottom: 4 }}>{label}月</p>
+                      <p style={{ fontFamily: MONO_FONT, color: d.rate >= 0 ? UP : DOWN }}>貯蓄率: {d.rate}%</p>
+                      <p style={{ fontFamily: MONO_FONT, color: TEXT3 }}>貯蓄額: {fmt(d.savings)}</p>
+                    </div>
+                  )
+                }}
+              />
+              <Bar dataKey="rate" radius={[4, 4, 0, 0]}>
+                {savingsTrend.map((d, i) => (
+                  <Cell key={i} fill={d.rate >= 0 ? UP : DOWN} fillOpacity={0.7} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* ── 支出ランキング + 先月比 ── */}
       <div className="kai-rise grid grid-cols-1 gap-2.5 sm:grid-cols-2" style={{ animationDelay: '80ms' }}>
         {/* category ranking */}
         <div className="rounded-[18px] p-4" style={panel}>
-          <p style={{ fontSize: 11, color: TEXT3, letterSpacing: '.08em', fontWeight: 700, marginBottom: 12 }}>支出ランキング</p>
+          <p style={{ fontSize: 11, color: TEXT3, letterSpacing: '.08em', fontWeight: 700, marginBottom: 12 }}>カテゴリ別ランキング</p>
           {rankData.length === 0 ? (
             <p style={{ padding: '16px 0', textAlign: 'center', fontSize: 13, color: TEXT3 }}>データなし</p>
           ) : (() => {
@@ -96,6 +192,64 @@ export function AnalyticsTab({ allTransactions, month }: {
               ))}
             </div>
           )}
+        </div>
+      </div>
+
+      {/* ── 店舗別ランキング + 曜日別パターン ── */}
+      <div className="kai-rise grid grid-cols-1 gap-2.5 sm:grid-cols-2" style={{ animationDelay: '120ms' }}>
+        {/* payee ranking */}
+        <div className="rounded-[18px] p-4" style={panel}>
+          <p style={{ fontSize: 11, color: TEXT3, letterSpacing: '.08em', fontWeight: 700, marginBottom: 12 }}>店舗別ランキング</p>
+          {payeeData.length === 0 ? (
+            <p style={{ padding: '16px 0', textAlign: 'center', fontSize: 13, color: TEXT3 }}>データなし</p>
+          ) : (() => {
+            const payeeMax = payeeData[0]?.amount ?? 1
+            return payeeData.map(({ name, amount }, i) => {
+              const pct = (amount / payeeMax) * 100
+              const color = pickColor(name)
+              return (
+                <div key={name} style={{ marginBottom: i < payeeData.length - 1 ? 10 : 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                    <span style={{ fontFamily: MONO_FONT, fontSize: 9.5, fontWeight: 700, color: i === 0 ? CORAL : TEXT3, minWidth: 14, textAlign: 'right' }}>{i + 1}</span>
+                    <span style={{ flex: 1, fontSize: 12, color: TEXT2, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>
+                    <span style={{ fontFamily: MONO_FONT, fontSize: 11, color: TEXT, fontWeight: 600, flexShrink: 0 }}>¥{amount.toLocaleString('ja-JP')}</span>
+                  </div>
+                  <div style={{ height: 3, background: KAI.border, borderRadius: 99, overflow: 'hidden', marginLeft: 20 }}>
+                    <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: 99, opacity: i === 0 ? 1 : 0.6 }}/>
+                  </div>
+                </div>
+              )
+            })
+          })()}
+        </div>
+
+        {/* daily spending pattern */}
+        <div className="rounded-[18px] p-4" style={panel}>
+          <p style={{ fontSize: 11, color: TEXT3, letterSpacing: '.08em', fontWeight: 700, marginBottom: 14 }}>曜日別パターン</p>
+          <ResponsiveContainer width="100%" height={160}>
+            <BarChart data={dailyPattern} margin={{ left: -10, right: 4 }}>
+              <XAxis dataKey="day" tick={{ fontSize: 10, fill: TEXT3, fontFamily: MONO_FONT }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 9, fill: TEXT3, fontFamily: MONO_FONT }} axisLine={false} tickLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} width={28} />
+              <Tooltip
+                content={({ active, payload, label }) => {
+                  if (!active || !payload?.length) return null
+                  const d = payload[0].payload as { day: string; avg: number; total: number; count: number }
+                  return (
+                    <div style={{ background: KAI.overlayBg, backdropFilter: 'blur(20px)', border: `1px solid ${KAI.borderStrong}`, borderRadius: 10, padding: '8px 12px', fontSize: 12 }}>
+                      <p style={{ fontFamily: MONO_FONT, fontWeight: 700, color: TEXT, marginBottom: 4 }}>{label}曜日</p>
+                      <p style={{ fontFamily: MONO_FONT, color: CORAL }}>平均: {fmt(d.avg)}</p>
+                      <p style={{ fontFamily: MONO_FONT, color: TEXT3 }}>合計: {fmt(d.total)} ({d.count}件)</p>
+                    </div>
+                  )
+                }}
+              />
+              <Bar dataKey="avg" radius={[4, 4, 0, 0]}>
+                {dailyPattern.map((d, i) => (
+                  <Cell key={i} fill={i === 0 || i === 6 ? CORAL : KAI.blue} fillOpacity={0.65} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
         </div>
       </div>
     </div>
