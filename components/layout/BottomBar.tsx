@@ -53,7 +53,7 @@ function BottomBarInner() {
                   className="flex min-h-[48px] flex-col items-center gap-[3px] px-2 py-2"
                   style={{ color: active ? CORAL : KAI.text3, textDecoration: 'none' }}
                 >
-                  <Icon name={it.mobileIcon ?? it.icon} size={20}/>
+                  <Icon name={it.icon} size={20}/>
                   <span style={{ fontSize: 11, fontWeight: 600 }}>{it.label}</span>
                 </Link>
               )
@@ -74,7 +74,7 @@ function BottomBarInner() {
                   className="flex min-h-[48px] flex-col items-center gap-[3px] px-2 py-2"
                   style={{ color: active ? CORAL : KAI.text3, textDecoration: 'none' }}
                 >
-                  <Icon name={it.mobileIcon ?? it.icon} size={20}/>
+                  <Icon name={it.icon} size={20}/>
                   <span style={{ fontSize: 11, fontWeight: 600 }}>{it.label}</span>
                 </Link>
               )

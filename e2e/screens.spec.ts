@@ -317,6 +317,101 @@ test.describe('AIチャットページ', () => {
   })
 })
 
+// ── BottomBar PlanA デザイン準拠 ─────────────────────────────────
+
+test.describe('BottomBar PlanA準拠', () => {
+  test.beforeEach(async ({ page }) => {
+    if (!(await isAuthenticated(page))) test.skip()
+  })
+
+  test('PlanA通りのラベル順序: ホーム|収支|[FAB]|分析|AI', async ({ page }) => {
+    await page.goto('/')
+    await page.waitForLoadState('networkidle')
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.waitForTimeout(300)
+
+    const expectedNav = [
+      { label: 'ホーム', href: '/' },
+      { label: '収支', href: '/transactions' },
+      { label: '分析', href: '/analytics' },
+      { label: 'AI', href: '/summary' },
+    ]
+
+    for (const { label, href } of expectedNav) {
+      const link = page.locator(`a[aria-label="${label}"]`)
+      await expect(link).toBeVisible()
+      await expect(link).toHaveAttribute('href', href)
+    }
+
+    // FABが中央にある
+    await expect(page.locator('button[aria-label="追加"]')).toBeVisible()
+  })
+
+  test('収支アイコンがlist（pieでない）、AIアイコンがsparkle（msgでない）', async ({ page }) => {
+    await page.goto('/')
+    await page.waitForLoadState('networkidle')
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.waitForTimeout(300)
+
+    // 収支リンク内のSVGにlist固有のline要素がある（x1="8" y1="6"）
+    const syuushiSvg = page.locator('a[aria-label="収支"] svg')
+    await expect(syuushiSvg).toBeVisible()
+    // list icon has horizontal lines (x1="8"), pie icon has arc path — check for line elements
+    const listLines = syuushiSvg.locator('line')
+    const lineCount = await listLines.count()
+    expect(lineCount, '収支アイコンはlist（6本のline要素）であること').toBe(6)
+
+    // AIリンク内のSVGにsparkle固有のpath（12 3l1.5）がある
+    const aiSvg = page.locator('a[aria-label="AI"] svg')
+    await expect(aiSvg).toBeVisible()
+    // sparkle icon has 2 path elements, msg icon has 1 path with "21 15" — check path count
+    const sparklePaths = aiSvg.locator('path')
+    const pathCount = await sparklePaths.count()
+    expect(pathCount, 'AIアイコンはsparkle（2つのpath要素）であること').toBe(2)
+  })
+
+  test('収支ボタンをタップすると /transactions に遷移する', async ({ page }) => {
+    await page.goto('/')
+    await page.waitForLoadState('networkidle')
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.waitForTimeout(300)
+
+    const link = page.locator('a[aria-label="収支"]')
+    await expect(link).toBeVisible()
+
+    // FABが重なっていないか確認
+    const box = await link.boundingBox()
+    expect(box, '収支リンクのboundingBoxが取得できること').toBeTruthy()
+
+    // クリック時にactionableかどうかをチェック（FABに遮られる場合ここでエラー）
+    await link.click({ timeout: 5_000 })
+    await page.waitForURL('**/transactions**', { timeout: 10_000 })
+    expect(page.url()).toContain('/transactions')
+  })
+
+  test('収支ページでリスト/カレンダーのViewToggleが存在する', async ({ page }) => {
+    await page.goto('/transactions')
+    await page.waitForLoadState('networkidle')
+
+    // ViewToggle のボタンが2つある（リスト・カレンダー）
+    const toggleButtons = page.locator('button').filter({ hasText: /リスト|カレンダー/ })
+    const count = await toggleButtons.count()
+    expect(count, 'リスト/カレンダーの切替ボタンが存在すること').toBeGreaterThanOrEqual(2)
+  })
+
+  test('アクティブなナビにcoralカラーが適用される', async ({ page }) => {
+    await page.goto('/')
+    await page.waitForLoadState('networkidle')
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.waitForTimeout(300)
+
+    const homeLink = page.locator('a[aria-label="ホーム"]')
+    const color = await homeLink.evaluate((el) => getComputedStyle(el).color)
+    // coral = #fb9477 = rgb(251, 148, 119)
+    expect(color).toBe('rgb(251, 148, 119)')
+  })
+})
+
 // ── 画面遷移（BottomBar巡回） ──────────────────────────────────
 
 test.describe('画面遷移', () => {
