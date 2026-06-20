@@ -105,6 +105,53 @@ export function buildMoMData(allTransactions: Transaction[], month: string) {
     .slice(0, 5)
 }
 
+/* ─── payee ranking ─── */
+export function buildPayeeData(transactions: Transaction[], month: string) {
+  const expenses = transactions.filter((t) => t.occurred_on.startsWith(month) && t.amount < 0)
+  const byPayee: Record<string, number> = {}
+  for (const t of expenses) {
+    const name = t.payee || 'その他'
+    byPayee[name] = (byPayee[name] ?? 0) + Math.abs(t.amount)
+  }
+  return Object.entries(byPayee)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8)
+    .map(([name, amount]) => ({ name, amount }))
+}
+
+/* ─── daily spending pattern (day of week) ─── */
+const DOW_LABELS = ['日', '月', '火', '水', '木', '金', '土']
+export function buildDailyPattern(transactions: Transaction[], month: string) {
+  const expenses = transactions.filter((t) => t.occurred_on.startsWith(month) && t.amount < 0)
+  const byDow = Array.from({ length: 7 }, () => ({ total: 0, count: 0 }))
+  for (const t of expenses) {
+    const dow = new Date(t.occurred_on + 'T00:00:00').getDay()
+    byDow[dow].total += Math.abs(t.amount)
+    byDow[dow].count += 1
+  }
+  return byDow.map((d, i) => ({
+    day: DOW_LABELS[i],
+    avg: d.count > 0 ? Math.round(d.total / d.count) : 0,
+    total: d.total,
+    count: d.count,
+  }))
+}
+
+/* ─── savings trend (monthly) ─── */
+export function buildSavingsTrend(transactions: Transaction[]) {
+  const now = jstNow()
+  return Array.from({ length: 6 }, (_, i) => {
+    const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - (5 - i), 1))
+    const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`
+    const monthTx = transactions.filter((t) => t.occurred_on.startsWith(key))
+    const inc = monthTx.filter((t) => t.amount >= 0).reduce((s, t) => s + t.amount, 0)
+    const exp = monthTx.filter((t) => t.amount < 0).reduce((s, t) => s + Math.abs(t.amount), 0)
+    const savings = inc - exp
+    const rate = inc > 0 ? Math.round((savings / inc) * 100) : 0
+    return { m: `${d.getUTCMonth() + 1}`, savings, rate, inc, exp }
+  })
+}
+
 /* ─── shared tooltip ─── */
 export function TooltipDark({ active, payload, label }: {
   active?: boolean

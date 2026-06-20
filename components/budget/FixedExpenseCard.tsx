@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { RefreshCw, Pin, CheckCircle2 } from 'lucide-react'
+import { useState, useRef } from 'react'
+import { RefreshCw, Pin, CheckCircle2, Plus } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { KAI } from '@/lib/kai-tokens'
@@ -131,9 +131,99 @@ function FixedRow({
   )
 }
 
+function AddFixedForm({ onClose }: { onClose: () => void }) {
+  const qc = useQueryClient()
+  const payeeRef = useRef<HTMLInputElement>(null)
+  const [payee, setPayee] = useState('')
+  const [amount, setAmount] = useState('')
+  const [error, setError] = useState('')
+
+  const { mutate, isPending } = useMutation({
+    mutationFn: () =>
+      fetch('/api/fixed-expenses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ payee: payee.trim(), avg_amount: Number(amount) }),
+      }).then(async (r) => {
+        const j = await r.json()
+        if (!r.ok) throw new Error(j.error ?? '登録失敗')
+        return j
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['fixed_expenses'] })
+      onClose()
+    },
+    onError: (e: Error) => setError(e.message),
+  })
+
+  const canSubmit = payee.trim().length > 0 && Number(amount) > 0
+
+  return (
+    <div style={{
+      padding: '12px 14px',
+      borderBottom: `1px solid ${KAI.border}`,
+      background: `${KAI.violet}08`,
+    }}>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+        <input
+          ref={payeeRef}
+          value={payee}
+          onChange={(e) => setPayee(e.target.value)}
+          placeholder="店舗名・サービス名"
+          autoFocus
+          style={{
+            flex: 1, padding: '7px 10px', fontSize: 13,
+            background: KAI.overlayWeak, border: `1px solid ${KAI.border2}`,
+            borderRadius: 8, color: KAI.text1, fontFamily: 'inherit',
+            outline: 'none',
+          }}
+        />
+        <input
+          value={amount}
+          onChange={(e) => setAmount(e.target.value.replace(/[^0-9]/g, ''))}
+          placeholder="金額"
+          inputMode="numeric"
+          style={{
+            width: 100, padding: '7px 10px', fontSize: 13,
+            background: KAI.overlayWeak, border: `1px solid ${KAI.border2}`,
+            borderRadius: 8, color: KAI.text1, fontFamily: 'inherit',
+            outline: 'none', textAlign: 'right',
+          }}
+        />
+      </div>
+      {error && <p style={{ fontSize: 11, color: KAI.danger, marginBottom: 6 }}>{error}</p>}
+      <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+        <button
+          type="button"
+          onClick={onClose}
+          style={{
+            fontSize: 11, fontWeight: 600, padding: '5px 12px', borderRadius: 7,
+            background: 'none', border: `1px solid ${KAI.border2}`,
+            color: KAI.text3, cursor: 'pointer', fontFamily: 'inherit',
+          }}
+        >キャンセル</button>
+        <button
+          type="button"
+          disabled={!canSubmit || isPending}
+          onClick={() => mutate()}
+          style={{
+            fontSize: 11, fontWeight: 600, padding: '5px 12px', borderRadius: 7,
+            background: canSubmit ? `${KAI.violet}22` : KAI.overlayWeak,
+            border: `1px solid ${canSubmit ? `${KAI.violet}44` : KAI.border2}`,
+            color: canSubmit ? KAI.violet : KAI.text4,
+            cursor: canSubmit && !isPending ? 'pointer' : 'not-allowed',
+            fontFamily: 'inherit',
+          }}
+        >{isPending ? '登録中…' : '登録'}</button>
+      </div>
+    </div>
+  )
+}
+
 export function FixedExpenseCard() {
   const qc = useQueryClient()
   const [showDismissed, setShowDismissed] = useState(false)
+  const [showAddForm, setShowAddForm] = useState(false)
   const [pendingId, setPendingId] = useState<string | null>(null)
 
   const { data, isLoading, isError } = useQuery<{ data: FixedExpense[] }>({
@@ -175,14 +265,12 @@ export function FixedExpenseCard() {
   const confirmed = all.filter((x) => !!x.confirmed_at)
   const dismissed = all.filter((x) => x.dismissed)
 
-  if (all.length === 0) return null
-
   return (
     <section style={{ animation: 'kai-rise .5s .25s ease-out both' }}>
       {/* ヘッダー */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
         <span style={{ fontSize: 10, color: KAI.text4, letterSpacing: '.14em', fontWeight: 700, textTransform: 'uppercase' }}>
-          固定費候補
+          固定費
         </span>
         <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
           {confirmed.length > 0 && (
@@ -194,13 +282,27 @@ export function FixedExpenseCard() {
               {confirmed.length} 登録済
             </span>
           )}
-          <span style={{
-            fontSize: 10, color: KAI.violet, fontWeight: 700, ...MONO,
-            background: `${KAI.violet}18`, border: `1px solid ${KAI.violet}30`,
-            borderRadius: 6, padding: '2px 7px',
-          }}>
-            {active.length} 件
-          </span>
+          {active.length > 0 && (
+            <span style={{
+              fontSize: 10, color: KAI.violet, fontWeight: 700, ...MONO,
+              background: `${KAI.violet}18`, border: `1px solid ${KAI.violet}30`,
+              borderRadius: 6, padding: '2px 7px',
+            }}>
+              {active.length} 候補
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={() => setShowAddForm(true)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 3,
+              fontSize: 10, fontWeight: 700, padding: '2px 8px 2px 5px', borderRadius: 6,
+              background: `${KAI.coral}18`, border: `1px solid ${KAI.coral}38`,
+              color: KAI.coral, cursor: 'pointer', fontFamily: 'inherit',
+            }}
+          >
+            <Plus size={11} strokeWidth={2.5} />追加
+          </button>
         </div>
       </div>
 
@@ -208,18 +310,23 @@ export function FixedExpenseCard() {
         background: KAI.overlayWeak, border: `1px solid ${KAI.border}`,
         borderRadius: 14, overflow: 'hidden',
       }}>
+        {/* 追加フォーム */}
+        {showAddForm && <AddFixedForm onClose={() => setShowAddForm(false)} />}
+
         {/* 説明バー */}
-        <div style={{
-          padding: '9px 14px',
-          background: `${KAI.violet}0a`,
-          borderBottom: `1px solid ${KAI.border}`,
-          display: 'flex', alignItems: 'center', gap: 8,
-        }}>
-          <Pin size={13} strokeWidth={2} style={{ color: KAI.violet, flexShrink: 0 }}/>
-          <p style={{ fontSize: 11, color: KAI.text3, lineHeight: 1.5 }}>
-            3ヶ月以上連続で検出された支払いです。固定費として管理するか確認してください。
-          </p>
-        </div>
+        {active.length > 0 && (
+          <div style={{
+            padding: '9px 14px',
+            background: `${KAI.violet}0a`,
+            borderBottom: `1px solid ${KAI.border}`,
+            display: 'flex', alignItems: 'center', gap: 8,
+          }}>
+            <Pin size={13} strokeWidth={2} style={{ color: KAI.violet, flexShrink: 0 }}/>
+            <p style={{ fontSize: 11, color: KAI.text3, lineHeight: 1.5 }}>
+              3ヶ月以上連続で検出された支払いです。固定費として管理するか確認してください。
+            </p>
+          </div>
+        )}
 
         {/* 承認済み */}
         {confirmed.map((item, i) => (
@@ -253,9 +360,14 @@ export function FixedExpenseCard() {
               />
             </div>
           ))
-        ) : confirmed.length === 0 ? (
+        ) : confirmed.length === 0 && !showAddForm ? (
           <div style={{ padding: '20px 14px', textAlign: 'center' }}>
-            <p style={{ fontSize: 13, color: KAI.text4 }}>すべて却下済みです</p>
+            <p style={{ fontSize: 13, color: KAI.text4 }}>
+              {all.length === 0 ? '固定費が未登録です' : 'すべて却下済みです'}
+            </p>
+            <p style={{ fontSize: 11, color: KAI.text4, marginTop: 4 }}>
+              上の「+追加」ボタンから手動で登録できます
+            </p>
           </div>
         ) : null}
 
