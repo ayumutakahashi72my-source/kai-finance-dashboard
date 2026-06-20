@@ -56,7 +56,7 @@ export function AiPageTabs({ initialTab = 0 }: Props) {
               flex: 1, padding: '7px 4px',
               borderRadius: 9,
               background: tab === i ? KAI.bgCard : 'none',
-              border: tab === i ? `1px solid ${KAI.border2}` : 'none',
+              border: `1px solid ${tab === i ? KAI.border2 : 'transparent'}`,
               fontSize: 11.5,
               fontWeight: tab === i ? 700 : 400,
               color: tab === i ? KAI.text1 : KAI.text3,
