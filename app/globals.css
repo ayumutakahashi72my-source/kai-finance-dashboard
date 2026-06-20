@@ -276,6 +276,7 @@
   --kai-overlay-border:  rgba(255,255,255,0.07);
   --kai-dropdown-bg:     rgba(16,18,28,0.97);
   --kai-bottombar-bg:    rgba(20,22,32,0.88);
+  --kai-bottombar-shadow: 0 8px 32px rgba(0,0,0,0.55);
   --kai-card-bg:         rgba(20,22,32,0.88);
 }
 
@@ -309,6 +310,7 @@
   --kai-overlay-border:  rgba(0,0,0,0.07);
   --kai-dropdown-bg:     rgba(255,255,255,0.97);
   --kai-bottombar-bg:    rgba(250,249,252,0.94);
+  --kai-bottombar-shadow: 0 8px 32px rgba(80,70,110,0.14);
   --kai-card-bg:         rgba(255,255,255,0.92);
 }
 

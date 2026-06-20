@@ -47,7 +47,7 @@ export function GoalBanner() {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          background: 'rgba(10,10,16,0.60)',
+          background: KAI.overlayBg,
           borderRadius: 14,
           gap: 8,
         }}

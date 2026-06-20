@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Mail, Globe } from 'lucide-react'
-import { CORAL, BLUE, GREEN, RED, AMBER, TEXT1, TEXT2, TEXT3, TEXT4, OVERLAY_WEAK, BORDER2, BORDER_STRONG, SyncResult, BackBtn } from './_shared'
+import { CORAL, BLUE, GREEN, RED, AMBER, TEXT1, TEXT2, TEXT3, TEXT4, BG, OVERLAY_WEAK, BORDER2, BORDER_STRONG, SyncResult, BackBtn } from './_shared'
 
 const MF_FEATURES = [
   {
@@ -216,7 +216,7 @@ export function MfSyncTab({ onBack, onDone }: { onBack: () => void; onDone: () =
           {otpPending && (
             <>
               <div onClick={clearOtp} style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}/>
-              <div style={{ position: 'fixed', left: '50%', top: '50%', zIndex: 61, transform: 'translate(-50%, -50%)', width: 'min(360px, calc(100vw - 40px))', background: 'rgba(18,16,28,0.98)', border: `1px solid ${BORDER_STRONG}`, borderRadius: 20, padding: '24px 22px 20px', display: 'flex', flexDirection: 'column', gap: 14, boxShadow: '0 24px 64px rgba(0,0,0,0.7)' }}>
+              <div style={{ position: 'fixed', left: '50%', top: '50%', zIndex: 61, transform: 'translate(-50%, -50%)', width: 'min(360px, calc(100vw - 40px))', background: BG, border: `1px solid ${BORDER_STRONG}`, borderRadius: 20, padding: '24px 22px 20px', display: 'flex', flexDirection: 'column', gap: 14, boxShadow: '0 24px 64px rgba(0,0,0,0.7)' }}>
                 <div style={{ display: 'flex', gap: 6, background: OVERLAY_WEAK, borderRadius: 10, padding: 4 }}>
                   {(['code', 'browser'] as const).map(mode => (
                     <button key={mode} onClick={() => { setBrowserMode(mode === 'browser'); setOtpError(null) }} style={{ flex: 1, padding: '7px 4px', borderRadius: 7, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', fontFamily: 'inherit', background: (mode === 'browser') === browserMode ? BORDER_STRONG : 'transparent', color: (mode === 'browser') === browserMode ? TEXT1 : TEXT3 }}>
@@ -266,7 +266,7 @@ export function MfSyncTab({ onBack, onDone }: { onBack: () => void; onDone: () =
           {showNoCredsAlert && (
             <>
               <div onClick={() => setShowNoCredsAlert(false)} style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}/>
-              <div style={{ position: 'fixed', left: '50%', top: '50%', zIndex: 61, transform: 'translate(-50%, -50%)', width: 'min(320px, calc(100vw - 40px))', background: 'rgba(18,16,28,0.98)', border: `1px solid ${BORDER_STRONG}`, borderRadius: 20, padding: '28px 24px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, boxShadow: '0 24px 64px rgba(0,0,0,0.7)' }}>
+              <div style={{ position: 'fixed', left: '50%', top: '50%', zIndex: 61, transform: 'translate(-50%, -50%)', width: 'min(320px, calc(100vw - 40px))', background: BG, border: `1px solid ${BORDER_STRONG}`, borderRadius: 20, padding: '28px 24px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, boxShadow: '0 24px 64px rgba(0,0,0,0.7)' }}>
                 <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'rgba(251,191,36,.12)', border: '1px solid rgba(251,191,36,.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>⚠</div>
                 <div style={{ textAlign: 'center' }}>
                   <div style={{ fontSize: 15, fontWeight: 700, color: TEXT1, marginBottom: 8 }}>MF連携が未設定です</div>
@@ -274,7 +274,7 @@ export function MfSyncTab({ onBack, onDone }: { onBack: () => void; onDone: () =
                 </div>
                 <div style={{ display: 'flex', gap: 8, width: '100%', marginTop: 4 }}>
                   <button onClick={() => setShowNoCredsAlert(false)} style={{ flex: 1, padding: '11px', borderRadius: 12, fontSize: 13, fontWeight: 600, background: OVERLAY_WEAK, border: `1px solid ${BORDER2}`, color: TEXT2, cursor: 'pointer', fontFamily: 'inherit' }}>閉じる</button>
-                  <a href="/settings/integrations/mf" style={{ flex: 2, padding: '11px', borderRadius: 12, fontSize: 13, fontWeight: 700, background: `linear-gradient(135deg, ${CORAL} 0%, ${BLUE} 100%)`, color: '#0c0a14', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>設定画面へ</a>
+                  <a href="/settings/integrations/mf" style={{ flex: 2, padding: '11px', borderRadius: 12, fontSize: 13, fontWeight: 700, background: `linear-gradient(135deg, ${CORAL} 0%, ${BLUE} 100%)`, color: 'var(--kai-bg)', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>設定画面へ</a>
                 </div>
               </div>
             </>

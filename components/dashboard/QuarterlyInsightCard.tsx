@@ -37,7 +37,7 @@ export function QuarterlyInsightCard() {
     <div
       className="reveal-up rounded-[18px] p-4"
       style={{
-        background: 'linear-gradient(135deg,rgba(167,139,250,0.10),rgba(122,167,255,0.06),rgba(20,22,32,0.66))',
+        background: `linear-gradient(135deg,rgba(167,139,250,0.10),rgba(122,167,255,0.06),${KAI.bgPanel})`,
         backdropFilter: 'blur(24px) saturate(160%)',
         border: '1px solid rgba(167,139,250,0.20)',
         animationDelay: '200ms',
@@ -99,7 +99,7 @@ export function QuarterlyInsightCard() {
               <div style={{
                 position: 'absolute', bottom: 0, left: 0, right: 0,
                 height: 60,
-                background: 'linear-gradient(transparent,rgba(16,18,28,0.95))',
+                background: `linear-gradient(transparent,${KAI.bgPanel})`,
               }} />
             )}
           </div>

@@ -56,7 +56,7 @@ export default function PrivacyPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-xs border-collapse" style={{ borderColor: 'var(--kai-border2)' }}>
             <thead>
-              <tr style={{ background: '#0f172a', color: 'var(--kai-text3)' }}>
+              <tr style={{ background: 'var(--kai-bg-panel-solid)', color: 'var(--kai-text3)' }}>
                 <th className="text-left p-2.5 border" style={{ borderColor: 'var(--kai-border2)' }}>送信先</th>
                 <th className="text-left p-2.5 border" style={{ borderColor: 'var(--kai-border2)' }}>送信データ</th>
                 <th className="text-left p-2.5 border" style={{ borderColor: 'var(--kai-border2)' }}>利用目的</th>

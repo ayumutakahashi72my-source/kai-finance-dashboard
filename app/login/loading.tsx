@@ -4,7 +4,7 @@ export default function LoginLoading() {
       style={{
         position: 'fixed',
         inset: 0,
-        background: '#0a0a10',
+        background: 'var(--kai-bg)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',

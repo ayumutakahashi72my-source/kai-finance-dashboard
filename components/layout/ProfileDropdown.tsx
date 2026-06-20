@@ -68,7 +68,7 @@ export function ProfileDropdown({ displayName, avatarUrl }: Props) {
             background: KAI.dropdownBg,
             backdropFilter: 'blur(28px)',
             border: `1px solid ${KAI.border2}`,
-            boxShadow: `0 12px 40px rgba(0,0,0,0.65), 0 0 0 0.5px ${KAI.overlayWeak}`,
+            boxShadow: `var(--kai-bottombar-shadow), 0 0 0 0.5px ${KAI.overlayWeak}`,
           }}
         >
           {/* プロフィール情報 */}
