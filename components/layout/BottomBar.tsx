@@ -30,7 +30,7 @@ function BottomBarInner() {
 
       <div
         className="fixed bottom-0 left-0 right-0 z-40 pt-2 lg:hidden"
-        style={{ background: 'linear-gradient(180deg, transparent, rgba(10,10,16,0.92) 30%)', paddingBottom: 'calc(env(safe-area-inset-bottom, 16px) + 8px)' }}
+        style={{ background: `linear-gradient(180deg, transparent, ${KAI.bg} 30%)`, paddingBottom: 'calc(env(safe-area-inset-bottom, 16px) + 8px)' }}
       >
         <div
           className="relative mx-3.5 flex items-center rounded-[24px] px-3 py-2"
@@ -38,7 +38,7 @@ function BottomBarInner() {
             background: KAI.bottombarBg,
             backdropFilter: 'blur(20px) saturate(160%)',
             border: `1px solid ${KAI.borderStrong}`,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.55)',
+            boxShadow: 'var(--kai-bottombar-shadow)',
           }}
         >
           <div className="flex flex-1 items-center justify-around">

@@ -6,29 +6,20 @@ export interface NavItem {
   /** モバイル用のアイコン（デザイン仕様でデスクトップと異なる場合） */
   mobileIcon?: IconName
   label: string
-  /** デスクトップSidebarのみに表示 */
-  desktopOnly?: boolean
-  /** モバイルBottomBarのみに表示 */
-  mobileOnly?: boolean
 }
 
 export const NAV_ITEMS: NavItem[] = [
-  { href: '/',                           icon: 'grid',     label: 'ホーム' },
-  { href: '/transactions?view=calendar', icon: 'calendar', label: 'カレンダー', mobileOnly: true },
-  { href: '/transactions',              icon: 'list',     mobileIcon: 'pie', label: '収支' },
-  { href: '/analytics',                 icon: 'barChart', label: '分析', desktopOnly: true },
-  { href: '/summary',                   icon: 'sparkle',  mobileIcon: 'msg', label: 'AI' },
+  { href: '/',              icon: 'grid',     label: 'ホーム' },
+  { href: '/transactions',  icon: 'list',     mobileIcon: 'pie', label: '収支' },
+  { href: '/analytics',     icon: 'barChart', label: '分析' },
+  { href: '/summary',       icon: 'sparkle',  mobileIcon: 'msg', label: 'AI' },
 ]
 
-export const BOTTOM_LEFT: NavItem[] = NAV_ITEMS.filter(
-  (n) => !n.desktopOnly && (n.href === '/' || n.mobileOnly),
-)
+export const BOTTOM_LEFT: NavItem[] = NAV_ITEMS.slice(0, 2)
 
-export const BOTTOM_RIGHT: NavItem[] = NAV_ITEMS.filter(
-  (n) => !n.desktopOnly && !n.mobileOnly && n.href !== '/',
-)
+export const BOTTOM_RIGHT: NavItem[] = NAV_ITEMS.slice(2)
 
-export const SIDEBAR_NAV: NavItem[] = NAV_ITEMS.filter((n) => !n.mobileOnly)
+export const SIDEBAR_NAV: NavItem[] = NAV_ITEMS
 
 export function isNavActive(
   href: string,

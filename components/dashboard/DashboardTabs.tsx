@@ -67,7 +67,7 @@ export function DashboardTabs({ transactions, allTransactions, month, streak: st
                 padding: 9,
                 fontSize: 13,
                 fontWeight: active ? 700 : 600,
-                color: active ? '#0c0a14' : KAI.text3,
+                color: active ? KAI.bg : KAI.text3,
                 background: active ? GRADIENTS[i] : KAI.overlayWeak,
                 border: `1px solid ${active ? 'transparent' : KAI.border}`,
                 borderRadius: 12,

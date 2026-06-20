@@ -93,8 +93,8 @@ export default async function DashboardPage({
       <div className="relative min-h-screen lg:pl-[220px]" style={{ zIndex: 2 }}>
         {/* ── Mobile header ── */}
         <header
-          className="lg:hidden"
-          style={{ borderBottom: `1px solid var(--kai-border)`, paddingTop: 'calc(env(safe-area-inset-top, 14px) + 14px)' }}
+          className="sticky top-0 z-30 lg:hidden"
+          style={{ background: 'var(--kai-header-bg)', backdropFilter: 'blur(24px)', borderBottom: `1px solid var(--kai-border)`, paddingTop: 'calc(env(safe-area-inset-top, 14px) + 14px)' }}
         >
           <div className="flex items-center justify-between px-5 py-[14px]">
             <KaiSystemBrand size="sm"/>

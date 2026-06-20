@@ -300,7 +300,7 @@ export function ManualEntryTab({ onBack, onDone, prefill }: {
               : `linear-gradient(135deg, ${CORAL}, #7aa7ff)`,
             border: 'none', borderRadius: 14,
             fontSize: 15, fontWeight: 800,
-            color: (saving || amountNumber <= 0 || !memo.trim()) ? TEXT3 : '#0c0a14',
+            color: (saving || amountNumber <= 0 || !memo.trim()) ? TEXT3 : 'var(--kai-bg)',
             cursor: (saving || amountNumber <= 0 || !memo.trim()) ? 'not-allowed' : 'pointer',
           }}
         >

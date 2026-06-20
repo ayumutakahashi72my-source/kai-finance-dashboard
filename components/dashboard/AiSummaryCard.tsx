@@ -68,7 +68,7 @@ export function AiSummaryCard() {
     <div
       className="reveal-up rounded-[18px] p-4"
       style={{
-        background: 'linear-gradient(135deg,rgba(251,148,119,0.10),rgba(122,167,255,0.06),rgba(20,22,32,0.66))',
+        background: `linear-gradient(135deg,rgba(251,148,119,0.10),rgba(122,167,255,0.06),${KAI.bgPanel})`,
         backdropFilter: 'blur(24px) saturate(160%)',
         border: '1px solid rgba(251,148,119,0.18)',
         animationDelay: '140ms',

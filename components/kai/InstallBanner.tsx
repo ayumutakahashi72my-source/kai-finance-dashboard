@@ -126,7 +126,7 @@ export function InstallBanner() {
           </button>
           <button onClick={handleInstall}
             style={{ background: 'linear-gradient(135deg,#fb9477,#7aa7ff)', border: 'none',
-              borderRadius: 8, color: '#0a0a10', fontSize: 12, fontWeight: 800,
+              borderRadius: 8, color: 'var(--kai-bg)', fontSize: 12, fontWeight: 800,
               cursor: 'pointer', padding: '6px 14px', whiteSpace: 'nowrap' }}>
             追加
           </button>
@@ -163,7 +163,7 @@ export function InstallBanner() {
               style={{
                 marginTop: 20, width: '100%', padding: '12px',
                 background: 'linear-gradient(135deg,#fb9477,#7aa7ff)',
-                border: 'none', borderRadius: 12, color: '#0a0a10',
+                border: 'none', borderRadius: 12, color: 'var(--kai-bg)',
                 fontSize: 14, fontWeight: 800, cursor: 'pointer',
               }}
             >
