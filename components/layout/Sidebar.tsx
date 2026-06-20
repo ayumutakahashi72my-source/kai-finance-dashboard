@@ -7,16 +7,10 @@ import { KAI } from '@/lib/kai-tokens'
 import { Icon, KaiSystemBrand } from '@/components/kai/shared'
 import { ThemeToggle } from '@/components/kai/ThemeToggle'
 import { AddPickerSheet } from '@/components/layout/AddPickerSheet'
+import { SIDEBAR_NAV, isNavActive } from '@/lib/nav'
 
 const CORAL = KAI.coral
 const CORAL_SOFT = 'rgba(251,148,119,0.10)'
-
-const NAV: { href: string; icon: import('@/components/kai/shared').IconName; label: string }[] = [
-  { href: '/',             icon: 'grid',     label: 'ダッシュボード' },
-  { href: '/transactions', icon: 'list',     label: '収支' },
-  { href: '/analytics',    icon: 'barChart', label: '分析' },
-  { href: '/summary',      icon: 'sparkle',  label: 'AI' },
-]
 
 export function Sidebar() {
   const pathname = usePathname()
@@ -45,8 +39,8 @@ export function Sidebar() {
 
       {/* Nav */}
       <nav style={{ flex: 1, padding: 10 }}>
-        {NAV.map((n, i) => {
-          const active = pathname === n.href
+        {SIDEBAR_NAV.map((n, i) => {
+          const active = isNavActive(n.href, pathname)
           return (
             <Link
               key={n.href}

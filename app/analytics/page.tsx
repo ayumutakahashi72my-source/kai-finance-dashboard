@@ -9,17 +9,13 @@ import { AnalyticsPageTabs } from '@/components/analytics/AnalyticsPageTabs'
 import { getTransactions } from '@/app/actions/transactions'
 import { getHousehold } from '@/app/actions/households'
 import { KAI } from '@/lib/kai-tokens'
+import { jstMonthStr } from '@/lib/jst'
 import type { Transaction } from '@/lib/types'
-
-function currentMonthStr() {
-  const d = new Date()
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
-}
 
 export default async function AnalyticsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ month?: string }>
+  searchParams: Promise<{ month?: string; tab?: string }>
 }) {
   const supabase = await createClient()
   const { data: { user }, error } = await supabase.auth.getUser()
@@ -28,8 +24,9 @@ export default async function AnalyticsPage({
   const household = await getHousehold()
   if (!household) redirect('/')
 
-  const { month: rawMonth } = await searchParams
-  const month = rawMonth ?? currentMonthStr()
+  const { month: rawMonth, tab: rawTab } = await searchParams
+  const month = rawMonth ?? jstMonthStr()
+  const initialTab = Math.min(Math.max(Number(rawTab) || 0, 0), 3)
 
   const displayName = user.user_metadata?.full_name ?? user.email ?? 'ユーザー'
   const avatarUrl = user.user_metadata?.avatar_url as string | undefined
@@ -85,7 +82,7 @@ export default async function AnalyticsPage({
         </div>
 
         <main className="mx-auto max-w-2xl space-y-3 px-4 py-5 pb-32 lg:pb-10">
-          <AnalyticsPageTabs month={month} allTransactions={allTransactions} />
+          <AnalyticsPageTabs month={month} allTransactions={allTransactions} initialTab={initialTab} />
         </main>
       </div>
 

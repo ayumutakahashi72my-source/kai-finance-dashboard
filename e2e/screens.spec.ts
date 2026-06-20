@@ -48,7 +48,7 @@ async function isAuthenticated(page: Page): Promise<boolean> {
 const PROTECTED_PATHS = [
   '/',
   '/transactions',
-  '/budget',
+  '/analytics',
   '/calendar',
   '/settings',
   '/summary',
@@ -216,12 +216,12 @@ test.describe('予算ページ', () => {
 
   test('キャッシュフローカードと予算ダッシュボードが表示される', async ({ page }) => {
     const errors = collectConsoleErrors(page)
-    await page.goto('/budget')
+    await page.goto('/analytics?tab=1')
     await page.waitForLoadState('networkidle')
 
     expect(await page.textContent('body')).not.toContain('INTERNAL_SERVER_ERROR')
 
-    // CashflowCard か BudgetDashboard の要素が表示される
+    // BudgetDashboard の要素が表示される
     await expect(
       page.getByText(/収入|支出|予算|キャッシュフロー/).first()
     ).toBeVisible({ timeout: 10_000 })
@@ -347,8 +347,8 @@ test.describe('画面遷移', () => {
     await page.waitForLoadState('networkidle')
     expect(await page.textContent('body')).not.toContain('INTERNAL_SERVER_ERROR')
 
-    // 予算ページ
-    await page.goto('/budget')
+    // 分析ページ（予算タブ）
+    await page.goto('/analytics?tab=1')
     await page.waitForLoadState('networkidle')
     expect(await page.textContent('body')).not.toContain('INTERNAL_SERVER_ERROR')
 
@@ -369,7 +369,7 @@ test.describe('レイテンシー', () => {
   const pages = [
     { name: 'ダッシュボード', path: '/', maxMs: 5000 },
     { name: '収支', path: '/transactions', maxMs: 5000 },
-    { name: '予算', path: '/budget', maxMs: 6000 },
+    { name: '分析', path: '/analytics', maxMs: 6000 },
     { name: 'カレンダー', path: '/calendar', maxMs: 5000 },
     { name: '設定', path: '/settings', maxMs: 4000 },
     { name: 'AIチャット', path: '/summary', maxMs: 5000 },
@@ -464,7 +464,7 @@ test.describe('コンソールエラー監視', () => {
 
     const errors = collectConsoleErrors(page)
 
-    const allPaths = ['/', '/transactions', '/budget', '/calendar', '/settings', '/summary']
+    const allPaths = ['/', '/transactions', '/analytics', '/calendar', '/settings', '/summary']
 
     for (const path of allPaths) {
       await page.goto(path)

@@ -19,10 +19,11 @@ const TABS = ['月次', '予算', '貯蓄', '固定費'] as const
 interface Props {
   month: string
   allTransactions: Transaction[]
+  initialTab?: number
 }
 
-export function AnalyticsPageTabs({ month, allTransactions }: Props) {
-  const [tab, setTab] = useState(0)
+export function AnalyticsPageTabs({ month, allTransactions, initialTab = 0 }: Props) {
+  const [tab, setTab] = useState(initialTab)
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([])
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
