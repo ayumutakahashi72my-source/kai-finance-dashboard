@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { Sidebar } from '@/components/layout/Sidebar'
@@ -7,6 +8,7 @@ import { KaiSystemBrand } from '@/components/kai/shared'
 import { TransactionsView } from '@/components/transactions/TransactionsView'
 import { getHousehold } from '@/app/actions/households'
 import { jstMonthStr } from '@/lib/jst'
+import { Skeleton } from '@/components/ui/Skeleton'
 
 export default async function TransactionsPage({
   searchParams,
@@ -45,7 +47,14 @@ export default async function TransactionsPage({
         </header>
 
         <main className="mx-auto max-w-2xl px-4 py-4 pb-32 lg:pb-10">
-          <TransactionsView month={month} initialView={initialView as 'list' | 'calendar'} />
+          <Suspense fallback={
+            <div className="space-y-3">
+              <Skeleton variant="panel" className="h-10" />
+              {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} variant="panel" className="h-14" />)}
+            </div>
+          }>
+            <TransactionsView month={month} initialView={initialView as 'list' | 'calendar'} />
+          </Suspense>
         </main>
       </div>
 

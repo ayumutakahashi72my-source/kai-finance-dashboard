@@ -1,4 +1,5 @@
 // Minimal PWA Service Worker — installability 要件を満たす最小構成
+// v3 — fetch handler は no-op（respondWith禁止: Set-Cookieがブラウザに無視されるため）
 
 self.addEventListener('install', () => {
   self.skipWaiting()
@@ -8,12 +9,10 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim())
 })
 
-// fetch handler が存在しないと Android Chrome は installable と判断しない
-self.addEventListener('fetch', (event) => {
-  if (event.request.mode === 'navigate') {
-    event.respondWith(fetch(event.request))
-  }
-})
+// fetch handler の登録だけでPWA installable判定に必要。
+// respondWith() を呼ぶとSet-Cookieヘッダーが無視されるため、
+// Supabaseセッションリフレッシュが壊れる。絶対に呼ばないこと。
+self.addEventListener('fetch', () => {})
 
 // ── Push notifications ────────────────────────────────────────────
 
