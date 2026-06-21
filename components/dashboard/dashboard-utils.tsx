@@ -213,6 +213,7 @@ export function buildDiscretionaryTrend(transactions: Transaction[]) {
   }))
 }
 
+
 /* ─── shared tooltip ─── */
 export function TooltipDark({ active, payload, label }: {
   active?: boolean
