@@ -7,7 +7,7 @@ interface EventLogPayload {
   metadata?: Record<string, unknown>
 }
 
-let queue: EventLogPayload[] = []
+const queue: EventLogPayload[] = []
 let timer: ReturnType<typeof setTimeout> | undefined
 
 function flush() {
