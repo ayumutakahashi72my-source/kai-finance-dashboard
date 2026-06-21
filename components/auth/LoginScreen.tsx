@@ -25,8 +25,6 @@ interface LoginScreenProps {
   onTermsClick?: (kind: 'tos' | 'privacy' | 'cookie' | 'data') => void
 }
 
-const PEACH = '#f5d4b8'
-
 export function LoginScreen({ onGoogleSignIn, onDemoSignIn, onTermsClick }: LoginScreenProps) {
   return (
     <main
@@ -38,7 +36,7 @@ export function LoginScreen({ onGoogleSignIn, onDemoSignIn, onTermsClick }: Logi
         fontFamily: 'var(--font-sans), Inter, sans-serif',
       }}
     >
-      {/* 暖色グラデ背景 (左寄り) */}
+      {/* 暖色グラデ背景 (左寄り) — ダーク/ライト共通の暖色トーン */}
       <div
         aria-hidden
         style={{
@@ -46,9 +44,9 @@ export function LoginScreen({ onGoogleSignIn, onDemoSignIn, onTermsClick }: Logi
           inset: 0,
           background: `
             radial-gradient(ellipse 680px 540px at -4% 22%, ${KAI.coral}38 0%, ${KAI.coral}12 35%, transparent 65%),
-            radial-gradient(ellipse 480px 360px at 8% 78%, ${PEACH}18 0%, transparent 60%),
+            radial-gradient(ellipse 480px 360px at 8% 78%, var(--kai-login-peach) 0%, transparent 60%),
             radial-gradient(ellipse 420px 320px at 95% 92%, ${KAI.blue}12 0%, transparent 65%),
-            linear-gradient(150deg, #1f1218 0%, var(--kai-bg-card) 55%, var(--kai-bg) 100%)
+            linear-gradient(150deg, var(--kai-login-base) 0%, var(--kai-bg-card) 55%, var(--kai-bg) 100%)
           `,
         }}
       />
@@ -114,9 +112,9 @@ export function LoginScreen({ onGoogleSignIn, onDemoSignIn, onTermsClick }: Logi
         {onDemoSignIn && (
           <div style={{ animation: 'kai-splash-fade .9s .75s both ease-out', display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: 12 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ flex: 1, height: 1, background: 'rgba(240,240,245,.12)' }} />
-              <span style={{ fontSize: 11, color: 'rgba(240,240,245,.38)', letterSpacing: '.08em' }}>または</span>
-              <div style={{ flex: 1, height: 1, background: 'rgba(240,240,245,.12)' }} />
+              <div style={{ flex: 1, height: 1, background: KAI.border }} />
+              <span style={{ fontSize: 11, color: KAI.text4, letterSpacing: '.08em' }}>または</span>
+              <div style={{ flex: 1, height: 1, background: KAI.border }} />
             </div>
             <DemoSignInButton onClick={onDemoSignIn} />
           </div>
@@ -139,7 +137,7 @@ export function LoginScreen({ onGoogleSignIn, onDemoSignIn, onTermsClick }: Logi
           style={{
             margin: 0,
             fontSize: 12,
-            color: 'rgba(240,240,245,.6)',
+            color: KAI.text3,
             lineHeight: 1.7,
             letterSpacing: '.005em',
           }}
@@ -194,17 +192,16 @@ function GoogleSignInButton({
         alignItems: 'center',
         justifyContent: 'center',
         gap: 12,
-        background: '#ffffff',
-        color: '#1f1f1f',
-        border: '1px solid #dadce0',
+        background: 'var(--kai-login-google-bg)',
+        color: 'var(--kai-login-google-text)',
+        border: '1px solid var(--kai-login-google-border)',
         borderRadius: 99,
         fontFamily: '"Roboto", "Noto Sans JP", -apple-system, sans-serif',
         fontSize: 14,
         fontWeight: 500,
         letterSpacing: '.005em',
         cursor: busy ? 'wait' : 'pointer',
-        boxShadow:
-          '0 1px 2px rgba(0,0,0,0.30), 0 1px 3px 1px rgba(0,0,0,0.15)',
+        boxShadow: 'var(--kai-login-google-shadow)',
         opacity: busy ? 0.7 : 1,
         transition: 'opacity .15s',
       }}
@@ -235,8 +232,8 @@ function DemoSignInButton({ onClick }: { onClick?: () => void | Promise<void> })
         justifyContent: 'center',
         gap: 8,
         background: 'transparent',
-        color: 'rgba(240,240,245,.72)',
-        border: '1px solid rgba(240,240,245,.18)',
+        color: KAI.text3,
+        border: `1px solid ${KAI.border2}`,
         borderRadius: 99,
         fontFamily: 'var(--font-sans), Inter, sans-serif',
         fontSize: 13,
@@ -295,9 +292,9 @@ function TermsLink({
         border: 'none',
         padding: 0,
         margin: 0,
-        color: 'rgba(240,240,245,.92)',
+        color: KAI.text2,
         textDecoration: 'underline',
-        textDecorationColor: 'rgba(240,240,245,.55)',
+        textDecorationColor: KAI.text4,
         textUnderlineOffset: 2,
         cursor: 'pointer',
         font: 'inherit',

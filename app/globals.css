@@ -278,6 +278,12 @@
   --kai-bottombar-bg:    rgba(20,22,32,0.88);
   --kai-bottombar-shadow: 0 8px 32px rgba(0,0,0,0.55);
   --kai-card-bg:         rgba(20,22,32,0.88);
+  --kai-login-base:      #1f1218;
+  --kai-login-peach:     rgba(245,212,184,0.09);
+  --kai-login-google-bg:     #ffffff;
+  --kai-login-google-text:   #1f1f1f;
+  --kai-login-google-border: #dadce0;
+  --kai-login-google-shadow: 0 1px 2px rgba(0,0,0,0.30), 0 1px 3px 1px rgba(0,0,0,0.15);
 }
 
 :root.light {
@@ -312,6 +318,12 @@
   --kai-bottombar-bg:    rgba(250,249,252,0.94);
   --kai-bottombar-shadow: 0 8px 32px rgba(80,70,110,0.14);
   --kai-card-bg:         rgba(255,255,255,0.92);
+  --kai-login-base:      #f8ede6;
+  --kai-login-peach:     rgba(245,212,184,0.22);
+  --kai-login-google-bg:     #ffffff;
+  --kai-login-google-text:   #1f1f1f;
+  --kai-login-google-border: #dadce0;
+  --kai-login-google-shadow: 0 1px 2px rgba(0,0,0,0.08), 0 1px 3px 1px rgba(0,0,0,0.06);
 }
 
 /* ==========================================================================

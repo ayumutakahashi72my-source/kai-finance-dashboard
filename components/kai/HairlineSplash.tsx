@@ -192,7 +192,7 @@ function HairlineSplashInner({
             kai
           </p>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ width: 24, height: 1, background: 'rgba(240,240,245,.22)' }} />
+            <span style={{ width: 24, height: 1, background: 'var(--kai-border-strong)' }} />
             <p
               style={{
                 margin: 0,
@@ -205,7 +205,7 @@ function HairlineSplashInner({
             >
               家計簿管理
             </p>
-            <span style={{ width: 24, height: 1, background: 'rgba(240,240,245,.22)' }} />
+            <span style={{ width: 24, height: 1, background: 'var(--kai-border-strong)' }} />
           </div>
         </div>
       </div>
@@ -245,7 +245,7 @@ function HairlineSplashInner({
 // ──────────────────────────────────────────────────────────────────
 
 function HairlineCorner({ pos }: { pos: 'tl' | 'tr' | 'bl' | 'br' }) {
-  const c = 'rgba(240,240,245,.32)'
+  const c = KAI.borderStrong
   const len = 14
   const insetX = 'env(safe-area-inset-left, 22px)'
   const insetY = 'env(safe-area-inset-top, 22px)'
