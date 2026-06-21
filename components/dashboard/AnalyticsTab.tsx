@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useCallback, useEffect } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
 import {
   AreaChart, Area, BarChart, Bar, Cell,
@@ -40,25 +40,27 @@ function MonthlyView({ allTransactions, currentMonth }: { allTransactions: Trans
   const searchParams = useSearchParams()
   const month = searchParams.get('detail_month') ?? currentMonth
 
-  const [activeDonutIdx, setActiveDonutIdx] = useState<number | null>(null)
+  const [donutSelection, setDonutSelection] = useState<{ month: string; idx: number } | null>(null)
 
   const monthTx = useMemo(() => allTransactions.filter((t) => t.occurred_on.startsWith(month)), [allTransactions, month])
   const categoryData = useMemo(() => buildCategoryData(monthTx), [monthTx])
   const donutData = useMemo(() => categoryData.map(([name, { amount, color }]) => ({ name, value: amount, color })), [categoryData])
   const donutTotal = useMemo(() => donutData.reduce((s, d) => s + d.value, 0), [donutData])
 
+  const activeDonutIdx = donutSelection && donutSelection.month === month && donutSelection.idx < donutData.length
+    ? donutSelection.idx : null
+  const setActiveDonutIdx = useCallback((idx: number | null) => {
+    setDonutSelection(idx !== null ? { month, idx } : null)
+  }, [month])
+
   const rankData = useMemo(() => [...categoryData].slice(0, 6).map(([name, { amount, color }]) => ({ name, amount, color })), [categoryData])
   const momData = useMemo(() => buildMoMData(allTransactions, month), [allTransactions, month])
   const payeeData = useMemo(() => buildPayeeData(allTransactions, month), [allTransactions, month])
   const dailyPattern = useMemo(() => buildDailyPattern(allTransactions, month), [allTransactions, month])
 
-  useEffect(() => {
-    setActiveDonutIdx(null)
-  }, [donutData.length, month])
-
   const handleDonutClick = useCallback((_: unknown, index: number) => {
-    setActiveDonutIdx((prev) => (prev === index ? null : index))
-  }, [])
+    setDonutSelection((prev) => prev && prev.month === month && prev.idx === index ? null : { month, idx: index })
+  }, [month])
 
   const activeItem = activeDonutIdx !== null && activeDonutIdx < donutData.length
     ? donutData[activeDonutIdx]
@@ -149,7 +151,7 @@ function MonthlyView({ allTransactions, currentMonth }: { allTransactions: Trans
                   background: activeDonutIdx === i ? `${d.color}18` : 'transparent',
                   fontFamily: 'inherit',
                 }}
-                onClick={() => setActiveDonutIdx((prev) => (prev === i ? null : i))}
+                onClick={() => setActiveDonutIdx(activeDonutIdx === i ? null : i)}
               >
                 <div style={{ width: 8, height: 8, borderRadius: 2, background: d.color, flexShrink: 0 }} />
                 <span style={{ fontSize: 11, color: activeDonutIdx === i ? d.color : TEXT3 }}>{d.name}</span>
