@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, createElement } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { KAI } from '@/lib/kai-tokens'
@@ -99,8 +99,7 @@ function SummaryChips({ income, expense, balance }: { income: number; expense: n
 
 /* ── Category Icon Display ─────────────────────────────────── */
 function CategoryIconDisplay({ name, size = 13, strokeWidth = 1.8 }: { name: string; size?: number; strokeWidth?: number }) {
-  const Icon = getCategoryIcon(name)
-  return <Icon size={size} strokeWidth={strokeWidth} />
+  return createElement(getCategoryIcon(name), { size, strokeWidth })
 }
 
 /* ── CategoryBar ───────────────────────────────────────────── */
