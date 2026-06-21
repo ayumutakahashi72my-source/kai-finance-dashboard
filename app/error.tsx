@@ -94,8 +94,8 @@ export default function Error({
           >
             再試行
           </button>
-          <a
-            href="/"
+          <button
+            onClick={() => { window.location.href = '/' }}
             style={{
               padding: '10px 24px',
               borderRadius: 12,
@@ -104,13 +104,13 @@ export default function Error({
               color: 'var(--kai-text2)',
               fontSize: 14,
               fontWeight: 600,
-              textDecoration: 'none',
+              cursor: 'pointer',
               display: 'inline-flex',
               alignItems: 'center',
             }}
           >
             ホームに戻る
-          </a>
+          </button>
         </div>
       </div>
     </div>
