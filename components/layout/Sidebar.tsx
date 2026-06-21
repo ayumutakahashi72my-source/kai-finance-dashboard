@@ -106,6 +106,29 @@ export function Sidebar() {
         </Link>
       </div>
 
+      {/* Admin */}
+      <div style={{ padding: '0 10px 6px' }}>
+        {[
+          { href: '/admin/analytics', label: 'AI分析' },
+          { href: '/admin/event-logs', label: 'イベントログ' },
+        ].map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 12,
+              padding: '8px 14px', borderRadius: 11,
+              fontSize: 12, fontWeight: 500, textDecoration: 'none',
+              color: pathname.startsWith(item.href) ? CORAL : KAI.text4,
+              background: pathname.startsWith(item.href) ? CORAL_SOFT : 'transparent',
+            }}
+          >
+            <Icon name={item.href.includes('event') ? 'list' : 'barChart'} size={14}/>
+            {item.label}
+          </Link>
+        ))}
+      </div>
+
       {/* Footer — household badge + theme toggle */}
       <div style={{ borderTop: `1px solid ${KAI.border2}`, padding: 14 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

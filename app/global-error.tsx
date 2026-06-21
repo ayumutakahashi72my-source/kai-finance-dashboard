@@ -1,5 +1,7 @@
 'use client'
 
+import { useEffect } from 'react'
+
 export default function GlobalError({
   error,
   reset,
@@ -7,6 +9,24 @@ export default function GlobalError({
   error: Error & { digest?: string }
   reset: () => void
 }) {
+  useEffect(() => {
+    fetch('/api/event-log', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        events: [{
+          level: 'error',
+          category: 'global-error',
+          message: error.message,
+          metadata: { name: error.name, stack: error.stack?.slice(0, 2000), digest: error.digest },
+        }],
+        url: location.href,
+        userAgent: navigator.userAgent,
+      }),
+      keepalive: true,
+    }).catch(() => {})
+  }, [error])
+
   return (
     <html lang="ja">
       <head>
