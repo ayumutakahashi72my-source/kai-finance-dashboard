@@ -421,7 +421,7 @@ export function TransactionsView({ month, initialView = 'list' }: Props) {
                     </span>
                     <button
                       onClick={(e) => { if (menuId === t.id) { setMenuId(null) } else { openMenu(e, t) } }}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: KAI.text4, fontSize: 16, padding: '8px 6px', lineHeight: 1, flexShrink: 0, minWidth: 36, minHeight: 36, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: KAI.text4, fontSize: 18, padding: '8px 4px', lineHeight: 1, flexShrink: 0, minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', marginLeft: 2 }}
                       aria-label="メニュー"
                     >⋯</button>
                   </div>
@@ -464,7 +464,7 @@ export function TransactionsView({ month, initialView = 'list' }: Props) {
 
                   return (
                     <div key={dateStr}>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: KAI.text4, letterSpacing: '.08em', padding: '8px 0 6px' }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: KAI.text3, letterSpacing: '.04em', padding: '12px 2px 8px' }}>
                         {label}
                       </div>
                       <div style={{
@@ -515,7 +515,7 @@ export function TransactionsView({ month, initialView = 'list' }: Props) {
                               </div>
                               <button
                                 onClick={(e) => { if (menuId === t.id) { setMenuId(null) } else { openMenu(e, t) } }}
-                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: KAI.text4, fontSize: 16, padding: '8px 6px', lineHeight: 1, flexShrink: 0, minWidth: 36, minHeight: 36, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: KAI.text4, fontSize: 18, padding: '8px 4px', lineHeight: 1, flexShrink: 0, minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', marginLeft: 2 }}
                                 aria-label="メニュー"
                               >⋯</button>
                             </div>

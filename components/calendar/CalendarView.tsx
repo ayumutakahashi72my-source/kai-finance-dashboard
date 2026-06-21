@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { KAI } from '@/lib/kai-tokens'
 import { todayJST } from '@/lib/jst'
+import { useSwipeDismiss } from '@/lib/hooks/use-swipe-dismiss'
 import type { Transaction, Category } from '@/lib/types'
 
 interface DayData {
@@ -63,7 +64,8 @@ function DayDetailOverlay({
   categoryMap: Record<string, Category>
   onClose: () => void
 }) {
-  // ESCキーで閉じる
+  const { sheetRef, onTouchStart, onTouchMove, onTouchEnd } = useSwipeDismiss({ onDismiss: onClose })
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
     window.addEventListener('keydown', handler)
@@ -82,18 +84,30 @@ function DayDetailOverlay({
     return Object.values(map).sort((a, b) => b.total - a.total)
   }, [data, categoryMap])
 
-  const content = (
-    <div className="flex flex-col gap-3">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <p className="text-base font-bold" style={{ color: KAI.coral }}>
-          {data.date.replace(/-/g, '/')}
-        </p>
-        <button onClick={onClose} className="flex h-7 w-7 items-center justify-center rounded-full text-sm transition-colors hover:bg-[var(--kai-overlay-weak)]" style={{ color: KAI.text3 }}>
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 3L11 11M11 3L3 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
-        </button>
-      </div>
+  const dateLabel = (() => {
+    const d = new Date(data.date + 'T00:00:00')
+    const dow = ['日', '月', '火', '水', '木', '金', '土'][d.getDay()]
+    return `${parseInt(data.date.slice(5, 7))}月${parseInt(data.date.slice(8))}日（${dow}）`
+  })()
 
+  const header = (
+    <div className="flex items-center justify-between pb-3" style={{ borderBottom: `1px solid ${KAI.border}` }}>
+      <p className="text-base font-bold" style={{ color: KAI.coral }}>
+        {dateLabel}
+      </p>
+      <button
+        onClick={onClose}
+        className="flex items-center justify-center rounded-full transition-colors hover:bg-[var(--kai-overlay-weak)]"
+        style={{ color: KAI.text3, width: 44, height: 44, minWidth: 44 }}
+        aria-label="閉じる"
+      >
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4 4L14 14M14 4L4 14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
+      </button>
+    </div>
+  )
+
+  const scrollContent = (
+    <div className="flex flex-col gap-3">
       {/* Day totals */}
       <div className="grid grid-cols-2 gap-2">
         <div className="rounded-[10px] p-3" style={{ background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.15)' }}>
@@ -201,20 +215,35 @@ function DayDetailOverlay({
         />
         {/* Sheet */}
         <div
-          className="fixed bottom-0 left-0 right-0 z-50 flex flex-col rounded-t-[24px] px-4 pb-8 pt-4"
+          ref={sheetRef}
+          className="fixed bottom-0 left-0 right-0 z-50 flex flex-col rounded-t-[24px]"
           style={{
             maxHeight: '82vh',
-            overflowY: 'auto',
             background: KAI.overlayBg,
             border: `1px solid ${KAI.border2}`,
             borderBottom: 'none',
             boxShadow: '0 -16px 48px rgba(0,0,0,0.6)',
             animation: 'slideUp 0.22s ease-out',
           }}
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
         >
-          {/* Handle */}
-          <div className="mx-auto mb-4 h-1 w-10 shrink-0 rounded-full" style={{ background: KAI.overlayWeak }} />
-          {content}
+          {/* Handle — ドラッグで閉じられることを示す */}
+          <div className="flex shrink-0 justify-center pb-2 pt-3" style={{ cursor: 'grab' }}>
+            <div className="h-1 w-10 rounded-full" style={{ background: KAI.text4, opacity: 0.5 }} />
+          </div>
+          {/* Sticky header */}
+          <div className="shrink-0 px-4">
+            {header}
+          </div>
+          {/* Scrollable content */}
+          <div
+            className="flex-1 overflow-y-auto overscroll-contain px-4 pb-8 pt-3"
+            style={{ WebkitOverflowScrolling: 'touch' }}
+          >
+            {scrollContent}
+          </div>
         </div>
       </div>
 
@@ -228,15 +257,21 @@ function DayDetailOverlay({
         />
         {/* Modal */}
         <div
-          className="fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-[20px] p-6"
+          className="fixed left-1/2 top-1/2 z-50 flex w-full max-w-md -translate-x-1/2 -translate-y-1/2 flex-col rounded-[20px]"
           style={{
+            maxHeight: '80vh',
             background: KAI.overlayBg,
             border: `1px solid ${KAI.border2}`,
             boxShadow: '0 24px 64px rgba(0,0,0,0.7)',
             animation: 'fadeScaleIn 0.18s ease-out',
           }}
         >
-          {content}
+          <div className="shrink-0 px-6 pt-6">
+            {header}
+          </div>
+          <div className="flex-1 overflow-y-auto overscroll-contain px-6 pb-6 pt-3">
+            {scrollContent}
+          </div>
         </div>
       </div>
     </>
@@ -356,18 +391,22 @@ export function CalendarView({ transactions, categories, month }: Props) {
                 {day}
               </span>
 
-              {/* Bottom indicators */}
+              {/* Bottom: expense amount + dot indicators */}
               {data && (
-                <div className="flex w-full items-center gap-[3px]">
-                  {data.income > 0 && (
-                    <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: KAI.success }} />
-                  )}
+                <div className="flex w-full flex-col items-start gap-0.5">
                   {data.expense > 0 && (
-                    <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: KAI.coral }} />
+                    <span className="text-[8px] font-bold leading-none" style={{ color: KAI.danger, fontFamily: 'var(--font-jetbrains),monospace' }}>
+                      {data.expense >= 10000 ? `${(data.expense / 10000).toFixed(data.expense >= 100000 ? 0 : 1)}万` : `${Math.round(data.expense / 100) * 100}`}
+                    </span>
                   )}
-                  {data?.transactions.some((t) => t.is_fixed) && (
-                    <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: KAI.violet }} />
-                  )}
+                  <div className="flex items-center gap-[3px]">
+                    {data.income > 0 && (
+                      <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: KAI.success }} />
+                    )}
+                    {data?.transactions.some((t) => t.is_fixed) && (
+                      <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: KAI.violet }} />
+                    )}
+                  </div>
                 </div>
               )}
             </button>

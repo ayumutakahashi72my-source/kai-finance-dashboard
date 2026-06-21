@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
-import { SendIcon } from 'lucide-react'
+import { useEffect, useRef, useState, useCallback } from 'react'
+import { SendIcon, HistoryIcon, ArrowLeftIcon } from 'lucide-react'
 import { KAI } from '@/lib/kai-tokens'
 
 interface ChatMessage {
@@ -10,6 +10,13 @@ interface ChatMessage {
 }
 
 interface UsageInfo {
+  session_count: number
+  estimated_cost: number
+}
+
+interface HistorySession {
+  year: number
+  month: number
   session_count: number
   estimated_cost: number
 }
@@ -35,6 +42,35 @@ export function AiChatPanel({ alwaysOpen = false }: Props) {
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef  = useRef<HTMLInputElement>(null)
   const [open, setOpen] = useState(alwaysOpen)
+
+  const [showHistory, setShowHistory] = useState(false)
+  const [historySessions, setHistorySessions] = useState<HistorySession[]>([])
+  const [historyLoading, setHistoryLoading] = useState(false)
+  const [viewingMonth, setViewingMonth] = useState<{ year: number; month: number } | null>(null)
+  const [viewingMessages, setViewingMessages] = useState<ChatMessage[]>([])
+
+  const loadHistory = useCallback(async () => {
+    setHistoryLoading(true)
+    try {
+      const r = await fetch('/api/ai/chat?history=true')
+      if (r.ok) {
+        const json = await r.json()
+        setHistorySessions(json.sessions ?? [])
+      }
+    } catch { /* ignore */ }
+    setHistoryLoading(false)
+  }, [])
+
+  const viewMonth = useCallback(async (year: number, month: number) => {
+    setViewingMonth({ year, month })
+    try {
+      const r = await fetch(`/api/ai/chat?year=${year}&month=${month}`)
+      if (r.ok) {
+        const json = await r.json()
+        setViewingMessages(json.messages ?? [])
+      }
+    } catch { /* ignore */ }
+  }, [])
 
   useEffect(() => {
     if (!open) return
@@ -119,13 +155,128 @@ export function AiChatPanel({ alwaysOpen = false }: Props) {
               </p>
             </div>
           </div>
-          <span style={{ fontSize: 9, fontFamily: 'var(--font-mono),monospace', fontWeight: 700, letterSpacing: '.10em', padding: '2px 6px', borderRadius: 99, background: 'rgba(167,139,250,.12)', border: '1px solid rgba(167,139,250,.28)', color: KAI.violet, display: 'flex', alignItems: 'center', gap: 4 }}>
-            <span style={{ width: 5, height: 5, borderRadius: '50%', background: KAI.violet, boxShadow: `0 0 6px ${KAI.violet}`, display: 'inline-block', animation: 'kai-blink 1.8s ease-in-out infinite' }} />
-            Sonnet
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <button
+              onClick={() => {
+                if (showHistory) {
+                  setShowHistory(false)
+                  setViewingMonth(null)
+                } else {
+                  setShowHistory(true)
+                  loadHistory()
+                }
+              }}
+              style={{
+                width: 30, height: 30, borderRadius: 8,
+                background: showHistory ? 'rgba(167,139,250,.18)' : KAI.overlayWeak,
+                border: `1px solid ${showHistory ? 'rgba(167,139,250,.35)' : KAI.overlayBorder}`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: showHistory ? KAI.violet : KAI.text3,
+                cursor: 'pointer',
+              }}
+              aria-label="過去の会話"
+            >
+              <HistoryIcon size={14} />
+            </button>
+            <span style={{ fontSize: 9, fontFamily: 'var(--font-mono),monospace', fontWeight: 700, letterSpacing: '.10em', padding: '2px 6px', borderRadius: 99, background: 'rgba(167,139,250,.12)', border: '1px solid rgba(167,139,250,.28)', color: KAI.violet, display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span style={{ width: 5, height: 5, borderRadius: '50%', background: KAI.violet, boxShadow: `0 0 6px ${KAI.violet}`, display: 'inline-block', animation: 'kai-blink 1.8s ease-in-out infinite' }} />
+              Sonnet
+            </span>
+          </div>
         </div>
 
-        {/* messages */}
+        {/* history view */}
+        {showHistory ? (
+          <div className="flex-1 overflow-y-auto px-5 py-4" style={{ maxHeight: 420 }}>
+            {viewingMonth ? (
+              <>
+                <button
+                  onClick={() => setViewingMonth(null)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 5,
+                    fontSize: 12, fontWeight: 600, color: KAI.violet,
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    padding: '0 0 12px', fontFamily: 'inherit',
+                  }}
+                >
+                  <ArrowLeftIcon size={14} />
+                  {viewingMonth.year}年{viewingMonth.month}月の会話
+                </button>
+                <div className="space-y-3">
+                  {viewingMessages.length === 0 && (
+                    <p style={{ fontSize: 13, color: KAI.text4, textAlign: 'center', paddingTop: 16 }}>
+                      メッセージがありません
+                    </p>
+                  )}
+                  {viewingMessages.map((m, i) => (
+                    <div key={i} style={{ display: 'flex', justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start' }}>
+                      {m.role === 'assistant' && (
+                        <div style={{ width: 22, height: 22, borderRadius: 6, background: `linear-gradient(135deg,${KAI.violet},${KAI.coral})`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginRight: 8, marginTop: 4 }}>
+                          <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
+                            <circle cx="8" cy="6" r="3" fill="var(--kai-text1)" />
+                            <path d="M3 14c0-2.76 2.24-5 5-5s5 2.24 5 5" stroke="var(--kai-text1)" strokeWidth="1.6" strokeLinecap="round" />
+                          </svg>
+                        </div>
+                      )}
+                      <div
+                        style={{
+                          maxWidth: '78%', borderRadius: 16, padding: '10px 14px', fontSize: 14, lineHeight: 1.65,
+                          background: m.role === 'user' ? 'rgba(251,148,119,0.15)' : KAI.overlayWeak,
+                          color: m.role === 'user' ? KAI.text1 : KAI.text2,
+                          border: m.role === 'user' ? '1px solid rgba(251,148,119,0.22)' : `1px solid ${KAI.overlayBorder}`,
+                          borderBottomRightRadius: m.role === 'user' ? 4 : 16,
+                          borderBottomLeftRadius: m.role === 'assistant' ? 4 : 16,
+                          opacity: 0.8,
+                        }}
+                      >
+                        {m.content}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <>
+                <p style={{ fontSize: 11, fontWeight: 700, color: KAI.text3, letterSpacing: '.08em', marginBottom: 12 }}>
+                  過去の相談履歴
+                </p>
+                {historyLoading ? (
+                  <p style={{ fontSize: 13, color: KAI.text4, textAlign: 'center', paddingTop: 16 }}>読み込み中...</p>
+                ) : historySessions.length === 0 ? (
+                  <p style={{ fontSize: 13, color: KAI.text4, textAlign: 'center', paddingTop: 16 }}>過去の相談履歴はありません</p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {historySessions.map((s) => (
+                      <button
+                        key={`${s.year}-${s.month}`}
+                        onClick={() => viewMonth(s.year, s.month)}
+                        style={{
+                          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                          padding: '10px 14px', borderRadius: 12,
+                          background: KAI.overlayWeak,
+                          border: `1px solid ${KAI.overlayBorder}`,
+                          cursor: 'pointer', fontFamily: 'inherit',
+                          textAlign: 'left',
+                        }}
+                      >
+                        <div>
+                          <span style={{ fontSize: 13, fontWeight: 600, color: KAI.text1 }}>
+                            {s.year}年{s.month}月
+                          </span>
+                          <span style={{ fontSize: 11, color: KAI.text3, marginLeft: 8 }}>
+                            {s.session_count}回の相談
+                          </span>
+                        </div>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={KAI.text4} strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        ) : (
+        /* messages */
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3" style={{ maxHeight: 420 }}>
           {messages.length === 0 && (
             <div>
@@ -195,10 +346,12 @@ export function AiChatPanel({ alwaysOpen = false }: Props) {
 
           <div ref={bottomRef} />
         </div>
+        )}
 
         {error && <p style={{ padding: '0 20px 8px', fontSize: 12, color: KAI.danger }}>{error}</p>}
 
-        {/* input */}
+        {/* input — hidden when browsing history */}
+        {!showHistory && (
         <div style={{ padding: '12px 16px 16px', borderTop: `1px solid ${KAI.overlayBorder}`, display: 'flex', gap: 8, alignItems: 'center' }}>
           <input
             ref={inputRef}
@@ -227,6 +380,7 @@ export function AiChatPanel({ alwaysOpen = false }: Props) {
             <SendIcon size={16} />
           </button>
         </div>
+        )}
       </div>
     )
   }

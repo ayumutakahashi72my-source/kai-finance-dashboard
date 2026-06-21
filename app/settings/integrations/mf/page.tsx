@@ -6,6 +6,7 @@ import { Sidebar } from '@/components/layout/Sidebar'
 import { BottomBar } from '@/components/layout/BottomBar'
 import { ProfileDropdown } from '@/components/layout/ProfileDropdown'
 import { MfSettingsForm } from '@/components/settings/MfSettingsForm'
+import { MfSyncLogs } from '@/components/settings/MfSyncLogs'
 import { KAI } from '@/lib/kai-tokens'
 
 export default async function MfSettingsPage() {
@@ -80,11 +81,32 @@ export default async function MfSettingsPage() {
           <ProfileDropdown displayName={displayName} avatarUrl={avatarUrl} />
         </header>
 
-        <main className="mx-auto max-w-2xl px-4 py-5 pb-32 lg:pb-10">
+        <main className="mx-auto max-w-2xl space-y-6 px-4 py-5 pb-32 lg:pb-10">
           <MfSettingsForm
             initialEmail={settings?.mf_email ?? null}
             initialEnabled={!!(settings?.mf_email && settings?.mf_password)}
           />
+
+          <div
+            className="rounded-[18px] p-5"
+            style={{
+              background: KAI.bgPanel,
+              backdropFilter: 'blur(24px) saturate(160%)',
+              border: `1px solid ${KAI.border}`,
+            }}
+          >
+            <h2
+              style={{
+                fontSize: 13,
+                fontWeight: 700,
+                color: KAI.text1,
+                marginBottom: 12,
+              }}
+            >
+              同期ログ
+            </h2>
+            <MfSyncLogs />
+          </div>
         </main>
       </div>
 

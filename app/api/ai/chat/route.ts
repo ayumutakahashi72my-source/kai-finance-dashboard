@@ -9,7 +9,7 @@ import { embedText } from '@/lib/embedder'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 const SYSTEM_PROMPT =
-  'あなたは日本語で応答する家計簿アシスタントです。ユーザーが提供する家計データをもとに、節約アドバイスや支出分析を行ってください。回答は簡潔に200字以内を目安にしてください。'
+  'あなたは日本語で応答する家計簿アシスタントです。ユーザーが提供する家計データをもとに、節約アドバイスや支出分析を行ってください。回答は簡潔に200字以内を目安にしてください。絵文字は使用せず、プレーンテキストとMarkdownのみで記述してください。'
 
 async function buildChatContext(
   supabase: SupabaseClient,
@@ -221,15 +221,38 @@ export async function POST(req: NextRequest) {
 }
 
 // GET: チャット履歴と使用量を返す
-export async function GET() {
+// ?history=true → 過去のセッション一覧
+// ?year=YYYY&month=MM → 指定月の履歴
+// (パラメータなし) → 今月の履歴
+export async function GET(req: NextRequest) {
   const auth = await requireAuth()
   if (!auth.ok) return auth.response
 
   const { supabase, householdId } = auth
+  const { searchParams } = new URL(req.url)
+
+  if (searchParams.get('history') === 'true') {
+    const { data: sessions } = await supabase
+      .from('chat_sessions')
+      .select('year, month, session_count, estimated_cost')
+      .eq('household_id', householdId)
+      .gt('session_count', 0)
+      .order('year', { ascending: false })
+      .order('month', { ascending: false })
+      .limit(12)
+    return NextResponse.json({ sessions: sessions ?? [] })
+  }
+
+  const yearParam = searchParams.get('year')
+  const monthParam = searchParams.get('month')
 
   const now = jstNow()
-  const year = now.getUTCFullYear()
-  const month = now.getUTCMonth() + 1
+  const year = yearParam ? parseInt(yearParam, 10) : now.getUTCFullYear()
+  const month = monthParam ? parseInt(monthParam, 10) : (now.getUTCMonth() + 1)
+
+  if (Number.isNaN(year) || Number.isNaN(month) || month < 1 || month > 12) {
+    return NextResponse.json({ error: 'invalid year or month' }, { status: 400 })
+  }
 
   const [{ data: messages }, { data: session }] = await Promise.all([
     supabase

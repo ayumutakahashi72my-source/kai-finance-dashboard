@@ -79,7 +79,7 @@ export async function generateMonthlySummary(
         messages: [
           {
             role: 'user',
-            content: `${context}\n\n上記データをもとに、家計の月次レポートを300字程度で作成してください。良かった点・改善点・来月へのアドバイスを含めてください。`,
+            content: `${context}\n\n上記データをもとに、家計の月次レポートを300字程度で作成してください。良かった点・改善点・来月へのアドバイスを含めてください。絵文字は使用せず、プレーンテキストとMarkdownのみで記述してください。`,
           },
         ],
       }),

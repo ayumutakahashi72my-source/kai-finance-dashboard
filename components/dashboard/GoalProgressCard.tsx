@@ -218,8 +218,12 @@ export function GoalProgressCard({ goal, currentMonthExpense, currentMonthIncome
             background: 'rgba(251,113,133,.08)', border: '1px solid rgba(251,113,133,.22)',
           }}
         >
-          <p style={{ fontSize: 12, color: KAI.danger, fontWeight: 700, margin: '0 0 4px' }}>
-            ⚠ 現状の収入では達成が困難です
+          <p style={{ fontSize: 12, color: KAI.danger, fontWeight: 700, margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 5 }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+              <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+              <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            現状の収入では達成が困難です
           </p>
           <p style={{ fontSize: 11, color: KAI.text3, margin: 0, lineHeight: 1.6 }}>
             目標期間を延ばすか、収入を増やす必要があります。
@@ -265,8 +269,12 @@ export function GoalProgressCard({ goal, currentMonthExpense, currentMonthIncome
                 background: 'rgba(251,113,133,.08)', border: '1px solid rgba(251,113,133,.22)',
               }}
             >
-              <p style={{ fontSize: 11, color: KAI.danger, fontWeight: 600, margin: '0 0 3px' }}>
-                ⚠ このペースでは達成困難です
+              <p style={{ fontSize: 11, color: KAI.danger, fontWeight: 600, margin: '0 0 3px', display: 'flex', alignItems: 'center', gap: 4 }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                  <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                  <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+                このペースでは達成困難です
               </p>
               <p style={{ fontSize: 11, color: KAI.text3, margin: 0 }}>
                 現実的な目安:{' '}

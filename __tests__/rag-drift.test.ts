@@ -9,7 +9,7 @@
  */
 import { describe, it, expect } from 'vitest'
 import { normalizeKeyword } from '../lib/ai-classifier'
-import { KEYWORD_RULES, classifyByKeyword } from '../lib/keyword-rules'
+import { classifyByKeyword } from '../lib/keyword-rules'
 import golden from './fixtures/category-golden.json'
 import baseline from './fixtures/classification-baseline.json'
 import normSnapshot from './fixtures/normalization-snapshot.json'
@@ -53,7 +53,6 @@ function computeMetrics() {
   }
 
   const accuracy = classifiable > 0 ? correct / classifiable : 0
-  const coverage = entries.length > 0 ? (entries.length - (entries.length - correct - misses.length)) / entries.length : 0
 
   const precisions: number[] = []
   const recalls: number[] = []

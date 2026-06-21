@@ -12,6 +12,10 @@ export default async function NotificationsSettingsPage() {
   const { data: { user }, error } = await supabase.auth.getUser()
   if (error || !user) redirect('/login')
 
+  const { getHousehold } = await import('@/app/actions/households')
+  const household = await getHousehold()
+  if (!household) redirect('/')
+
   return (
     <div className="min-h-screen" style={{ background: KAI.bg }}>
       <div

@@ -9,11 +9,14 @@ import { ManualEntryTab } from './tabs/ManualEntryTab'
 import { CsvImportTab } from './tabs/CsvImportTab'
 import { MfSyncTab } from './tabs/MfSyncTab'
 import { useIsDemo } from '@/lib/hooks/use-is-demo'
+import { useSwipeDismiss } from '@/lib/hooks/use-swipe-dismiss'
 
 type Step = 'picker' | 'manual' | 'csv' | 'mf' | 'receipt'
 
 // ── Sheet chrome ──────────────────────────────────────────────────────────────
 function SheetChrome({ onBackdropClick, children }: { onBackdropClick: () => void; children: React.ReactNode }) {
+  const { sheetRef, onTouchStart, onTouchMove, onTouchEnd } = useSwipeDismiss({ onDismiss: onBackdropClick })
+
   return (
     <>
       <div
@@ -22,11 +25,15 @@ function SheetChrome({ onBackdropClick, children }: { onBackdropClick: () => voi
         style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)', animation: 'kai-rise 0.18s ease-out both' }}
       />
       <div
+        ref={sheetRef}
         style={{ position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 51, background: BG, backdropFilter: 'blur(28px) saturate(160%)', WebkitBackdropFilter: 'blur(28px) saturate(160%)', border: '1px solid var(--kai-border-strong)', borderBottomWidth: 0, borderRadius: '24px 24px 0 0', padding: '20px 20px calc(env(safe-area-inset-bottom, 20px) + 28px)', animation: 'kai-sheet-up 0.22s cubic-bezier(.16,1,.3,1) both', boxShadow: '0 -16px 48px rgba(0,0,0,0.6)', maxHeight: '92dvh', overflowY: 'auto' }}
         role="dialog"
         aria-modal="true"
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
       >
-        <div style={{ width: 36, height: 4, borderRadius: 99, background: 'var(--kai-border-strong)', margin: '0 auto 20px' }} />
+        <div style={{ width: 36, height: 4, borderRadius: 99, background: 'var(--kai-border-strong)', margin: '0 auto 20px', cursor: 'grab' }} />
         {children}
       </div>
     </>
@@ -68,8 +75,8 @@ function PickerStep({ onPick, onClose, isDemo }: { onPick: (s: Step) => void; on
           <p style={{ fontSize: 16, fontWeight: 700, color: TEXT1 }}>支出を追加</p>
           <p style={{ fontSize: 12, color: TEXT4, marginTop: 2 }}>どの方法で記録しますか？</p>
         </div>
-        <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--kai-overlay-border)', border: '1px solid var(--kai-border2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: TEXT3, cursor: 'pointer' }} aria-label="閉じる">
-          <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M2 2L13 13M13 2L2 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+        <button onClick={onClose} style={{ width: 44, height: 44, minWidth: 44, borderRadius: '50%', background: 'var(--kai-overlay-border)', border: '1px solid var(--kai-border2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: TEXT3, cursor: 'pointer' }} aria-label="閉じる">
+          <svg width="18" height="18" viewBox="0 0 15 15" fill="none"><path d="M2 2L13 13M13 2L2 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
         </button>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>

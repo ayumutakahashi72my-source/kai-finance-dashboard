@@ -15,15 +15,15 @@ function formatLabel(ym: string): string {
   return `${y}年${m}月`
 }
 
-export function MonthSwitcher({ currentMonth }: { currentMonth: string }) {
+export function MonthSwitcher({ currentMonth, paramName = 'month' }: { currentMonth: string; paramName?: string }) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
   const navigate = (ym: string) => {
     const params = new URLSearchParams(searchParams.toString())
-    params.set('month', ym)
-    router.push(`${pathname}?${params.toString()}`)
+    params.set(paramName, ym)
+    router.push(`${pathname}?${params.toString()}`, { scroll: false })
   }
 
   const now = new Date()

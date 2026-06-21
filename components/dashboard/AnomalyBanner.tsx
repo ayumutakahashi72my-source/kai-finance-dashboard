@@ -75,7 +75,9 @@ export function AnomalyBanner({ month }: { month: string }) {
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
-        <span style={{ fontSize: 12 }}>⚡</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fb9477" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+        </svg>
         <span style={{ fontSize: 12, fontWeight: 700, color: KAI.coral, letterSpacing: '.06em' }}>
           支出異常アラート
         </span>

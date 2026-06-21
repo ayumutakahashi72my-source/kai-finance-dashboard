@@ -45,16 +45,26 @@ export const fmtK = (n: number) => `${(Math.abs(n) / 10000).toFixed(1)}万`
 /* ─── data helpers ─── */
 export function buildMonthlyData(transactions: Transaction[]) {
   const now = jstNow()
-  return Array.from({ length: 6 }, (_, i) => {
+  const monthKeys: string[] = []
+  const monthLabels: string[] = []
+  for (let i = 0; i < 6; i++) {
     const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - (5 - i), 1))
-    const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`
-    const monthTx = transactions.filter((t) => t.occurred_on.startsWith(key))
-    return {
-      m: `${d.getUTCMonth() + 1}`,
-      inc: monthTx.filter((t) => t.amount >= 0).reduce((s, t) => s + t.amount, 0),
-      exp: monthTx.filter((t) => t.amount < 0).reduce((s, t) => s + Math.abs(t.amount), 0),
-    }
-  })
+    monthKeys.push(`${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`)
+    monthLabels.push(`${d.getUTCMonth() + 1}`)
+  }
+
+  const buckets = monthKeys.map(() => ({ inc: 0, exp: 0 }))
+  const keyIndex = new Map(monthKeys.map((k, i) => [k, i]))
+
+  for (const t of transactions) {
+    const mk = t.occurred_on.slice(0, 7)
+    const idx = keyIndex.get(mk)
+    if (idx === undefined) continue
+    if (t.amount >= 0) buckets[idx].inc += t.amount
+    else buckets[idx].exp += Math.abs(t.amount)
+  }
+
+  return buckets.map((b, i) => ({ m: monthLabels[i], inc: b.inc, exp: b.exp }))
 }
 
 export type CategoryData = [string, { amount: number; color: string; icon: string | null }][]
@@ -140,17 +150,69 @@ export function buildDailyPattern(transactions: Transaction[], month: string) {
 /* ─── savings trend (monthly) ─── */
 export function buildSavingsTrend(transactions: Transaction[]) {
   const now = jstNow()
-  return Array.from({ length: 6 }, (_, i) => {
+  const monthKeys: string[] = []
+  const monthLabels: string[] = []
+  for (let i = 0; i < 6; i++) {
     const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - (5 - i), 1))
-    const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`
-    const monthTx = transactions.filter((t) => t.occurred_on.startsWith(key))
-    const inc = monthTx.filter((t) => t.amount >= 0).reduce((s, t) => s + t.amount, 0)
-    const exp = monthTx.filter((t) => t.amount < 0).reduce((s, t) => s + Math.abs(t.amount), 0)
-    const savings = inc - exp
-    const rate = inc > 0 ? Math.round((savings / inc) * 100) : 0
-    return { m: `${d.getUTCMonth() + 1}`, savings, rate, inc, exp }
+    monthKeys.push(`${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`)
+    monthLabels.push(`${d.getUTCMonth() + 1}`)
+  }
+
+  const buckets = monthKeys.map(() => ({ inc: 0, exp: 0 }))
+  const keyIndex = new Map(monthKeys.map((k, i) => [k, i]))
+
+  for (const t of transactions) {
+    const mk = t.occurred_on.slice(0, 7)
+    const idx = keyIndex.get(mk)
+    if (idx === undefined) continue
+    if (t.amount >= 0) buckets[idx].inc += t.amount
+    else buckets[idx].exp += Math.abs(t.amount)
+  }
+
+  return buckets.map((b, i) => {
+    const savings = b.inc - b.exp
+    const rate = b.inc > 0 ? Math.round((savings / b.inc) * 100) : 0
+    return { m: monthLabels[i], savings, rate, inc: b.inc, exp: b.exp }
   })
 }
+
+/* ─── discretionary spending trend ─── */
+const DISCRETIONARY_KEYWORDS = ['趣味', '嗜好', '課金', 'サブスク', 'エンタメ', '娯楽', '遊興', 'ゲーム', '書籍', '美容']
+
+export function buildDiscretionaryTrend(transactions: Transaction[]) {
+  const now = jstNow()
+  const monthKeys: string[] = []
+  const monthLabels: string[] = []
+  for (let i = 0; i < 6; i++) {
+    const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - (5 - i), 1))
+    monthKeys.push(`${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`)
+    monthLabels.push(`${d.getUTCMonth() + 1}`)
+  }
+
+  const buckets = monthKeys.map(() => ({ disc: 0, allExp: 0 }))
+  const keyIndex = new Map(monthKeys.map((k, i) => [k, i]))
+
+  for (const t of transactions) {
+    if (t.amount >= 0 || t.is_fixed) continue
+    const mk = t.occurred_on.slice(0, 7)
+    const idx = keyIndex.get(mk)
+    if (idx === undefined) continue
+    const abs = Math.abs(t.amount)
+    buckets[idx].allExp += abs
+    const catName = t.categories?.name ?? ''
+    if (DISCRETIONARY_KEYWORDS.some((kw) => catName.includes(kw))) {
+      buckets[idx].disc += abs
+    }
+  }
+
+  return buckets.map((b, i) => ({
+    m: monthLabels[i],
+    total: b.disc,
+    rate: b.allExp > 0 ? Math.round((b.disc / b.allExp) * 100) : 0,
+    allExp: b.allExp,
+  }))
+}
+
 
 /* ─── shared tooltip ─── */
 export function TooltipDark({ active, payload, label }: {

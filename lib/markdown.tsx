@@ -1,5 +1,11 @@
 import React from 'react'
 
+const EMOJI_RE = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{FE00}-\u{FE0F}\u{1FA00}-\u{1FA9F}\u{200D}\u{20E3}]/gu
+
+function stripEmoji(text: string): string {
+  return text.replace(EMOJI_RE, '').replace(/\s{2,}/g, ' ').trim()
+}
+
 export function inlineMarkdown(text: string): React.ReactNode {
   const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g)
   return parts.map((part, i) => {
@@ -14,7 +20,7 @@ export function inlineMarkdown(text: string): React.ReactNode {
 }
 
 export function renderMarkdown(content: string) {
-  const lines = content.split('\n')
+  const lines = stripEmoji(content).split('\n')
   const elements: React.ReactNode[] = []
   let key = 0
 
