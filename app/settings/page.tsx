@@ -6,8 +6,8 @@ import { Sidebar } from '@/components/layout/Sidebar'
 import { BottomBar } from '@/components/layout/BottomBar'
 import { KaiSystemBrand } from '@/components/kai/shared'
 import { KAI } from '@/lib/kai-tokens'
-import { ChevronRightIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
+import { ExportButton } from '@/components/settings/ExportButton'
 import { LeaveHouseholdButton } from '@/components/settings/LeaveHouseholdButton'
 import { CleanupCardTransfersButton } from '@/components/settings/CleanupCardTransfersButton'
 import { FixCategoryColorsButton } from '@/components/settings/FixCategoryColorsButton'
@@ -117,7 +117,6 @@ const TagIcon2 = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="non
 const RefreshIcon = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={KAI.coral} strokeWidth="1.9"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg>
 const OcrIcon = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={KAI.cyan} strokeWidth="1.9"><path d="M12 2v4"/><path d="M12 18v4"/><circle cx="12" cy="12" r="4"/></svg>
 const TimerIcon = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={KAI.text2} strokeWidth="1.9"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l2.5 2.5"/></svg>
-const DownloadIcon = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={KAI.text2} strokeWidth="1.9"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
 const InfoIcon = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={KAI.text2} strokeWidth="1.9"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
 
 export default async function SettingsPage() {
@@ -206,7 +205,7 @@ export default async function SettingsPage() {
               <span style={{ fontSize: 9, fontWeight: 700, color: KAI.coral, background: 'rgba(251,148,119,.12)', border: '1px solid rgba(251,148,119,.25)', borderRadius: 6, padding: '3px 7px', ...MONO }}>
                 {isDemo ? 'DEMO' : 'PRO'}
               </span>
-              <ChevronRightIcon size={16} style={{ color: KAI.text3, flexShrink: 0 }} />
+              {/* no link — purely informational */}
             </div>
           </Panel>
 
@@ -227,7 +226,7 @@ export default async function SettingsPage() {
               <Panel>
                 <Row icon={<LinkIcon2 />} iconBg="rgba(74,222,128,.12)" iconBorder="rgba(74,222,128,.22)" title="Money Forward 連携" subtitle="毎朝6:00 自動取込" href="/settings/integrations/mf" />
                 <RowDivider />
-                <Row icon={<ChatIcon />} iconBg="rgba(122,167,255,.12)" title="同期ログ" subtitle="直近30日" href="/settings/mf" />
+                <Row icon={<ChatIcon />} iconBg="rgba(122,167,255,.12)" title="同期ログ" subtitle="直近30日" href="/settings/integrations/mf" />
               </Panel>
             </>
           )}
@@ -257,9 +256,11 @@ export default async function SettingsPage() {
           {/* ── データ・その他 ── */}
           <GrpLabel>データ・その他</GrpLabel>
           <Panel>
-            <Row icon={<DownloadIcon />} iconBg="var(--kai-overlay-weak)" title="データをエクスポート" subtitle="CSV / JSON" href="/legal/data" />
+            <ExportButton />
             <RowDivider />
             <Row icon={<InfoIcon />} iconBg="var(--kai-overlay-weak)" title="プライバシー・データ取扱い" href="/legal/privacy" />
+            <RowDivider />
+            <Row icon={<InfoIcon />} iconBg="var(--kai-overlay-weak)" title="データ取り扱いに関する方針" href="/legal/data" />
           </Panel>
 
           {/* ── 管理者（アコーディオン、管理者のみ表示） ── */}

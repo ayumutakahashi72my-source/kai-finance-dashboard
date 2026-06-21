@@ -18,6 +18,7 @@ import { generateBudgetAdvice } from '@/lib/budget-advisor'
 import { sendPushToHousehold } from '@/lib/push-sender'
 import { normalizeKeyword } from '@/lib/ai-classifier'
 import { canonicalizeMerchant } from '@/lib/merchant-canonical'
+import { matchesFixedPayee, matchesFixedCategory, threeMonthsAgoDate } from '@/lib/fixed-expense-keywords'
 
 function prevMonth(year: number, month: number): { year: number; month: number } {
   return month === 1 ? { year: year - 1, month: 12 } : { year, month: month - 1 }
@@ -149,26 +150,25 @@ export async function GET(req: NextRequest) {
 
     // ⑤ 固定費候補を SQL 集計で検出（直近3ヶ月で3回以上同一payee）
     try {
-      const threeMonthsAgo = new Date()
-      threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3)
-      const since = threeMonthsAgo.toISOString().slice(0, 10)
+      const since = threeMonthsAgoDate()
 
       const { data: candidates } = await supabase
         .from('transactions')
-        .select('payee, amount, occurred_on')
+        .select('payee, amount, occurred_on, categories(name)')
         .eq('household_id', hid)
         .lt('amount', 0)
         .gte('occurred_on', since)
 
       if (candidates?.length) {
-        // 表記揺れを吸収するため canonicalizeMerchant(normalizeKeyword(payee)) で集約。
-        // 代表 payee は最頻出の元 payee を保持。
         const payeeStats = new Map<string, {
           amounts: number[]
           months: Set<string>
           originalPayees: Map<string, number>
         }>()
         for (const tx of candidates) {
+          const catName = (tx.categories as unknown as { name: string } | null)?.name ?? ''
+          if (!matchesFixedCategory(catName) && !matchesFixedPayee(tx.payee)) continue
+
           const key = canonicalizeMerchant(normalizeKeyword(tx.payee)) || tx.payee
           if (!payeeStats.has(key)) {
             payeeStats.set(key, { amounts: [], months: new Set(), originalPayees: new Map() })

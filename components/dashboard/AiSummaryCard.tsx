@@ -112,7 +112,7 @@ export function AiSummaryCard() {
       <div className="mt-3 flex items-center justify-between">
         {summary ? (
           <Link
-            href="/summary"
+            href="/summary?tab=1"
             className="text-[13px] font-semibold text-[#fb9477] transition-colors hover:text-[#c4b5fd]"
           >
             全文を見る <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ display: 'inline', verticalAlign: 'middle' }}><path d="M5 2.5L9 6L5 9.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>

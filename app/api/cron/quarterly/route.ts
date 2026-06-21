@@ -93,7 +93,7 @@ const QUARTERLY_PROMPT = `あなたは家計の専門アドバイザーです。
 3. **改善ポイント（上位3件）** — 具体的で実行可能なアドバイス
 4. **次の四半期へ向けて** — 優先すべき財務目標
 
-数値は具体的に引用し、ポジティブな点も必ず含めてください。`
+数値は具体的に引用し、ポジティブな点も必ず含めてください。絵文字は使用せず、プレーンテキストとMarkdownのみで記述してください。`
 
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get('authorization')

@@ -152,6 +152,43 @@ export function buildSavingsTrend(transactions: Transaction[]) {
   })
 }
 
+/* ─── discretionary spending trend ─── */
+const DISCRETIONARY_KEYWORDS = ['趣味', '嗜好', '課金', 'サブスク', 'エンタメ', '娯楽', '遊興', 'ゲーム', '書籍', '美容']
+
+export function buildDiscretionaryTrend(transactions: Transaction[]) {
+  const now = jstNow()
+  const monthKeys: string[] = []
+  const monthLabels: string[] = []
+  for (let i = 0; i < 6; i++) {
+    const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - (5 - i), 1))
+    monthKeys.push(`${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`)
+    monthLabels.push(`${d.getUTCMonth() + 1}`)
+  }
+
+  const buckets = monthKeys.map(() => ({ disc: 0, allExp: 0 }))
+  const keyIndex = new Map(monthKeys.map((k, i) => [k, i]))
+
+  for (const t of transactions) {
+    if (t.amount >= 0 || t.is_fixed) continue
+    const mk = t.occurred_on.slice(0, 7)
+    const idx = keyIndex.get(mk)
+    if (idx === undefined) continue
+    const abs = Math.abs(t.amount)
+    buckets[idx].allExp += abs
+    const catName = t.categories?.name ?? ''
+    if (DISCRETIONARY_KEYWORDS.some((kw) => catName.includes(kw))) {
+      buckets[idx].disc += abs
+    }
+  }
+
+  return buckets.map((b, i) => ({
+    m: monthLabels[i],
+    total: b.disc,
+    rate: b.allExp > 0 ? Math.round((b.disc / b.allExp) * 100) : 0,
+    allExp: b.allExp,
+  }))
+}
+
 /* ─── shared tooltip ─── */
 export function TooltipDark({ active, payload, label }: {
   active?: boolean
