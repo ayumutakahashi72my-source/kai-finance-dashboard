@@ -13,6 +13,10 @@ export default async function CategoriesSettingsPage() {
   const { data: { user }, error } = await supabase.auth.getUser()
   if (error || !user) redirect('/login')
 
+  const { getHousehold } = await import('@/app/actions/households')
+  const household = await getHousehold()
+  if (!household) redirect('/')
+
   const categories = await getCategories()
 
   return (

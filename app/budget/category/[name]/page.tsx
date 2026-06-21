@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { getTransactions } from '@/app/actions/transactions'
 import { getCategories } from '@/app/actions/categories'
+import { getHousehold } from '@/app/actions/households'
 import { CategoryTransactionsPage } from '@/components/budget/CategoryTransactionsPage'
 import { jstMonthStr } from '@/lib/jst'
 import type { Transaction, Category } from '@/lib/types'
@@ -16,6 +17,9 @@ export default async function BudgetCategoryPage({
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
+
+  const household = await getHousehold()
+  if (!household) redirect('/')
 
   const { name } = await params
   const { month: rawMonth } = await searchParams

@@ -125,6 +125,10 @@ export default async function SettingsPage() {
   const { data: { user }, error } = await supabase.auth.getUser()
   if (error || !user) redirect('/login')
 
+  const { getHousehold } = await import('@/app/actions/households')
+  const household = await getHousehold()
+  if (!household) redirect('/')
+
   const isDemo = user.email === process.env.DEMO_USER_EMAIL
   const displayName = user.user_metadata?.full_name ?? user.email ?? 'ユーザー'
   const avatarUrl = user.user_metadata?.avatar_url as string | undefined

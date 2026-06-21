@@ -22,7 +22,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     console.log('[PWA] controller at mount:', navigator.serviceWorker.controller)
 
     navigator.serviceWorker
-      .register('/sw.js', { scope: '/' })
+      .register('/sw.js', { scope: '/', updateViaCache: 'none' })
       .then((reg) => {
         console.log('[PWA] SW registered, state:', reg.active?.state ?? 'no active worker')
       })
