@@ -16,9 +16,8 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { generateMonthlySummary } from '@/lib/monthly-summary'
 import { generateBudgetAdvice } from '@/lib/budget-advisor'
 import { sendPushToHousehold } from '@/lib/push-sender'
-import { normalizeKeyword } from '@/lib/ai-classifier'
-import { canonicalizeMerchant } from '@/lib/merchant-canonical'
-import { matchesFixedPayee, matchesFixedCategory, threeMonthsAgoDate } from '@/lib/fixed-expense-keywords'
+import { threeMonthsAgoDate } from '@/lib/fixed-expense-keywords'
+import { detectFixedExpenses } from '@/lib/fixed-expense-detect'
 
 function prevMonth(year: number, month: number): { year: number; month: number } {
   return month === 1 ? { year: year - 1, month: 12 } : { year, month: month - 1 }
@@ -160,37 +159,7 @@ export async function GET(req: NextRequest) {
         .gte('occurred_on', since)
 
       if (candidates?.length) {
-        const payeeStats = new Map<string, {
-          amounts: number[]
-          months: Set<string>
-          originalPayees: Map<string, number>
-        }>()
-        for (const tx of candidates) {
-          const catName = (tx.categories as unknown as { name: string } | null)?.name ?? ''
-          if (!matchesFixedCategory(catName) && !matchesFixedPayee(tx.payee)) continue
-
-          const key = canonicalizeMerchant(normalizeKeyword(tx.payee)) || tx.payee
-          if (!payeeStats.has(key)) {
-            payeeStats.set(key, { amounts: [], months: new Set(), originalPayees: new Map() })
-          }
-          const stat = payeeStats.get(key)!
-          stat.amounts.push(Math.abs(tx.amount))
-          stat.months.add(tx.occurred_on.slice(0, 7))
-          stat.originalPayees.set(tx.payee, (stat.originalPayees.get(tx.payee) ?? 0) + 1)
-        }
-
-        const fixedCandidates = [...payeeStats.entries()]
-          .filter(([, stat]) => stat.months.size >= 3)
-          .map(([, stat]) => {
-            const topPayee = [...stat.originalPayees.entries()].sort((a, b) => b[1] - a[1])[0][0]
-            return {
-              household_id: hid,
-              payee: topPayee,
-              avg_amount: Math.round(stat.amounts.reduce((a, b) => a + b, 0) / stat.amounts.length),
-              months_seen: stat.months.size,
-              updated_at: new Date().toISOString(),
-            }
-          })
+        const fixedCandidates = detectFixedExpenses(candidates, hid)
 
         if (fixedCandidates.length) {
           await supabase

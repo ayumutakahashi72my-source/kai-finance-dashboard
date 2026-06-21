@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Pencil, Trash2, X, TrendingUp } from 'lucide-react'
 import { KAI } from '@/lib/kai-tokens'
+import { useSwipeDismiss } from '@/lib/hooks/use-swipe-dismiss'
 import { getCategoryIcon } from '@/lib/category-icons'
 import { CategoryIcon } from '@/components/ui/CategoryIcon'
 import { Button } from '@/components/ui/button'
@@ -188,8 +189,8 @@ export function CategoryTransactionDrawer({
   const [editingTx, setEditingTx] = useState<Transaction | null>(null)
   const [deletingTx, setDeletingTx] = useState<Transaction | null>(null)
   const [menuId, setMenuId] = useState<string | null>(null)
+  const { sheetRef, onTouchStart, onTouchMove, onTouchEnd } = useSwipeDismiss({ onDismiss: onClose })
 
-  // Esc キーで閉じる
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
     window.addEventListener('keydown', handler)
@@ -223,6 +224,7 @@ export function CategoryTransactionDrawer({
 
       {/* ボトムシート */}
       <div
+        ref={sheetRef}
         className="fixed bottom-0 left-0 right-0 z-50 flex flex-col"
         style={{
           maxHeight: '82dvh',
@@ -233,9 +235,12 @@ export function CategoryTransactionDrawer({
           boxShadow: '0 -8px 40px rgba(0,0,0,0.6)',
           animation: 'kai-rise .28s cubic-bezier(.2,.8,.3,1) both',
         }}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
       >
         {/* ハンドル */}
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 4px' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 4px', cursor: 'grab' }}>
           <div style={{ width: 36, height: 4, borderRadius: 99, background: KAI.borderStrong }}/>
         </div>
 
@@ -260,14 +265,15 @@ export function CategoryTransactionDrawer({
           </div>
           <button
             onClick={onClose}
+            aria-label="閉じる"
             style={{
-              width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
+              width: 44, height: 44, minWidth: 44, borderRadius: '50%', flexShrink: 0,
               background: KAI.border, border: `1px solid ${KAI.border2}`,
               color: KAI.text3, display: 'flex', alignItems: 'center', justifyContent: 'center',
               cursor: 'pointer',
             }}
           >
-            <X size={15}/>
+            <X size={18}/>
           </button>
         </div>
 
@@ -352,11 +358,12 @@ export function CategoryTransactionDrawer({
                         <div style={{ position: 'relative', marginLeft: 4 }}>
                           <button
                             onClick={() => setMenuId(isOpen ? null : tx.id)}
+                            aria-label="メニュー"
                             style={{
-                              width: 30, height: 30, borderRadius: '50%',
+                              width: 44, height: 44, minWidth: 44, borderRadius: '50%',
                               background: 'transparent', border: 'none', cursor: 'pointer',
                               color: KAI.text4, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              fontSize: 16,
+                              fontSize: 18,
                             }}
                           >⋯</button>
                           {isOpen && (

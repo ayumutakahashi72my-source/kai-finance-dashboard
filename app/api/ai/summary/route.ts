@@ -29,12 +29,17 @@ export async function GET(req: NextRequest) {
   const monthParam = searchParams.get('month')
 
   if (yearParam && monthParam) {
+    const y = parseInt(yearParam, 10)
+    const m = parseInt(monthParam, 10)
+    if (Number.isNaN(y) || Number.isNaN(m) || m < 1 || m > 12) {
+      return NextResponse.json({ error: 'invalid year or month' }, { status: 400 })
+    }
     const { data } = await supabase
       .from('monthly_summaries')
       .select('year, month, content, created_at')
       .eq('household_id', householdId)
-      .eq('year', parseInt(yearParam, 10))
-      .eq('month', parseInt(monthParam, 10))
+      .eq('year', y)
+      .eq('month', m)
       .maybeSingle()
     return NextResponse.json({ data })
   }

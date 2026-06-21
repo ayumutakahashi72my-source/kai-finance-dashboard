@@ -250,6 +250,10 @@ export async function GET(req: NextRequest) {
   const year = yearParam ? parseInt(yearParam, 10) : now.getUTCFullYear()
   const month = monthParam ? parseInt(monthParam, 10) : (now.getUTCMonth() + 1)
 
+  if (Number.isNaN(year) || Number.isNaN(month) || month < 1 || month > 12) {
+    return NextResponse.json({ error: 'invalid year or month' }, { status: 400 })
+  }
+
   const [{ data: messages }, { data: session }] = await Promise.all([
     supabase
       .from('chat_messages')

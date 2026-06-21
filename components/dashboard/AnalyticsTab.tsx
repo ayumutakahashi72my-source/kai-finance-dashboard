@@ -21,7 +21,8 @@ function TabButton({ active, label, onClick }: { active: boolean; label: string;
     <button
       onClick={onClick}
       style={{
-        fontSize: 12, fontWeight: 600, padding: '6px 14px', borderRadius: 8,
+        flex: 1,
+        fontSize: 13, fontWeight: 600, padding: '10px 16px', borderRadius: 10,
         border: 'none', cursor: 'pointer', fontFamily: 'inherit',
         transition: 'all .2s',
         background: active ? `${KAI.coral}18` : 'transparent',
@@ -34,21 +35,26 @@ function TabButton({ active, label, onClick }: { active: boolean; label: string;
   )
 }
 
-function OverviewView({ allTransactions, month }: { allTransactions: Transaction[]; month: string }) {
-  const [activeDonutIdx, setActiveDonutIdx] = useState<number | null>(null)
+/* ━━━ 月次分析: 当月のカテゴリ内訳・ランキング・先月比・曜日パターン ━━━ */
+function MonthlyView({ allTransactions, currentMonth }: { allTransactions: Transaction[]; currentMonth: string }) {
+  const searchParams = useSearchParams()
+  const month = searchParams.get('detail_month') ?? currentMonth
 
-  const monthlyData = useMemo(() => buildMonthlyData(allTransactions), [allTransactions])
-  const savingsTrend = useMemo(() => buildSavingsTrend(allTransactions), [allTransactions])
-  const discretionaryTrend = useMemo(() => buildDiscretionaryTrend(allTransactions), [allTransactions])
+  const [activeDonutIdx, setActiveDonutIdx] = useState<number | null>(null)
 
   const monthTx = useMemo(() => allTransactions.filter((t) => t.occurred_on.startsWith(month)), [allTransactions, month])
   const categoryData = useMemo(() => buildCategoryData(monthTx), [monthTx])
   const donutData = useMemo(() => categoryData.map(([name, { amount, color }]) => ({ name, value: amount, color })), [categoryData])
   const donutTotal = useMemo(() => donutData.reduce((s, d) => s + d.value, 0), [donutData])
 
+  const rankData = useMemo(() => [...categoryData].slice(0, 6).map(([name, { amount, color }]) => ({ name, amount, color })), [categoryData])
+  const momData = useMemo(() => buildMoMData(allTransactions, month), [allTransactions, month])
+  const payeeData = useMemo(() => buildPayeeData(allTransactions, month), [allTransactions, month])
+  const dailyPattern = useMemo(() => buildDailyPattern(allTransactions, month), [allTransactions, month])
+
   useEffect(() => {
     setActiveDonutIdx(null)
-  }, [donutData.length])
+  }, [donutData.length, month])
 
   const handleDonutClick = useCallback((_: unknown, index: number) => {
     setActiveDonutIdx((prev) => (prev === index ? null : index))
@@ -61,32 +67,13 @@ function OverviewView({ allTransactions, month }: { allTransactions: Transaction
 
   return (
     <div className="space-y-3">
-      {/* income/expense trend */}
-      <div className="kai-rise rounded-[18px] p-[18px]" style={panel}>
-        <p style={{ fontSize: 11, color: TEXT3, letterSpacing: '.08em', fontWeight: 700, marginBottom: 14 }}>収支トレンド · 6M</p>
-        <ResponsiveContainer width="100%" height={180}>
-          <AreaChart data={monthlyData} margin={{ left: -10, right: 4 }}>
-            <defs>
-              <linearGradient id="gI" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={UP} stopOpacity={0.35} />
-                <stop offset="100%" stopColor={UP} stopOpacity={0} />
-              </linearGradient>
-              <linearGradient id="gE" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={DOWN} stopOpacity={0.35} />
-                <stop offset="100%" stopColor={DOWN} stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <XAxis dataKey="m" tick={{ fontSize: 10, fill: TEXT3, fontFamily: MONO_FONT }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fontSize: 9, fill: TEXT3, fontFamily: MONO_FONT }} axisLine={false} tickLine={false} tickFormatter={(v) => `${(v / 10000).toFixed(0)}万`} width={32} />
-            <Tooltip content={<TooltipDark />} />
-            <Area type="monotone" dataKey="inc" name="収入" stroke={UP}   strokeWidth={2} fill="url(#gI)" dot={false} />
-            <Area type="monotone" dataKey="exp" name="支出" stroke={DOWN} strokeWidth={2} fill="url(#gE)" dot={false} />
-          </AreaChart>
-        </ResponsiveContainer>
+      {/* month switcher */}
+      <div style={{ display: 'flex', justifyContent: 'center', padding: '4px 0' }}>
+        <MonthSwitcher currentMonth={month} paramName="detail_month" />
       </div>
 
-      {/* category donut + savings trend */}
-      <div className="kai-rise grid grid-cols-1 gap-2.5 sm:grid-cols-2" style={{ animationDelay: '60ms' }}>
+      {/* category donut + MoM */}
+      <div className="kai-rise grid grid-cols-1 gap-2.5 sm:grid-cols-2">
         {/* donut */}
         <div className="rounded-[18px] p-4" style={panel}>
           <p style={{ fontSize: 11, color: TEXT3, letterSpacing: '.08em', fontWeight: 700, marginBottom: 8 }}>カテゴリ内訳</p>
@@ -149,139 +136,26 @@ function OverviewView({ allTransactions, month }: { allTransactions: Transaction
               </div>
             </div>
           )}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 10px', marginTop: 4 }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 6px', marginTop: 6 }}>
             {donutData.slice(0, 6).map((d, i) => (
-              <div
+              <button
                 key={d.name}
+                type="button"
                 style={{
-                  display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer',
                   opacity: activeDonutIdx !== null && activeDonutIdx !== i ? 0.4 : 1,
                   transition: 'opacity .15s',
+                  padding: '5px 8px', borderRadius: 6, border: 'none',
+                  background: activeDonutIdx === i ? `${d.color}18` : 'transparent',
+                  fontFamily: 'inherit',
                 }}
                 onClick={() => setActiveDonutIdx((prev) => (prev === i ? null : i))}
               >
-                <div style={{ width: 7, height: 7, borderRadius: 2, background: d.color, flexShrink: 0 }} />
-                <span style={{ fontSize: 10, color: TEXT3 }}>{d.name}</span>
-              </div>
+                <div style={{ width: 8, height: 8, borderRadius: 2, background: d.color, flexShrink: 0 }} />
+                <span style={{ fontSize: 11, color: activeDonutIdx === i ? d.color : TEXT3 }}>{d.name}</span>
+              </button>
             ))}
           </div>
-        </div>
-
-        {/* savings trend */}
-        <div className="rounded-[18px] p-4" style={panel}>
-          <p style={{ fontSize: 11, color: TEXT3, letterSpacing: '.08em', fontWeight: 700, marginBottom: 14 }}>貯蓄率推移 · 6M</p>
-          <ResponsiveContainer width="100%" height={160}>
-            <BarChart data={savingsTrend} margin={{ left: -10, right: 4 }}>
-              <XAxis dataKey="m" tick={{ fontSize: 10, fill: TEXT3, fontFamily: MONO_FONT }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 9, fill: TEXT3, fontFamily: MONO_FONT }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}%`} width={32} />
-              <Tooltip
-                content={({ active, payload, label }) => {
-                  if (!active || !payload?.length) return null
-                  const d = payload[0].payload as { m: string; rate: number; savings: number }
-                  return (
-                    <div style={{ background: KAI.overlayBg, backdropFilter: 'blur(20px)', border: `1px solid ${KAI.borderStrong}`, borderRadius: 10, padding: '8px 12px', fontSize: 12 }}>
-                      <p style={{ fontFamily: MONO_FONT, fontWeight: 700, color: TEXT, marginBottom: 4 }}>{label}月</p>
-                      <p style={{ fontFamily: MONO_FONT, color: d.rate >= 0 ? UP : DOWN }}>貯蓄率: {d.rate}%</p>
-                      <p style={{ fontFamily: MONO_FONT, color: TEXT3 }}>貯蓄額: {fmt(d.savings)}</p>
-                    </div>
-                  )
-                }}
-              />
-              <Bar dataKey="rate" radius={[4, 4, 0, 0]}>
-                {savingsTrend.map((d, i) => <Cell key={i} fill={d.rate >= 0 ? UP : DOWN} fillOpacity={0.7} />)}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* discretionary spending trend */}
-      <div className="kai-rise rounded-[18px] p-[18px]" style={{ ...panel, animationDelay: '100ms' }}>
-        <p style={{ fontSize: 11, color: TEXT3, letterSpacing: '.08em', fontWeight: 700, marginBottom: 4 }}>裁量的支出トレンド · 6M</p>
-        <p style={{ fontSize: 10, color: TEXT3, marginBottom: 14, opacity: 0.7 }}>
-          固定費を除く趣味・嗜好品・課金など
-        </p>
-        {discretionaryTrend.every((d) => d.total === 0) ? (
-          <p style={{ padding: '16px 0', textAlign: 'center', fontSize: 13, color: TEXT3 }}>
-            該当カテゴリのデータなし
-          </p>
-        ) : (
-          <ResponsiveContainer width="100%" height={180}>
-            <BarChart data={discretionaryTrend} margin={{ left: -10, right: 4 }}>
-              <defs>
-                <linearGradient id="gDisc" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={KAI.violet} stopOpacity={0.8} />
-                  <stop offset="100%" stopColor={KAI.violet} stopOpacity={0.3} />
-                </linearGradient>
-              </defs>
-              <XAxis dataKey="m" tick={{ fontSize: 10, fill: TEXT3, fontFamily: MONO_FONT }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 9, fill: TEXT3, fontFamily: MONO_FONT }} axisLine={false} tickLine={false} tickFormatter={(v) => `${(v / 10000).toFixed(0)}万`} width={32} />
-              <Tooltip
-                content={({ active, payload, label }) => {
-                  if (!active || !payload?.length) return null
-                  const d = payload[0].payload as { m: string; total: number; rate: number; allExp: number }
-                  return (
-                    <div style={{ background: KAI.overlayBg, backdropFilter: 'blur(20px)', border: `1px solid ${KAI.borderStrong}`, borderRadius: 10, padding: '8px 12px', fontSize: 12 }}>
-                      <p style={{ fontFamily: MONO_FONT, fontWeight: 700, color: TEXT, marginBottom: 4 }}>{label}月</p>
-                      <p style={{ fontFamily: MONO_FONT, color: KAI.violet }}>裁量的支出: {fmt(d.total)}</p>
-                      <p style={{ fontFamily: MONO_FONT, color: TEXT3 }}>変動費全体: {fmt(d.allExp)}</p>
-                      <p style={{ fontFamily: MONO_FONT, color: TEXT3 }}>占有率: {d.rate}%</p>
-                    </div>
-                  )
-                }}
-              />
-              <Bar dataKey="total" radius={[4, 4, 0, 0]} fill="url(#gDisc)" />
-            </BarChart>
-          </ResponsiveContainer>
-        )}
-      </div>
-    </div>
-  )
-}
-
-function DetailView({ allTransactions, currentMonth }: { allTransactions: Transaction[]; currentMonth: string }) {
-  const searchParams = useSearchParams()
-  const month = searchParams.get('detail_month') ?? currentMonth
-
-  const monthTx = useMemo(() => allTransactions.filter((t) => t.occurred_on.startsWith(month)), [allTransactions, month])
-  const categoryData = useMemo(() => buildCategoryData(monthTx), [monthTx])
-  const rankData = useMemo(() => [...categoryData].slice(0, 6).map(([name, { amount, color }]) => ({ name, amount, color })), [categoryData])
-  const momData = useMemo(() => buildMoMData(allTransactions, month), [allTransactions, month])
-  const payeeData = useMemo(() => buildPayeeData(allTransactions, month), [allTransactions, month])
-  const dailyPattern = useMemo(() => buildDailyPattern(allTransactions, month), [allTransactions, month])
-
-  return (
-    <div className="space-y-3">
-      {/* month switcher — reuses existing MonthSwitcher via URL param 'detail_month' */}
-      <div style={{ display: 'flex', justifyContent: 'center', padding: '4px 0' }}>
-        <MonthSwitcher currentMonth={month} paramName="detail_month" />
-      </div>
-
-      {/* category ranking + MoM */}
-      <div className="kai-rise grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-        {/* category ranking */}
-        <div className="rounded-[18px] p-4" style={panel}>
-          <p style={{ fontSize: 11, color: TEXT3, letterSpacing: '.08em', fontWeight: 700, marginBottom: 12 }}>カテゴリ別ランキング</p>
-          {rankData.length === 0 ? (
-            <p style={{ padding: '16px 0', textAlign: 'center', fontSize: 13, color: TEXT3 }}>データなし</p>
-          ) : (() => {
-            const rankTotal = rankData.reduce((s, r) => s + r.amount, 0)
-            return rankData.map(({ name, amount, color }, i) => {
-              const pct = rankTotal > 0 ? (amount / rankTotal) * 100 : 0
-              return (
-                <div key={name} style={{ marginBottom: i < rankData.length - 1 ? 10 : 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                    <span style={{ fontFamily: MONO_FONT, fontSize: 9.5, fontWeight: 700, color: i === 0 ? color : TEXT3, minWidth: 14, textAlign: 'right' }}>{i + 1}</span>
-                    <span style={{ flex: 1, fontSize: 12, color: TEXT2, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>
-                    <span style={{ fontFamily: MONO_FONT, fontSize: 11, color: TEXT, fontWeight: 600, flexShrink: 0 }}>¥{amount.toLocaleString('ja-JP')}</span>
-                  </div>
-                  <div style={{ height: 3, background: KAI.border, borderRadius: 99, overflow: 'hidden', marginLeft: 20 }}>
-                    <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: 99, opacity: i === 0 ? 1 : 0.7 }}/>
-                  </div>
-                </div>
-              )
-            })
-          })()}
         </div>
 
         {/* MoM */}
@@ -312,8 +186,33 @@ function DetailView({ allTransactions, currentMonth }: { allTransactions: Transa
         </div>
       </div>
 
-      {/* store ranking + daily pattern */}
+      {/* category ranking + store ranking */}
       <div className="kai-rise grid grid-cols-1 gap-2.5 sm:grid-cols-2" style={{ animationDelay: '60ms' }}>
+        {/* category ranking */}
+        <div className="rounded-[18px] p-4" style={panel}>
+          <p style={{ fontSize: 11, color: TEXT3, letterSpacing: '.08em', fontWeight: 700, marginBottom: 12 }}>カテゴリ別ランキング</p>
+          {rankData.length === 0 ? (
+            <p style={{ padding: '16px 0', textAlign: 'center', fontSize: 13, color: TEXT3 }}>データなし</p>
+          ) : (() => {
+            const rankTotal = rankData.reduce((s, r) => s + r.amount, 0)
+            return rankData.map(({ name, amount, color }, i) => {
+              const pct = rankTotal > 0 ? (amount / rankTotal) * 100 : 0
+              return (
+                <div key={name} style={{ marginBottom: i < rankData.length - 1 ? 10 : 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                    <span style={{ fontFamily: MONO_FONT, fontSize: 9.5, fontWeight: 700, color: i === 0 ? color : TEXT3, minWidth: 14, textAlign: 'right' }}>{i + 1}</span>
+                    <span style={{ flex: 1, fontSize: 12, color: TEXT2, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>
+                    <span style={{ fontFamily: MONO_FONT, fontSize: 11, color: TEXT, fontWeight: 600, flexShrink: 0 }}>¥{amount.toLocaleString('ja-JP')}</span>
+                  </div>
+                  <div style={{ height: 3, background: KAI.border, borderRadius: 99, overflow: 'hidden', marginLeft: 20 }}>
+                    <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: 99, opacity: i === 0 ? 1 : 0.7 }}/>
+                  </div>
+                </div>
+              )
+            })
+          })()}
+        </div>
+
         {/* payee ranking */}
         <div className="rounded-[18px] p-4" style={panel}>
           <p style={{ fontSize: 11, color: TEXT3, letterSpacing: '.08em', fontWeight: 700, marginBottom: 12 }}>店舗別ランキング</p>
@@ -339,32 +238,138 @@ function DetailView({ allTransactions, currentMonth }: { allTransactions: Transa
             })
           })()}
         </div>
+      </div>
 
-        {/* daily spending pattern */}
+      {/* daily spending pattern */}
+      <div className="kai-rise rounded-[18px] p-4" style={{ ...panel, animationDelay: '100ms' }}>
+        <p style={{ fontSize: 11, color: TEXT3, letterSpacing: '.08em', fontWeight: 700, marginBottom: 14 }}>曜日別パターン</p>
+        <ResponsiveContainer width="100%" height={160}>
+          <BarChart data={dailyPattern} margin={{ left: -10, right: 4 }}>
+            <XAxis dataKey="day" tick={{ fontSize: 10, fill: TEXT3, fontFamily: MONO_FONT }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fontSize: 9, fill: TEXT3, fontFamily: MONO_FONT }} axisLine={false} tickLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} width={28} />
+            <Tooltip
+              content={({ active, payload, label }) => {
+                if (!active || !payload?.length) return null
+                const d = payload[0].payload as { day: string; avg: number; total: number; count: number }
+                return (
+                  <div style={{ background: KAI.overlayBg, backdropFilter: 'blur(20px)', border: `1px solid ${KAI.borderStrong}`, borderRadius: 10, padding: '8px 12px', fontSize: 12 }}>
+                    <p style={{ fontFamily: MONO_FONT, fontWeight: 700, color: TEXT, marginBottom: 4 }}>{label}曜日</p>
+                    <p style={{ fontFamily: MONO_FONT, color: CORAL }}>平均: {fmt(d.avg)}</p>
+                    <p style={{ fontFamily: MONO_FONT, color: TEXT3 }}>合計: {fmt(d.total)} ({d.count}件)</p>
+                  </div>
+                )
+              }}
+            />
+            <Bar dataKey="avg" radius={[4, 4, 0, 0]}>
+              {dailyPattern.map((d, i) => <Cell key={i} fill={i === 0 || i === 6 ? CORAL : KAI.blue} fillOpacity={0.65} />)}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  )
+}
+
+/* ━━━ 全期間分析: 6ヶ月トレンド（収支・貯蓄率・裁量的支出） ━━━ */
+function AllPeriodView({ allTransactions }: { allTransactions: Transaction[] }) {
+  const monthlyData = useMemo(() => buildMonthlyData(allTransactions), [allTransactions])
+  const savingsTrend = useMemo(() => buildSavingsTrend(allTransactions), [allTransactions])
+  const discretionaryTrend = useMemo(() => buildDiscretionaryTrend(allTransactions), [allTransactions])
+
+  return (
+    <div className="space-y-3">
+      {/* income/expense trend */}
+      <div className="kai-rise rounded-[18px] p-[18px]" style={panel}>
+        <p style={{ fontSize: 11, color: TEXT3, letterSpacing: '.08em', fontWeight: 700, marginBottom: 14 }}>収支トレンド · 6ヶ月</p>
+        <ResponsiveContainer width="100%" height={180}>
+          <AreaChart data={monthlyData} margin={{ left: -10, right: 4 }}>
+            <defs>
+              <linearGradient id="gI" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={UP} stopOpacity={0.35} />
+                <stop offset="100%" stopColor={UP} stopOpacity={0} />
+              </linearGradient>
+              <linearGradient id="gE" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={DOWN} stopOpacity={0.35} />
+                <stop offset="100%" stopColor={DOWN} stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <XAxis dataKey="m" tick={{ fontSize: 10, fill: TEXT3, fontFamily: MONO_FONT }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fontSize: 9, fill: TEXT3, fontFamily: MONO_FONT }} axisLine={false} tickLine={false} tickFormatter={(v) => `${(v / 10000).toFixed(0)}万`} width={32} />
+            <Tooltip content={<TooltipDark />} />
+            <Area type="monotone" dataKey="inc" name="収入" stroke={UP}   strokeWidth={2} fill="url(#gI)" dot={false} />
+            <Area type="monotone" dataKey="exp" name="支出" stroke={DOWN} strokeWidth={2} fill="url(#gE)" dot={false} />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* savings rate + discretionary */}
+      <div className="kai-rise grid grid-cols-1 gap-2.5 sm:grid-cols-2" style={{ animationDelay: '60ms' }}>
+        {/* savings trend */}
         <div className="rounded-[18px] p-4" style={panel}>
-          <p style={{ fontSize: 11, color: TEXT3, letterSpacing: '.08em', fontWeight: 700, marginBottom: 14 }}>曜日別パターン</p>
+          <p style={{ fontSize: 11, color: TEXT3, letterSpacing: '.08em', fontWeight: 700, marginBottom: 14 }}>貯蓄率推移 · 6ヶ月</p>
           <ResponsiveContainer width="100%" height={160}>
-            <BarChart data={dailyPattern} margin={{ left: -10, right: 4 }}>
-              <XAxis dataKey="day" tick={{ fontSize: 10, fill: TEXT3, fontFamily: MONO_FONT }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 9, fill: TEXT3, fontFamily: MONO_FONT }} axisLine={false} tickLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} width={28} />
+            <BarChart data={savingsTrend} margin={{ left: -10, right: 4 }}>
+              <XAxis dataKey="m" tick={{ fontSize: 10, fill: TEXT3, fontFamily: MONO_FONT }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 9, fill: TEXT3, fontFamily: MONO_FONT }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}%`} width={32} />
               <Tooltip
                 content={({ active, payload, label }) => {
                   if (!active || !payload?.length) return null
-                  const d = payload[0].payload as { day: string; avg: number; total: number; count: number }
+                  const d = payload[0].payload as { m: string; rate: number; savings: number }
                   return (
                     <div style={{ background: KAI.overlayBg, backdropFilter: 'blur(20px)', border: `1px solid ${KAI.borderStrong}`, borderRadius: 10, padding: '8px 12px', fontSize: 12 }}>
-                      <p style={{ fontFamily: MONO_FONT, fontWeight: 700, color: TEXT, marginBottom: 4 }}>{label}曜日</p>
-                      <p style={{ fontFamily: MONO_FONT, color: CORAL }}>平均: {fmt(d.avg)}</p>
-                      <p style={{ fontFamily: MONO_FONT, color: TEXT3 }}>合計: {fmt(d.total)} ({d.count}件)</p>
+                      <p style={{ fontFamily: MONO_FONT, fontWeight: 700, color: TEXT, marginBottom: 4 }}>{label}月</p>
+                      <p style={{ fontFamily: MONO_FONT, color: d.rate >= 0 ? UP : DOWN }}>貯蓄率: {d.rate}%</p>
+                      <p style={{ fontFamily: MONO_FONT, color: TEXT3 }}>貯蓄額: {fmt(d.savings)}</p>
                     </div>
                   )
                 }}
               />
-              <Bar dataKey="avg" radius={[4, 4, 0, 0]}>
-                {dailyPattern.map((d, i) => <Cell key={i} fill={i === 0 || i === 6 ? CORAL : KAI.blue} fillOpacity={0.65} />)}
+              <Bar dataKey="rate" radius={[4, 4, 0, 0]}>
+                {savingsTrend.map((d, i) => <Cell key={i} fill={d.rate >= 0 ? UP : DOWN} fillOpacity={0.7} />)}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
+        </div>
+
+        {/* discretionary spending */}
+        <div className="rounded-[18px] p-4" style={panel}>
+          <p style={{ fontSize: 11, color: TEXT3, letterSpacing: '.08em', fontWeight: 700, marginBottom: 4 }}>裁量的支出 · 6ヶ月</p>
+          <p style={{ fontSize: 10, color: TEXT3, marginBottom: 14, opacity: 0.7 }}>
+            趣味・嗜好品・課金など
+          </p>
+          {discretionaryTrend.every((d) => d.total === 0) ? (
+            <p style={{ padding: '16px 0', textAlign: 'center', fontSize: 13, color: TEXT3 }}>
+              該当カテゴリのデータなし
+            </p>
+          ) : (
+            <ResponsiveContainer width="100%" height={140}>
+              <BarChart data={discretionaryTrend} margin={{ left: -10, right: 4 }}>
+                <defs>
+                  <linearGradient id="gDisc" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={KAI.violet} stopOpacity={0.8} />
+                    <stop offset="100%" stopColor={KAI.violet} stopOpacity={0.3} />
+                  </linearGradient>
+                </defs>
+                <XAxis dataKey="m" tick={{ fontSize: 10, fill: TEXT3, fontFamily: MONO_FONT }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 9, fill: TEXT3, fontFamily: MONO_FONT }} axisLine={false} tickLine={false} tickFormatter={(v) => `${(v / 10000).toFixed(0)}万`} width={32} />
+                <Tooltip
+                  content={({ active, payload, label }) => {
+                    if (!active || !payload?.length) return null
+                    const d = payload[0].payload as { m: string; total: number; rate: number; allExp: number }
+                    return (
+                      <div style={{ background: KAI.overlayBg, backdropFilter: 'blur(20px)', border: `1px solid ${KAI.borderStrong}`, borderRadius: 10, padding: '8px 12px', fontSize: 12 }}>
+                        <p style={{ fontFamily: MONO_FONT, fontWeight: 700, color: TEXT, marginBottom: 4 }}>{label}月</p>
+                        <p style={{ fontFamily: MONO_FONT, color: KAI.violet }}>裁量的支出: {fmt(d.total)}</p>
+                        <p style={{ fontFamily: MONO_FONT, color: TEXT3 }}>変動費全体: {fmt(d.allExp)}</p>
+                        <p style={{ fontFamily: MONO_FONT, color: TEXT3 }}>占有率: {d.rate}%</p>
+                      </div>
+                    )
+                  }}
+                />
+                <Bar dataKey="total" radius={[4, 4, 0, 0]} fill="url(#gDisc)" />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
         </div>
       </div>
     </div>
@@ -385,14 +390,14 @@ export function AnalyticsTab({ allTransactions, month }: {
         background: KAI.overlayWeak,
         border: `1px solid ${BORDER}`,
       }}>
-        <TabButton active={activeTab === 0} label="概要" onClick={() => setActiveTab(0)} />
-        <TabButton active={activeTab === 1} label="カテゴリ・店舗" onClick={() => setActiveTab(1)} />
+        <TabButton active={activeTab === 0} label="月次分析" onClick={() => setActiveTab(0)} />
+        <TabButton active={activeTab === 1} label="全期間分析" onClick={() => setActiveTab(1)} />
       </div>
 
       {activeTab === 0 ? (
-        <OverviewView allTransactions={allTransactions} month={month} />
+        <MonthlyView allTransactions={allTransactions} currentMonth={month} />
       ) : (
-        <DetailView allTransactions={allTransactions} currentMonth={month} />
+        <AllPeriodView allTransactions={allTransactions} />
       )}
     </div>
   )
