@@ -1,6 +1,5 @@
 import { normalizeKeyword } from '@/lib/ai-classifier'
 import { canonicalizeMerchant } from '@/lib/merchant-canonical'
-import { matchesFixedPayee, matchesFixedCategory } from '@/lib/fixed-expense-keywords'
 
 interface TransactionRow {
   payee: string
@@ -29,9 +28,6 @@ export function detectFixedExpenses(
   }>()
 
   for (const tx of candidates) {
-    const catName = (tx.categories as { name: string } | null)?.name ?? ''
-    if (!matchesFixedCategory(catName) && !matchesFixedPayee(tx.payee)) continue
-
     const key = canonicalizeMerchant(normalizeKeyword(tx.payee)) || tx.payee
     if (!payeeStats.has(key)) {
       payeeStats.set(key, { amounts: [], months: new Set(), originalPayees: new Map() })
