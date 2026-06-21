@@ -10,10 +10,9 @@ export default function GlobalError({
   reset: () => void
 }) {
   useEffect(() => {
-    fetch('/api/event-log', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+    console.error('[global-error]', error)
+    try {
+      const payload = JSON.stringify({
         events: [{
           level: 'error',
           category: 'global-error',
@@ -22,9 +21,18 @@ export default function GlobalError({
         }],
         url: location.href,
         userAgent: navigator.userAgent,
-      }),
-      keepalive: true,
-    }).catch(() => {})
+      })
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon('/api/event-log', new Blob([payload], { type: 'application/json' }))
+      } else {
+        fetch('/api/event-log', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: payload,
+          keepalive: true,
+        }).catch(() => {})
+      }
+    } catch { /* best-effort */ }
   }, [error])
 
   return (

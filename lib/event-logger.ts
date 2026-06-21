@@ -11,7 +11,7 @@ let queue: EventLogPayload[] = []
 let timer: ReturnType<typeof setTimeout> | undefined
 
 function flush() {
-  if (queue.length === 0) return
+  if (queue.length === 0 || typeof window === 'undefined') return
   const batch = queue.splice(0, queue.length)
   const body = JSON.stringify({ events: batch, url: location.href, userAgent: navigator.userAgent })
   if (navigator.sendBeacon) {

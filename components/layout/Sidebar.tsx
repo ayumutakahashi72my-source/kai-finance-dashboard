@@ -107,23 +107,31 @@ export function Sidebar() {
       </div>
 
       {/* Admin */}
-      <div style={{ padding: '0 10px 6px' }}>
+      <div style={{ padding: '0 10px 6px', borderTop: `1px solid ${KAI.border2}`, marginTop: 4, paddingTop: 8 }}>
+        <p style={{
+          margin: '0 0 4px 14px', fontSize: 10, fontWeight: 600,
+          color: KAI.text5, letterSpacing: '.08em',
+          fontFamily: 'var(--font-jetbrains), monospace',
+          textTransform: 'uppercase',
+        }}>
+          Admin
+        </p>
         {[
-          { href: '/admin/analytics', label: 'AI分析' },
-          { href: '/admin/event-logs', label: 'イベントログ' },
+          { href: '/admin/analytics', label: 'AI分析', icon: 'barChart' as const },
+          { href: '/admin/event-logs', label: 'イベントログ', icon: 'list' as const },
         ].map((item) => (
           <Link
             key={item.href}
             href={item.href}
             style={{
-              display: 'flex', alignItems: 'center', gap: 12,
-              padding: '8px 14px', borderRadius: 11,
+              display: 'flex', alignItems: 'center', gap: 10,
+              padding: '7px 14px', borderRadius: 11,
               fontSize: 12, fontWeight: 500, textDecoration: 'none',
               color: pathname.startsWith(item.href) ? CORAL : KAI.text4,
               background: pathname.startsWith(item.href) ? CORAL_SOFT : 'transparent',
             }}
           >
-            <Icon name={item.href.includes('event') ? 'list' : 'barChart'} size={14}/>
+            <Icon name={item.icon} size={14}/>
             {item.label}
           </Link>
         ))}

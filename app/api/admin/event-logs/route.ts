@@ -31,16 +31,21 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  const { data: stats } = await supabase
-    .from('event_logs')
-    .select('level')
+  const [
+    { count: errorCount },
+    { count: warnCount },
+    { count: infoCount },
+  ] = await Promise.all([
+    supabase.from('event_logs').select('*', { count: 'exact', head: true }).eq('level', 'error'),
+    supabase.from('event_logs').select('*', { count: 'exact', head: true }).eq('level', 'warn'),
+    supabase.from('event_logs').select('*', { count: 'exact', head: true }).eq('level', 'info'),
+  ])
 
-  const counts = { error: 0, warn: 0, info: 0, total: 0 }
-  if (stats) {
-    for (const row of stats) {
-      counts.total++
-      if (row.level in counts) counts[row.level as 'error' | 'warn' | 'info']++
-    }
+  const counts = {
+    error: errorCount ?? 0,
+    warn: warnCount ?? 0,
+    info: infoCount ?? 0,
+    total: (errorCount ?? 0) + (warnCount ?? 0) + (infoCount ?? 0),
   }
 
   return NextResponse.json({ logs: data ?? [], total: count ?? 0, counts })
