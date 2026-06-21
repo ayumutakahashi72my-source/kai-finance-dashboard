@@ -28,7 +28,8 @@ export async function GET(request: NextRequest) {
   const { data, error, count } = await query
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    console.error('[admin/event-logs] query failed:', error.message)
+    return NextResponse.json({ error: 'ログの取得に失敗しました' }, { status: 500 })
   }
 
   const userMap: Record<string, string> = {}
