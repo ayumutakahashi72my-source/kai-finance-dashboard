@@ -5,7 +5,7 @@ import { parseMfCsv, decodeCsvBuffer } from '@/lib/csv-parser'
 import {
   CORAL, BLUE, VIOLET, GREEN, AMBER,
   TEXT1, TEXT3, TEXT4, TEXT5,
-  OVERLAY_WEAK, BORDER, BORDER2, BORDER_STRONG,
+  OVERLAY_WEAK, BORDER2, BORDER_STRONG,
   ImportResult, BackBtn,
 } from './_shared'
 

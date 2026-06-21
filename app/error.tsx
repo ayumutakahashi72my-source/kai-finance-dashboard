@@ -11,6 +11,7 @@ export default function Error({
 }) {
   useEffect(() => {
     console.error('[error.tsx]', error)
+    import('@/lib/event-logger').then(({ reportError }) => reportError(error, 'error-boundary')).catch(() => {})
   }, [error])
 
   return (

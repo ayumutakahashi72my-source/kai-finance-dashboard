@@ -1,5 +1,7 @@
 'use client'
 
+import { useEffect } from 'react'
+
 export default function GlobalError({
   error,
   reset,
@@ -7,8 +9,42 @@ export default function GlobalError({
   error: Error & { digest?: string }
   reset: () => void
 }) {
+  useEffect(() => {
+    console.error('[global-error]', error)
+    try {
+      const payload = JSON.stringify({
+        events: [{
+          level: 'error',
+          category: 'global-error',
+          message: error.message,
+          metadata: { name: error.name, stack: error.stack?.slice(0, 2000), digest: error.digest },
+        }],
+        url: location.href,
+        userAgent: navigator.userAgent,
+      })
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon('/api/event-log', new Blob([payload], { type: 'application/json' }))
+      } else {
+        fetch('/api/event-log', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: payload,
+          keepalive: true,
+        }).catch(() => {})
+      }
+    } catch { /* best-effort */ }
+  }, [error])
+
   return (
     <html lang="ja">
+      <head>
+        <style dangerouslySetInnerHTML={{ __html: `
+          :root { --ge-bg:#0a0a10; --ge-text:#f0eff4; --ge-sub:#85849a; --ge-dim:#5e5e72; --ge-btn:#0a0a10; }
+          @media(prefers-color-scheme:light){
+            :root { --ge-bg:#f8f8fa; --ge-text:#1a1a2e; --ge-sub:#6b6b80; --ge-dim:#9090a0; --ge-btn:#f8f8fa; }
+          }
+        ` }} />
+      </head>
       <body
         style={{
           margin: 0,
@@ -16,7 +52,7 @@ export default function GlobalError({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: '#0a0a10',
+          background: 'var(--ge-bg)',
           fontFamily: 'Inter, -apple-system, sans-serif',
           padding: 24,
         }}
@@ -45,7 +81,7 @@ export default function GlobalError({
             style={{
               fontSize: 18,
               fontWeight: 700,
-              color: '#f0eff4',
+              color: 'var(--ge-text)',
               marginBottom: 8,
             }}
           >
@@ -54,7 +90,7 @@ export default function GlobalError({
           <p
             style={{
               fontSize: 13,
-              color: '#85849a',
+              color: 'var(--ge-sub)',
               lineHeight: 1.7,
               marginBottom: 24,
             }}
@@ -67,7 +103,7 @@ export default function GlobalError({
                   marginTop: 8,
                   fontFamily: 'JetBrains Mono, monospace',
                   fontSize: 11,
-                  color: '#5e5e72',
+                  color: 'var(--ge-dim)',
                 }}
               >
                 Error ID: {error.digest}
@@ -80,7 +116,7 @@ export default function GlobalError({
               padding: '10px 24px',
               borderRadius: 12,
               background: 'linear-gradient(135deg,#a78bfa,#fb9477)',
-              color: '#0a0a10',
+              color: 'var(--ge-btn)',
               fontSize: 14,
               fontWeight: 600,
               border: 'none',

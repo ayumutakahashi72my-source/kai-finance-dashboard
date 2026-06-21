@@ -105,7 +105,6 @@ function RowDivider() {
 }
 
 // SVG icons (matching design spec exactly)
-const HomeIcon = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={KAI.coral} strokeWidth="1.9"><path d="M3 12L12 3l9 9"/><path d="M5 10v10h14V10"/></svg>
 const UsersIcon = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={KAI.blue} strokeWidth="1.9"><circle cx="9" cy="8" r="3.4"/><path d="M3 20a6 6 0 0 1 12 0"/><path d="M16 5a3 3 0 0 1 0 6"/><path d="M21 20a6 6 0 0 0-5-5.9"/></svg>
 const ClockIcon = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={KAI.success} strokeWidth="1.9"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
 const LinkIcon2 = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={KAI.success} strokeWidth="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
@@ -268,9 +267,7 @@ export default async function SettingsPage() {
             <AdminAccordion>
               <GrpLabel color={KAI.coral}>世帯管理</GrpLabel>
               <Panel>
-                <Row icon={<HomeIcon />} iconBg="rgba(251,148,119,.12)" title="世帯管理" href="/settings/admin/members" value={householdName} />
-                <RowDivider />
-                <Row icon={<UsersIcon />} iconBg="rgba(122,167,255,.12)" title="メンバー管理" href="/settings/admin/members" value={`${memberCount}名`} />
+                <Row icon={<UsersIcon />} iconBg="rgba(122,167,255,.12)" title="メンバー管理" subtitle={householdName} href="/settings/admin/members" value={`${memberCount}名`} />
               </Panel>
 
               <GrpLabel color={KAI.violet}>AI運用</GrpLabel>
@@ -292,6 +289,11 @@ export default async function SettingsPage() {
                 </div>
                 <RowDivider />
                 <Row icon={<OcrIcon />} iconBg="rgba(34,211,238,.12)" title="レシート自動分類" subtitle="OCR後にAIで自動カテゴリ付け" rightSlot={<StaticToggle defaultOn />} />
+              </Panel>
+
+              <GrpLabel color={KAI.coral}>運用監視</GrpLabel>
+              <Panel>
+                <Row icon={<AlertIcon />} iconBg="rgba(251,113,133,.12)" title="イベントログ" subtitle="エラー・警告・操作ログ" href="/admin/event-logs" />
               </Panel>
 
               <GrpLabel color={KAI.text3}>メンテナンス</GrpLabel>
