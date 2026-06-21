@@ -31,6 +31,19 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
+  const userMap: Record<string, string> = {}
+  const { data: members } = await supabase.rpc('get_household_members_with_email')
+  if (members) {
+    for (const m of members as { user_id: string; display_name: string; email: string }[]) {
+      userMap[m.user_id] = m.display_name || m.email
+    }
+  }
+
+  const logs = (data ?? []).map((log: Record<string, unknown>) => ({
+    ...log,
+    user_name: log.user_id ? (userMap[log.user_id as string] ?? null) : null,
+  }))
+
   const [
     { count: errorCount },
     { count: warnCount },
@@ -48,5 +61,5 @@ export async function GET(request: NextRequest) {
     total: (errorCount ?? 0) + (warnCount ?? 0) + (infoCount ?? 0),
   }
 
-  return NextResponse.json({ logs: data ?? [], total: count ?? 0, counts })
+  return NextResponse.json({ logs, total: count ?? 0, counts })
 }

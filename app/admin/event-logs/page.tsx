@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import Link from 'next/link'
 import { KAI } from '@/lib/kai-tokens'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { BottomBar } from '@/components/layout/BottomBar'
@@ -15,6 +16,7 @@ interface EventLog {
   metadata: Record<string, unknown> | null
   url: string | null
   user_agent: string | null
+  user_name: string | null
   created_at: string
 }
 
@@ -74,9 +76,20 @@ export default function EventLogsPage() {
       <div className="relative lg:pl-[220px]" style={{ zIndex: 2 }}>
         <main style={{ maxWidth: 800, margin: '0 auto', padding: '20px 16px 96px' }}>
 
-          <h1 style={{ fontSize: 20, fontWeight: 700, marginBottom: 20 }}>
-            イベントログ
-          </h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+            <Link
+              href="/settings"
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                width: 32, height: 32, borderRadius: 10,
+                background: KAI.overlayWeak, border: `1px solid ${KAI.border}`,
+                textDecoration: 'none', color: KAI.text2, flexShrink: 0,
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
+            </Link>
+            <h1 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>イベントログ</h1>
+          </div>
 
           {isError && (
             <div style={{
@@ -226,6 +239,17 @@ function LogEntry({ log }: { log: EventLog }) {
         }}>
           {log.category}
         </span>
+        {log.user_name && (
+          <span style={{
+            fontSize: 10,
+            color: KAI.text4,
+            background: KAI.overlayWeak,
+            padding: '1px 6px',
+            borderRadius: 4,
+          }}>
+            {log.user_name}
+          </span>
+        )}
         <span style={{ flex: 1 }} />
         <span style={{
           fontSize: 11,
@@ -235,6 +259,17 @@ function LogEntry({ log }: { log: EventLog }) {
           {timeStr}
         </span>
       </div>
+      {log.url && !expanded && (
+        <span style={{
+          fontSize: 10,
+          color: KAI.text5,
+          fontFamily: 'var(--font-jetbrains), monospace',
+          marginBottom: 2,
+          display: 'block',
+        }}>
+          {(() => { try { return new URL(log.url).pathname } catch { return log.url } })()}
+        </span>
+      )}
       <p style={{
         fontSize: 13,
         color: KAI.text2,

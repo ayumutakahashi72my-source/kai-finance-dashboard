@@ -268,9 +268,7 @@ export default async function SettingsPage() {
             <AdminAccordion>
               <GrpLabel color={KAI.coral}>世帯管理</GrpLabel>
               <Panel>
-                <Row icon={<HomeIcon />} iconBg="rgba(251,148,119,.12)" title="世帯管理" href="/settings/admin/members" value={householdName} />
-                <RowDivider />
-                <Row icon={<UsersIcon />} iconBg="rgba(122,167,255,.12)" title="メンバー管理" href="/settings/admin/members" value={`${memberCount}名`} />
+                <Row icon={<UsersIcon />} iconBg="rgba(122,167,255,.12)" title="メンバー管理" subtitle={householdName} href="/settings/admin/members" value={`${memberCount}名`} />
               </Panel>
 
               <GrpLabel color={KAI.violet}>AI運用</GrpLabel>
@@ -292,6 +290,11 @@ export default async function SettingsPage() {
                 </div>
                 <RowDivider />
                 <Row icon={<OcrIcon />} iconBg="rgba(34,211,238,.12)" title="レシート自動分類" subtitle="OCR後にAIで自動カテゴリ付け" rightSlot={<StaticToggle defaultOn />} />
+              </Panel>
+
+              <GrpLabel color={KAI.coral}>運用監視</GrpLabel>
+              <Panel>
+                <Row icon={<AlertIcon />} iconBg="rgba(251,113,133,.12)" title="イベントログ" subtitle="エラー・警告・操作ログ" href="/admin/event-logs" />
               </Panel>
 
               <GrpLabel color={KAI.text3}>メンテナンス</GrpLabel>
