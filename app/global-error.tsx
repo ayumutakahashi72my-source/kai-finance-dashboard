@@ -9,6 +9,14 @@ export default function GlobalError({
 }) {
   return (
     <html lang="ja">
+      <head>
+        <style dangerouslySetInnerHTML={{ __html: `
+          :root { --ge-bg:#0a0a10; --ge-text:#f0eff4; --ge-sub:#85849a; --ge-dim:#5e5e72; --ge-btn:#0a0a10; }
+          @media(prefers-color-scheme:light){
+            :root { --ge-bg:#f8f8fa; --ge-text:#1a1a2e; --ge-sub:#6b6b80; --ge-dim:#9090a0; --ge-btn:#f8f8fa; }
+          }
+        ` }} />
+      </head>
       <body
         style={{
           margin: 0,
@@ -16,7 +24,7 @@ export default function GlobalError({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: '#0a0a10',
+          background: 'var(--ge-bg)',
           fontFamily: 'Inter, -apple-system, sans-serif',
           padding: 24,
         }}
@@ -45,7 +53,7 @@ export default function GlobalError({
             style={{
               fontSize: 18,
               fontWeight: 700,
-              color: '#f0eff4',
+              color: 'var(--ge-text)',
               marginBottom: 8,
             }}
           >
@@ -54,7 +62,7 @@ export default function GlobalError({
           <p
             style={{
               fontSize: 13,
-              color: '#85849a',
+              color: 'var(--ge-sub)',
               lineHeight: 1.7,
               marginBottom: 24,
             }}
@@ -67,7 +75,7 @@ export default function GlobalError({
                   marginTop: 8,
                   fontFamily: 'JetBrains Mono, monospace',
                   fontSize: 11,
-                  color: '#5e5e72',
+                  color: 'var(--ge-dim)',
                 }}
               >
                 Error ID: {error.digest}
@@ -80,7 +88,7 @@ export default function GlobalError({
               padding: '10px 24px',
               borderRadius: 12,
               background: 'linear-gradient(135deg,#a78bfa,#fb9477)',
-              color: '#0a0a10',
+              color: 'var(--ge-btn)',
               fontSize: 14,
               fontWeight: 600,
               border: 'none',

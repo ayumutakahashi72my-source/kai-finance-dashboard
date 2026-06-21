@@ -99,7 +99,8 @@ function SummaryChips({ income, expense, balance }: { income: number; expense: n
 
 /* ── Category Icon Display ─────────────────────────────────── */
 function CategoryIconDisplay({ name, size = 13, strokeWidth = 1.8 }: { name: string; size?: number; strokeWidth?: number }) {
-  return getCategoryIcon(name)({ size, strokeWidth })
+  const Icon = getCategoryIcon(name)
+  return <Icon size={size} strokeWidth={strokeWidth} />
 }
 
 /* ── CategoryBar ───────────────────────────────────────────── */

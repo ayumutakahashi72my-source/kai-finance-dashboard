@@ -57,7 +57,7 @@ export function AiChatPanel({ alwaysOpen = false }: Props) {
         const json = await r.json()
         setHistorySessions(json.sessions ?? [])
       }
-    } catch { /* ignore */ }
+    } catch (e) { console.warn('[AiChat] history load failed:', e) }
     setHistoryLoading(false)
   }, [])
 
@@ -69,7 +69,7 @@ export function AiChatPanel({ alwaysOpen = false }: Props) {
         const json = await r.json()
         setViewingMessages(json.messages ?? [])
       }
-    } catch { /* ignore */ }
+    } catch (e) { console.warn('[AiChat] month load failed:', e) }
   }, [])
 
   useEffect(() => {
@@ -82,7 +82,7 @@ export function AiChatPanel({ alwaysOpen = false }: Props) {
         setMessages(json.messages ?? [])
         setUsage(json.usage ?? { session_count: 0, estimated_cost: 0 })
       })
-      .catch(() => {})
+      .catch((e) => { if (e?.name !== 'AbortError') console.warn('[AiChat] init load failed:', e) })
     return () => controller.abort()
   }, [open])
 

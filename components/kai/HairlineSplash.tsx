@@ -83,12 +83,15 @@ function HairlineSplashInner({
       return
     }
     // visible 未指定: autoHide
+    const t2Ref = { current: undefined as ReturnType<typeof setTimeout> | undefined }
     const t = setTimeout(() => {
       setShow(false)
-      const t2 = setTimeout(() => onDone?.(), 320)
-      return () => clearTimeout(t2)
+      t2Ref.current = setTimeout(() => onDone?.(), 320)
     }, autoHideMs)
-    return () => clearTimeout(t)
+    return () => {
+      clearTimeout(t)
+      if (t2Ref.current) clearTimeout(t2Ref.current)
+    }
   }, [visible, autoHideMs, onDone])
 
   return (

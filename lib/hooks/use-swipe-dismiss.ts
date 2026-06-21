@@ -1,4 +1,4 @@
-import { useRef, useCallback } from 'react'
+import { useRef, useCallback, useEffect } from 'react'
 
 interface SwipeDismissOptions {
   onDismiss: () => void
@@ -8,6 +8,13 @@ interface SwipeDismissOptions {
 export function useSwipeDismiss({ onDismiss, threshold = 100 }: SwipeDismissOptions) {
   const sheetRef = useRef<HTMLDivElement>(null)
   const dragRef = useRef({ startY: 0, currentY: 0, dragging: false })
+  const dismissTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+
+  useEffect(() => {
+    return () => {
+      if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current)
+    }
+  }, [])
 
   const onTouchStart = useCallback((e: React.TouchEvent) => {
     const el = sheetRef.current
@@ -35,7 +42,7 @@ export function useSwipeDismiss({ onDismiss, threshold = 100 }: SwipeDismissOpti
     if (dy > threshold) {
       sheetRef.current.style.transition = 'transform .2s ease-out'
       sheetRef.current.style.transform = 'translateY(100%)'
-      setTimeout(onDismiss, 200)
+      dismissTimerRef.current = setTimeout(onDismiss, 200)
     } else {
       sheetRef.current.style.transition = 'transform .2s ease-out'
       sheetRef.current.style.transform = 'translateY(0)'
