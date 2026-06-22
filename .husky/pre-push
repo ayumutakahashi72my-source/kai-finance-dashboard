@@ -1,0 +1,4 @@
+#!/bin/sh
+
+echo "🔍 Pre-push: Playwright E2E テスト実行中..."
+npm run e2e

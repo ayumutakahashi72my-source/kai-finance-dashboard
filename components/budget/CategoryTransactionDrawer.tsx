@@ -1,10 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Pencil, Trash2, X, TrendingUp } from 'lucide-react'
+import { Pencil, Trash2, X } from 'lucide-react'
 import { KAI } from '@/lib/kai-tokens'
 import { useSwipeDismiss } from '@/lib/hooks/use-swipe-dismiss'
-import { getCategoryIcon } from '@/lib/category-icons'
+import { getCategoryEmoji } from '@/lib/category-icons'
 import { CategoryIcon } from '@/components/ui/CategoryIcon'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -308,7 +308,6 @@ export function CategoryTransactionDrawer({
                 }}>
                   {txs.map((tx, i) => {
                     const isOpen = menuId === tx.id
-                    const CatIcon = getCategoryIcon(tx.categories?.name ?? '')
                     return (
                       <div
                         key={tx.id}
@@ -323,13 +322,11 @@ export function CategoryTransactionDrawer({
                           width: 34, height: 34, borderRadius: 10, flexShrink: 0,
                           background: tx.amount >= 0 ? 'rgba(74,222,128,0.10)' : KAI.overlayWeak,
                           border: `1px solid ${tx.amount >= 0 ? 'rgba(74,222,128,0.25)' : KAI.border2}`,
-                          color: tx.amount >= 0 ? '#4ade80' : color,
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                         }}>
-                          {tx.amount >= 0
-                            ? <TrendingUp size={14}/>
-                            : <CatIcon size={14}/>
-                          }
+                          <span style={{ fontSize: 14, lineHeight: 1 }}>
+                            {tx.amount >= 0 ? '📈' : getCategoryEmoji(tx.categories?.name ?? '')}
+                          </span>
                         </div>
 
                         {/* 内容 */}

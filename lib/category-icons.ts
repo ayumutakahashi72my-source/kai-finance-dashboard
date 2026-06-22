@@ -293,6 +293,67 @@ export function resolveIconName(categoryName: string): string | null {
   return null
 }
 
+const EMOJI_MAP: Record<string, string> = {
+  食費: '🛒', 食料品: '🛒', スーパー: '🧺', 外食: '🍽️', レストラン: '🍽️',
+  ランチ: '🍽️', ディナー: '🍽️', ファストフード: '🍕', カフェ: '☕', コーヒー: '☕',
+  ドリンク: '☕', 飲食: '🍽️', 飲み物: '🍷', お酒: '🍷', コンビニ: '🏪', 弁当: '🍱',
+  交通費: '🚃', 交通: '🚃', 電車: '🚃', バス: '🚌', 地下鉄: '🚃',
+  タクシー: '🚗', ガソリン: '⛽', ガス代: '⛽', 車: '🚗', 駐車場: '🚗',
+  高速代: '🚗', 自動車: '🚗', バイク: '🏍️', 自転車: '🚲', 宅配: '🚚',
+  住宅: '🏠', 住居: '🏠', 家賃: '🏠', 住居費: '🏠', マンション: '🏢',
+  家: '🏠', 賃料: '🏠', 管理費: '🏢',
+  光熱費: '⚡', 電気代: '⚡', 電気: '⚡', ガス: '🔥', 水道: '💧',
+  水道代: '💧', 水道光熱費: '⚡', 公共料金: '⚡',
+  通信費: '📱', 通信: '📱', 携帯: '📱', スマホ: '📱',
+  インターネット: '📶', 'Wi-Fi': '📶', ネット: '📶', 電話: '📱',
+  '医療・健康': '❤️', 医療費: '🏥', 医療: '🏥', 病院: '🏥',
+  歯科: '🏥', 健康: '❤️', 薬局: '💊', 薬: '💊', ドラッグストア: '💊',
+  日用品: '📦', 雑費: '📦', 生活用品: '📦', 消耗品: '📦', 掃除用品: '📦', 洗剤: '📦',
+  被服費: '👔', 衣服: '👔', 洋服: '👔', ファッション: '🛍️',
+  アクセサリー: '🛍️', 美容院: '💇', 美容: '💇', ヘアサロン: '💇',
+  美容室: '💇', 化粧品: '💄',
+  娯楽: '🎮', ゲーム: '🎮', 趣味: '🎮', 音楽: '🎵', ライブ: '🎵',
+  映画: '🎬', 動画: '📺', サブスク: '📺', サブスクリプション: '📺',
+  動画配信: '📺', Netflix: '📺', YouTube: '📺',
+  本: '📖', 書籍: '📖', 漫画: '📖', 電子書籍: '📖',
+  旅行: '✈️', 旅行費: '✈️', 宿泊: '🏨', ホテル: '🏨',
+  交際費: '👥', 飲み会: '👥', 会食: '👥',
+  プレゼント: '🎁', 贈り物: '🎁', 慶弔費: '🎁',
+  固定費: '🧾', 保険: '🛡️', 生命保険: '🛡️', 医療保険: '🛡️',
+  損害保険: '🛡️', 年金: '🏛️', 税金: '🏛️', 住民税: '🏛️', 所得税: '🏛️',
+  教育: '🎓', 教育費: '🎓', 学費: '🎓', 習い事: '🎓', 塾: '🎓', 資格: '🎓',
+  ジム: '🏋️', スポーツ: '🏋️', フィットネス: '🏋️',
+  会費: '💳', サービス: '💳', サポート: '🔧', 修理: '🔧', デジタル: '💻',
+  子育て: '👶', 育児: '👶', おもちゃ: '👶', ペット: '🐾', ペット用品: '🐾',
+  収入: '📈', 給料: '💰', 給与: '💰', 副収入: '💰',
+  ボーナス: '💰', 賞与: '💰', 報酬: '💰',
+  その他: '⚬',
+}
+
+export function getCategoryEmoji(categoryName: string): string {
+  if (EMOJI_MAP[categoryName]) return EMOJI_MAP[categoryName]
+
+  if (categoryName.includes('食') || categoryName.includes('飲'))  return '🍽️'
+  if (categoryName.includes('交通') || categoryName.includes('電車')) return '🚃'
+  if (categoryName.includes('車') || categoryName.includes('ガソリン')) return '🚗'
+  if (categoryName.includes('住') || categoryName.includes('家賃')) return '🏠'
+  if (categoryName.includes('通信') || categoryName.includes('携帯')) return '📱'
+  if (categoryName.includes('光熱') || categoryName.includes('電気')) return '⚡'
+  if (categoryName.includes('医') || categoryName.includes('健康')) return '❤️'
+  if (categoryName.includes('保険'))                          return '🛡️'
+  if (categoryName.includes('教育') || categoryName.includes('学'))  return '🎓'
+  if (categoryName.includes('旅'))                            return '✈️'
+  if (categoryName.includes('娯楽') || categoryName.includes('趣味')) return '🎮'
+  if (categoryName.includes('美容'))                          return '💇'
+  if (categoryName.includes('衣') || categoryName.includes('服'))    return '👔'
+  if (categoryName.includes('税') || categoryName.includes('年金'))  return '🏛️'
+  if (categoryName.includes('固定') || categoryName.includes('月額')) return '🧾'
+  if (categoryName.includes('ペット'))                        return '🐾'
+  if (categoryName.includes('子') || categoryName.includes('育'))    return '👶'
+
+  return '🏷️'
+}
+
 export function getCategoryIcon(categoryName: string): LucideIcon {
   if (MAP[categoryName]) return MAP[categoryName]
 

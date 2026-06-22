@@ -3,9 +3,9 @@
 import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Pencil, Trash2, ArrowLeft, TrendingUp } from 'lucide-react'
+import { Pencil, Trash2, ArrowLeft } from 'lucide-react'
 import { KAI } from '@/lib/kai-tokens'
-import { getCategoryIcon } from '@/lib/category-icons'
+import { getCategoryEmoji } from '@/lib/category-icons'
 import { CategoryIcon } from '@/components/ui/CategoryIcon'
 import { sortedCategoryOptions } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -39,9 +39,7 @@ function groupByDate(txs: Transaction[]) {
 const MONO = 'var(--font-jetbrains), "JetBrains Mono", monospace'
 
 function CategoryIconDisplay({ name, size = 15 }: { name: string; size?: number }) {
-  const Icon = getCategoryIcon(name)
-  // eslint-disable-next-line react-hooks/static-components
-  return <Icon size={size} />
+  return <span style={{ fontSize: size, lineHeight: 1 }}>{getCategoryEmoji(name)}</span>
 }
 
 /* ─── EditDialog ─────────────────────────────────────────────────── */
@@ -274,7 +272,7 @@ export function CategoryTransactionsPage({ catName, color, month, initialTxs, ca
                   background: `${accent}12`, border: `1px solid ${accent}28`, color: accent,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}>
-                  {tx.amount >= 0 ? <TrendingUp size={14}/> : <CategoryIconDisplay name={tx.categories?.name ?? ''} size={14}/>}
+                  <span style={{ fontSize: 14, lineHeight: 1 }}>{tx.amount >= 0 ? '📈' : getCategoryEmoji(tx.categories?.name ?? '')}</span>
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 13, fontWeight: 500, color: KAI.text1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>

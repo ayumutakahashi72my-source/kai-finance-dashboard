@@ -2,9 +2,9 @@
 
 import { useOptimistic, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { TrendingUp, Pencil, Trash2, CheckSquare, Square, Pin, PinOff } from 'lucide-react'
+import { Pencil, Trash2, CheckSquare, Square, Pin, PinOff } from 'lucide-react'
 import { KAI } from '@/lib/kai-tokens'
-import { getCategoryIcon } from '@/lib/category-icons'
+import { getCategoryEmoji } from '@/lib/category-icons'
 import { CategoryIcon } from '@/components/ui/CategoryIcon'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -570,10 +570,9 @@ export function TransactionList({ initial, categories, uncategorizedCount = 0 }:
                           color: tx.amount >= 0 ? '#4ade80' : color,
                         }}
                       >
-                        {tx.amount >= 0
-                          ? <TrendingUp className="size-4" />
-                          : (() => { const I = getCategoryIcon(tx.categories?.name ?? ''); return <I className="size-4" /> })()
-                        }
+                        <span style={{ fontSize: 16, lineHeight: 1 }}>
+                          {tx.amount >= 0 ? '📈' : getCategoryEmoji(tx.categories?.name ?? '')}
+                        </span>
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-[14px] font-medium text-[var(--kai-text1)]">{tx.payee}</p>

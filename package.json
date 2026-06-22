@@ -16,7 +16,8 @@
     "setup:ocr": "npx tsx scripts/download-ocr-models.ts",
     "e2e": "playwright test",
     "e2e:ui": "playwright test --ui",
-    "compare:models": "npx tsx scripts/compare-insight-models.ts"
+    "compare:models": "npx tsx scripts/compare-insight-models.ts",
+    "prepare": "husky"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.96.0",
@@ -56,6 +57,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
     "fast-check": "^4.8.0",
+    "husky": "^9.1.7",
     "pdf-parse": "^2.4.5",
     "pdfjs-dist": "^5.7.284",
     "playwright": "^1.60.0",

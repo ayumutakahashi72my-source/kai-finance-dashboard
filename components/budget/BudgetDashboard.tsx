@@ -6,7 +6,7 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { useCountUp } from '@/components/kai/hooks'
-import { getCategoryIcon } from '@/lib/category-icons'
+import { getCategoryEmoji } from '@/lib/category-icons'
 import { KAI } from '@/lib/kai-tokens'
 import { jstMonthStr } from '@/lib/jst'
 import { FixedExpenseCard } from '@/components/budget/FixedExpenseCard'
@@ -95,10 +95,8 @@ function OverallBar({
   )
 }
 
-function CategoryIconDisplay({ name, size = 13, strokeWidth = 1.8 }: { name: string; size?: number; strokeWidth?: number }) {
-  const Icon = getCategoryIcon(name)
-  // eslint-disable-next-line react-hooks/static-components
-  return <Icon size={size} strokeWidth={strokeWidth} />
+function CategoryIconDisplay({ name, size = 14 }: { name: string; size?: number }) {
+  return <span style={{ fontSize: size, lineHeight: 1 }}>{getCategoryEmoji(name)}</span>
 }
 
 /* ─── CategoryBar (カテゴリ別横棒グラフ) ────────────────────────── */
@@ -128,7 +126,7 @@ function CategoryBar({
           background: `${cat.color}1c`, border: `1px solid ${cat.color}33`, color: cat.color,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
-          <CategoryIconDisplay name={cat.name} size={13} strokeWidth={1.8}/>
+          <CategoryIconDisplay name={cat.name} size={14}/>
         </div>
 
         <span style={{ fontSize: 12.5, fontWeight: 600, color: KAI.text1, flex: 1 }}>
