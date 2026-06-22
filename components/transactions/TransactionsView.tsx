@@ -167,6 +167,7 @@ export function TransactionsView({ month, initialView = 'list' }: Props) {
   const [showFilters, setShowFilters] = useState(hasFilter)
 
   const [view, setView] = useState<'list' | 'calendar'>(initialView)
+  const [listTab, setListTab] = useState<'transactions' | 'categories'>('transactions')
   const [classifying,    setClassifying]    = useState(false)
   const [classifyResult, setClassifyResult] = useState<{ classified: number; total: number } | null>(null)
 
@@ -385,8 +386,32 @@ export function TransactionsView({ month, initialView = 'list' }: Props) {
         </div>
       ) : (
         <>
+          {/* ── Sub tabs: 明細 / カテゴリ ── */}
+          <div style={{ display: 'flex', gap: 4, background: KAI.overlayWeak, borderRadius: 10, padding: 3 }}>
+            {([
+              { key: 'transactions', label: '明細' },
+              { key: 'categories', label: 'カテゴリ' },
+            ] as const).map(tab => {
+              const active = listTab === tab.key
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => setListTab(tab.key)}
+                  style={{
+                    flex: 1, padding: '7px 0', borderRadius: 8, fontSize: 12, fontWeight: 600,
+                    cursor: 'pointer', border: 'none', fontFamily: 'inherit',
+                    background: active ? KAI.bgPanel : 'transparent',
+                    color: active ? KAI.text1 : KAI.text4,
+                    boxShadow: active ? '0 1px 4px rgba(0,0,0,0.2)' : 'none',
+                    transition: 'all .15s ease',
+                  }}
+                >{tab.label}</button>
+              )
+            })}
+          </div>
+
           {/* ── Filter results (flat list) ── */}
-          {hasFilter && (
+          {listTab === 'transactions' && hasFilter && (
             <section style={{
               background: KAI.overlayWeak, border: `1px solid ${KAI.border}`,
               borderRadius: 14, overflow: 'hidden',
@@ -436,7 +461,7 @@ export function TransactionsView({ month, initialView = 'list' }: Props) {
           )}
 
           {/* ── Transaction list by date ── */}
-          {!hasFilter && (
+          {listTab === 'transactions' && !hasFilter && (
             <>
               {(() => {
                 const grouped: Record<string, Transaction[]> = {}
@@ -528,7 +553,7 @@ export function TransactionsView({ month, initialView = 'list' }: Props) {
           )}
 
           {/* ── Category breakdown ── */}
-          <section style={{ animation: 'kai-rise .5s .1s ease-out both' }}>
+          {listTab === 'categories' && <section style={{ animation: 'kai-rise .5s .1s ease-out both' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
               <span style={{ fontSize: 10, color: KAI.text4, letterSpacing: '.14em', fontWeight: 700, textTransform: 'uppercase' }}>カテゴリ別</span>
               {(() => {
@@ -587,7 +612,7 @@ export function TransactionsView({ month, initialView = 'list' }: Props) {
                 <p style={{ fontSize: 14, color: KAI.text3 }}>支出データがありません</p>
               </div>
             )}
-          </section>
+          </section>}
         </>
       )}
     </div>
