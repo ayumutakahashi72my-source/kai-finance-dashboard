@@ -1,4 +1,4 @@
 #!/bin/sh
 
-echo "🔍 Pre-push: Playwright E2E テスト実行中..."
-npm run e2e
+echo "🔍 Pre-push: typecheck + lint + unit tests..."
+npm run typecheck && npm run lint && npm run test
