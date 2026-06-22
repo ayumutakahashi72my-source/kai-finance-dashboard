@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { KAI } from '@/lib/kai-tokens'
-import { useCountUp } from '@/components/kai/hooks'
 import { resolveIconName } from '@/lib/category-icons'
 import { CategoryIcon } from '@/components/ui/CategoryIcon'
 import { Skeleton } from '@/components/ui/Skeleton'
@@ -102,54 +101,6 @@ function CategoryFilledIcon({ name, size = 14, color }: { name: string; size?: n
   return <CategoryIcon name={iconName} size={size} color={color} />
 }
 
-/* ── CategoryBar ───────────────────────────────────────────── */
-function CategoryBar({
-  name, color, used, totalExpense, idx, onManage,
-}: {
-  name: string; color: string
-  used: number; totalExpense: number; idx: number
-  onManage: () => void
-}) {
-  const pct         = totalExpense > 0 ? Math.min(100, (used / totalExpense) * 100) : 0
-  const animatedPct = useCountUp(pct, { duration: 1100, delay: 200 + idx * 55 })
-  return (
-    <div style={{ padding: '11px 14px', animation: `kai-rise .4s ${.15 + idx * .04}s ease-out both` }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 7 }}>
-        <div style={{
-          width: 26, height: 26, borderRadius: 8, flexShrink: 0,
-          background: `${color}1c`, border: `1px solid ${color}33`, color,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>
-          <CategoryFilledIcon name={name} size={14}/>
-        </div>
-        <span style={{ fontSize: 12.5, fontWeight: 600, color: KAI.text1, flex: 1 }}>{name}</span>
-        <span style={{ fontSize: 13, fontWeight: 700, color: KAI.text1, ...MONO, letterSpacing: '-.01em' }}>
-          ¥{used.toLocaleString('ja-JP')}
-        </span>
-        <button
-          type="button"
-          onClick={onManage}
-          style={{
-            fontSize: 10, fontWeight: 600, color: KAI.coral,
-            background: `${KAI.coral}12`, border: `1px solid ${KAI.coral}30`,
-            borderRadius: 6, padding: '2px 8px', cursor: 'pointer',
-            fontFamily: 'inherit', whiteSpace: 'nowrap', flexShrink: 0,
-          }}
-        >管理 ›</button>
-      </div>
-      <div style={{ height: 6, borderRadius: 99, background: KAI.overlayWeak, overflow: 'hidden' }}>
-        <div style={{
-          height: '100%', width: `${Math.min(100, animatedPct)}%`,
-          background: `linear-gradient(90deg, ${color}, ${color}88)`,
-          borderRadius: 99,
-        }}/>
-      </div>
-      <div style={{ marginTop: 3, fontSize: 9.5, color: KAI.text4, ...MONO }}>
-        支出全体の {Math.round(pct)}%
-      </div>
-    </div>
-  )
-}
 
 /* ── TransactionsView (main) ───────────────────────────────── */
 
@@ -167,7 +118,6 @@ export function TransactionsView({ month, initialView = 'list' }: Props) {
   const [showFilters, setShowFilters] = useState(hasFilter)
 
   const [view, setView] = useState<'list' | 'calendar'>(initialView)
-  const [listTab, setListTab] = useState<'transactions' | 'categories'>('transactions')
   const [classifying,    setClassifying]    = useState(false)
   const [classifyResult, setClassifyResult] = useState<{ classified: number; total: number } | null>(null)
 
@@ -343,6 +293,40 @@ export function TransactionsView({ month, initialView = 'list' }: Props) {
       {/* Summary Chips */}
       <SummaryChips income={totalIncome} expense={totalExpense} balance={balance} />
 
+      {/* AI auto-classify button (shown only when uncategorized exist) */}
+      {view === 'list' && (() => {
+        const BAD = ['未分類', 'その他', '不明']
+        const uncategorized = transactions.filter((t) => !t.category_id || BAD.includes(t.categories?.name ?? '')).length
+        if (uncategorized === 0 && !classifyResult) return null
+        return (
+          <button
+            type="button"
+            onClick={handleClassify}
+            disabled={classifying}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+              width: '100%', padding: '8px 12px', borderRadius: 10, border: 'none',
+              cursor: classifying ? 'not-allowed' : 'pointer',
+              background: classifyResult ? 'rgba(74,222,128,.12)' : 'rgba(251,191,36,.12)',
+              color: classifyResult ? KAI.success : KAI.warning,
+              fontSize: 12, fontWeight: 600, fontFamily: 'inherit',
+              opacity: classifying ? 0.6 : 1,
+            }}
+          >
+            {classifying ? (
+              <><span style={{ width: 8, height: 8, borderRadius: '50%', background: KAI.warning, animation: 'kai-blink 1s steps(2) infinite', display: 'inline-block' }}/>分類中…</>
+            ) : classifyResult ? (
+              `✓ ${classifyResult.classified}件分類済`
+            ) : (
+              <>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 6v6l4 2"/><path d="M22 2 12 12"/></svg>
+                未分類 {uncategorized}件をAI自動分類
+              </>
+            )}
+          </button>
+        )
+      })()}
+
       {/* Category filter chips */}
       {view === 'list' && categories.length > 0 && (
         <div style={{ display: 'flex', gap: 6, overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: 2 }}>
@@ -386,32 +370,8 @@ export function TransactionsView({ month, initialView = 'list' }: Props) {
         </div>
       ) : (
         <>
-          {/* ── Sub tabs: 明細 / カテゴリ ── */}
-          <div style={{ display: 'flex', gap: 4, background: KAI.overlayWeak, borderRadius: 10, padding: 3 }}>
-            {([
-              { key: 'transactions', label: '明細' },
-              { key: 'categories', label: 'カテゴリ' },
-            ] as const).map(tab => {
-              const active = listTab === tab.key
-              return (
-                <button
-                  key={tab.key}
-                  onClick={() => setListTab(tab.key)}
-                  style={{
-                    flex: 1, padding: '7px 0', borderRadius: 8, fontSize: 12, fontWeight: 600,
-                    cursor: 'pointer', border: 'none', fontFamily: 'inherit',
-                    background: active ? KAI.bgPanel : 'transparent',
-                    color: active ? KAI.text1 : KAI.text4,
-                    boxShadow: active ? '0 1px 4px rgba(0,0,0,0.2)' : 'none',
-                    transition: 'all .15s ease',
-                  }}
-                >{tab.label}</button>
-              )
-            })}
-          </div>
-
           {/* ── Filter results (flat list) ── */}
-          {listTab === 'transactions' && hasFilter && (
+          {hasFilter && (
             <section style={{
               background: KAI.overlayWeak, border: `1px solid ${KAI.border}`,
               borderRadius: 14, overflow: 'hidden',
@@ -461,7 +421,7 @@ export function TransactionsView({ month, initialView = 'list' }: Props) {
           )}
 
           {/* ── Transaction list by date ── */}
-          {listTab === 'transactions' && !hasFilter && (
+          {!hasFilter && (
             <>
               {(() => {
                 const grouped: Record<string, Transaction[]> = {}
@@ -552,67 +512,6 @@ export function TransactionsView({ month, initialView = 'list' }: Props) {
             </>
           )}
 
-          {/* ── Category breakdown ── */}
-          {listTab === 'categories' && <section style={{ animation: 'kai-rise .5s .1s ease-out both' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-              <span style={{ fontSize: 10, color: KAI.text4, letterSpacing: '.14em', fontWeight: 700, textTransform: 'uppercase' }}>カテゴリ別</span>
-              {(() => {
-                const BAD = ['未分類', 'その他', '不明']
-                const uncategorized = transactions.filter((t) => !t.category_id || BAD.includes(t.categories?.name ?? '')).length
-                if (uncategorized === 0 && !classifyResult) return null
-                return (
-                  <button
-                    type="button"
-                    onClick={handleClassify}
-                    disabled={classifying}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 5,
-                      padding: '7px 12px', borderRadius: 10, border: 'none', cursor: classifying ? 'not-allowed' : 'pointer',
-                      background: classifyResult ? 'rgba(74,222,128,.12)' : 'rgba(251,191,36,.12)',
-                      color: classifyResult ? KAI.success : KAI.warning,
-                      fontSize: 12, fontWeight: 600, fontFamily: 'inherit',
-                      opacity: classifying ? 0.6 : 1, whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {classifying ? (
-                      <><span style={{ width: 8, height: 8, borderRadius: '50%', background: KAI.warning, animation: 'kai-blink 1s steps(2) infinite', display: 'inline-block' }}/>分類中…</>
-                    ) : classifyResult ? (
-                      `✓ ${classifyResult.classified}件分類済`
-                    ) : (
-                      <>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 6v6l4 2"/><path d="M22 2 12 12"/></svg>
-                        未分類 {uncategorized}件をAI自動分類
-                      </>
-                    )}
-                  </button>
-                )
-              })()}
-            </div>
-
-            {categories.length > 0 ? (
-              <div style={{
-                background: KAI.overlayWeak, border: `1px solid ${KAI.border}`,
-                borderRadius: 14, overflow: 'hidden',
-              }}>
-                {categories.map((c, i) => (
-                  <div key={c.name} style={{ borderBottom: i < categories.length - 1 ? `1px solid ${KAI.border}` : 'none' }}>
-                    <CategoryBar
-                      name={c.name} color={c.color}
-                      used={c.used} totalExpense={totalExpense} idx={i}
-                      onManage={() => router.push(`/budget/category/${encodeURIComponent(c.name)}?month=${month}`)}
-                    />
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div style={{
-                background: KAI.overlayWeak, border: `1px solid ${KAI.border}`,
-                borderRadius: 14, padding: '32px 20px', textAlign: 'center',
-              }}>
-                <p style={{ fontSize: 14, color: KAI.text3 }}>支出データがありません</p>
-              </div>
-            )}
-          </section>}
         </>
       )}
     </div>
