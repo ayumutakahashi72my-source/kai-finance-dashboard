@@ -1,0 +1,4 @@
+#!/bin/sh
+
+echo "🔍 Pre-push: typecheck + lint + unit tests..."
+npm run typecheck && npm run lint && npm run test

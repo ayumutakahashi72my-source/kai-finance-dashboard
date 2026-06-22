@@ -3,9 +3,9 @@
 import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Pencil, Trash2, ArrowLeft, TrendingUp } from 'lucide-react'
+import { Pencil, Trash2, ArrowLeft } from 'lucide-react'
 import { KAI } from '@/lib/kai-tokens'
-import { getCategoryIcon } from '@/lib/category-icons'
+import { resolveIconName } from '@/lib/category-icons'
 import { CategoryIcon } from '@/components/ui/CategoryIcon'
 import { sortedCategoryOptions } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -38,10 +38,8 @@ function groupByDate(txs: Transaction[]) {
 
 const MONO = 'var(--font-jetbrains), "JetBrains Mono", monospace'
 
-function CategoryIconDisplay({ name, size = 15 }: { name: string; size?: number }) {
-  const Icon = getCategoryIcon(name)
-  // eslint-disable-next-line react-hooks/static-components
-  return <Icon size={size} />
+function CategoryIconDisplay({ name, size = 15, color }: { name: string; size?: number; color?: string }) {
+  return <CategoryIcon name={resolveIconName(name) ?? 'Tag'} size={size} color={color} />
 }
 
 /* ─── EditDialog ─────────────────────────────────────────────────── */
@@ -274,7 +272,11 @@ export function CategoryTransactionsPage({ catName, color, month, initialTxs, ca
                   background: `${accent}12`, border: `1px solid ${accent}28`, color: accent,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}>
-                  {tx.amount >= 0 ? <TrendingUp size={14}/> : <CategoryIconDisplay name={tx.categories?.name ?? ''} size={14}/>}
+                  <CategoryIcon
+                    name={tx.amount >= 0 ? 'TrendingUp' : (resolveIconName(tx.categories?.name ?? '') ?? 'Tag')}
+                    size={14}
+                    color={accent}
+                  />
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 13, fontWeight: 500, color: KAI.text1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>

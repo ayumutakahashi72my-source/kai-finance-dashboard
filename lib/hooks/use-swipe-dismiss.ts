@@ -20,7 +20,7 @@ export function useSwipeDismiss({ onDismiss, threshold = 100 }: SwipeDismissOpti
     const el = sheetRef.current
     if (!el) return
     const scrollEl = el.querySelector('[data-swipe-scroll]') as HTMLElement | null
-    if (scrollEl && scrollEl.scrollTop > 8) return
+    if (scrollEl && scrollEl.contains(e.target as Node)) return
     if (!scrollEl && el.scrollTop > 8) return
     dragRef.current = { startY: e.touches[0].clientY, currentY: e.touches[0].clientY, dragging: true }
   }, [])

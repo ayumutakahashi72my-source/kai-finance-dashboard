@@ -66,9 +66,7 @@ export function DesktopRecentTx({ transactions }: { transactions: Transaction[] 
           animation: `kai-rise .3s ${.08 + i * .025}s ease-out both`,
         }}>
           <div style={{ width: 30, height: 30, borderRadius: 9, flexShrink: 0, background: `${t.categories?.color ?? pickColor(t.categories?.name ?? '')}18`, border: `1px solid ${t.categories?.color ?? pickColor(t.categories?.name ?? '')}2a`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            {t.categories?.icon
-              ? <CategoryIcon name={t.categories.icon} size={14} color={t.categories?.color ?? TEXT3} />
-              : <span style={{ fontSize: 14, color: TEXT3 }}>·</span>}
+            <CategoryIcon name={t.categories?.icon} size={14} />
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 12, color: TEXT2, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.payee}</div>
