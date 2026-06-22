@@ -225,19 +225,21 @@ function DayDetailOverlay({
             boxShadow: '0 -16px 48px rgba(0,0,0,0.6)',
             animation: 'slideUp 0.22s ease-out',
           }}
-          onTouchStart={onTouchStart}
-          onTouchMove={onTouchMove}
-          onTouchEnd={onTouchEnd}
         >
-          {/* Handle — ドラッグで閉じられることを示す */}
-          <div className="flex shrink-0 justify-center pb-2 pt-3" style={{ cursor: 'grab' }}>
-            <div className="h-1 w-10 rounded-full" style={{ background: KAI.text4, opacity: 0.5 }} />
+          {/* Handle + Header — スワイプで閉じるのはここだけ */}
+          <div
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            onTouchEnd={onTouchEnd}
+          >
+            <div className="flex shrink-0 justify-center pb-2 pt-3" style={{ cursor: 'grab' }}>
+              <div className="h-1 w-10 rounded-full" style={{ background: KAI.text4, opacity: 0.5 }} />
+            </div>
+            <div className="shrink-0 px-4">
+              {header}
+            </div>
           </div>
-          {/* Sticky header */}
-          <div className="shrink-0 px-4">
-            {header}
-          </div>
-          {/* Scrollable content */}
+          {/* Scrollable content — スワイプ干渉なし */}
           <div
             data-swipe-scroll
             className="flex-1 overflow-y-auto overscroll-contain px-4 pb-8 pt-3"
