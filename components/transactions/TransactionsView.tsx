@@ -5,7 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { KAI } from '@/lib/kai-tokens'
 import { useCountUp } from '@/components/kai/hooks'
-import { getCategoryEmoji } from '@/lib/category-icons'
+import { resolveIconName } from '@/lib/category-icons'
+import { CategoryIcon } from '@/components/ui/CategoryIcon'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { TransactionFilters, readFiltersFromUrl, isFilterActive } from '@/components/transactions/TransactionFilters'
 import { EditDialog, DeleteConfirmDialog } from '@/components/transactions/TransactionList'
@@ -95,9 +96,10 @@ function SummaryChips({ income, expense, balance }: { income: number; expense: n
   )
 }
 
-/* ── Category Emoji Display ────────────────────────────────── */
-function CategoryEmojiDisplay({ name, size = 14 }: { name: string; size?: number }) {
-  return <span style={{ fontSize: size, lineHeight: 1 }}>{getCategoryEmoji(name)}</span>
+/* ── Category Filled Icon Display ──────────────────────────── */
+function CategoryFilledIcon({ name, size = 14, color }: { name: string; size?: number; color?: string }) {
+  const iconName = resolveIconName(name) ?? 'Tag'
+  return <CategoryIcon name={iconName} size={size} color={color} />
 }
 
 /* ── CategoryBar ───────────────────────────────────────────── */
@@ -118,7 +120,7 @@ function CategoryBar({
           background: `${color}1c`, border: `1px solid ${color}33`, color,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
-          <CategoryEmojiDisplay name={name} size={14}/>
+          <CategoryFilledIcon name={name} size={14}/>
         </div>
         <span style={{ fontSize: 12.5, fontWeight: 600, color: KAI.text1, flex: 1 }}>{name}</span>
         <span style={{ fontSize: 13, fontWeight: 700, color: KAI.text1, ...MONO, letterSpacing: '-.01em' }}>
@@ -408,7 +410,7 @@ export function TransactionsView({ month, initialView = 'list' }: Props) {
                       border: `1px solid ${t.categories?.color ?? KAI.text3}33`,
                       display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13,
                     }}>
-                      {getCategoryEmoji(t.categories?.name ?? '')}
+                      <CategoryIcon name={resolveIconName(t.categories?.name ?? '') ?? 'Tag'} size={13} />
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <p style={{ fontSize: 12.5, color: KAI.text2, fontWeight: 500, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.payee}</p>
@@ -482,7 +484,7 @@ export function TransactionsView({ month, initialView = 'list' }: Props) {
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                                 fontSize: 18,
                               }}>
-                                  <CategoryEmojiDisplay name={t.categories?.name ?? ''} size={16} />
+                                  <CategoryFilledIcon name={t.categories?.name ?? ''} size={16} />
                               </div>
                               <div style={{ flex: 1, minWidth: 0 }}>
                                 <div style={{ fontSize: 13, fontWeight: 500, color: KAI.text1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>

@@ -4,7 +4,7 @@ import { useOptimistic, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Pencil, Trash2, CheckSquare, Square, Pin, PinOff } from 'lucide-react'
 import { KAI } from '@/lib/kai-tokens'
-import { getCategoryEmoji } from '@/lib/category-icons'
+import { resolveIconName } from '@/lib/category-icons'
 import { CategoryIcon } from '@/components/ui/CategoryIcon'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -570,9 +570,11 @@ export function TransactionList({ initial, categories, uncategorizedCount = 0 }:
                           color: tx.amount >= 0 ? '#4ade80' : color,
                         }}
                       >
-                        <span style={{ fontSize: 16, lineHeight: 1 }}>
-                          {tx.amount >= 0 ? '📈' : getCategoryEmoji(tx.categories?.name ?? '')}
-                        </span>
+                        <CategoryIcon
+                          name={tx.amount >= 0 ? 'TrendingUp' : (resolveIconName(tx.categories?.name ?? '') ?? 'Tag')}
+                          size={18}
+                          color={tx.amount >= 0 ? '#4ade80' : color}
+                        />
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-[14px] font-medium text-[var(--kai-text1)]">{tx.payee}</p>

@@ -6,7 +6,8 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { useCountUp } from '@/components/kai/hooks'
-import { getCategoryEmoji } from '@/lib/category-icons'
+import { resolveIconName } from '@/lib/category-icons'
+import { CategoryIcon } from '@/components/ui/CategoryIcon'
 import { KAI } from '@/lib/kai-tokens'
 import { jstMonthStr } from '@/lib/jst'
 import { FixedExpenseCard } from '@/components/budget/FixedExpenseCard'
@@ -95,8 +96,8 @@ function OverallBar({
   )
 }
 
-function CategoryIconDisplay({ name, size = 14 }: { name: string; size?: number }) {
-  return <span style={{ fontSize: size, lineHeight: 1 }}>{getCategoryEmoji(name)}</span>
+function CategoryIconDisplay({ name, size = 14, color }: { name: string; size?: number; color?: string }) {
+  return <CategoryIcon name={resolveIconName(name) ?? 'Tag'} size={size} color={color} />
 }
 
 /* ─── CategoryBar (カテゴリ別横棒グラフ) ────────────────────────── */
