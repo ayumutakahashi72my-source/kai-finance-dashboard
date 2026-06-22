@@ -241,9 +241,8 @@ function DayDetailOverlay({
           </div>
           {/* Scrollable content — スワイプ干渉なし */}
           <div
-            data-swipe-scroll
-            className="flex-1 overflow-y-auto overscroll-contain px-4 pb-8 pt-3"
-            style={{ WebkitOverflowScrolling: 'touch' }}
+            className="flex-1 overflow-y-auto overscroll-contain px-4 pt-3"
+            style={{ WebkitOverflowScrolling: 'touch', paddingBottom: 'calc(env(safe-area-inset-bottom, 16px) + 100px)' }}
           >
             {scrollContent}
           </div>
