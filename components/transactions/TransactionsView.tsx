@@ -380,7 +380,9 @@ export function TransactionsView({ month, initialView = 'list' }: Props) {
       {/* ══════ Content ══════ */}
 
       {view === 'calendar' ? (
-        <CalendarView transactions={transactions} categories={allCats} month={month} />
+        <div className="overflow-hidden">
+          <CalendarView transactions={transactions} categories={allCats} month={month} />
+        </div>
       ) : (
         <>
           {/* ── Filter results (flat list) ── */}
