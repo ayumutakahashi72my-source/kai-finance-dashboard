@@ -45,6 +45,7 @@ export async function POST(
     .from('transactions')
     .select('amount, categories(name)')
     .eq('household_id', householdId)
+    .eq('excluded', false)
     .gte('occurred_on', since)
 
   let totalIncome  = 0

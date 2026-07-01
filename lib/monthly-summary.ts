@@ -18,6 +18,7 @@ async function buildMonthContext(
     .from('transactions')
     .select('amount, payee, categories(name)')
     .eq('household_id', householdId)
+    .eq('excluded', false)
     .gte('occurred_on', since)
     .lte('occurred_on', until)
 

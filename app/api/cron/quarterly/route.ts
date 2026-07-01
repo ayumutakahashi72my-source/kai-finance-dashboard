@@ -33,6 +33,7 @@ async function buildQuarterContext(
     .from('transactions')
     .select('amount, payee, occurred_on, categories(name)')
     .eq('household_id', householdId)
+    .eq('excluded', false)
     .gte('occurred_on', since)
     .lt('occurred_on', until)
 

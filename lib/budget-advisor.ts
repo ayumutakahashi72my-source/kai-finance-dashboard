@@ -41,6 +41,7 @@ async function buildContext(
     .from('transactions')
     .select('amount, payee, occurred_on, categories(name)')
     .eq('household_id', householdId)
+    .eq('excluded', false)
     .gte('occurred_on', since)
     .lte('occurred_on', until)
     .lt('amount', 0)

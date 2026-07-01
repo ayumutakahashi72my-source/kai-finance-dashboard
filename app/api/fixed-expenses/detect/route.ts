@@ -14,6 +14,7 @@ export async function POST() {
     .from('transactions')
     .select('payee, amount, occurred_on, categories(name)')
     .eq('household_id', householdId)
+    .eq('excluded', false)
     .lt('amount', 0)
     .gte('occurred_on', since)
 

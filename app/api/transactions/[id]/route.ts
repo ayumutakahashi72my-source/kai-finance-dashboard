@@ -3,6 +3,7 @@ import { requireAuth } from '@/lib/api-guard'
 import { todayJST } from '@/lib/jst'
 import { recalculateScore } from '@/lib/score-calculator'
 import { normalizeKeyword, logCorrection } from '@/lib/ai-classifier'
+import { learnExcludePattern } from '@/lib/duplicate-analyzer'
 import { z } from 'zod'
 
 const UpdateSchema = z.object({
@@ -11,6 +12,8 @@ const UpdateSchema = z.object({
   occurred_on: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   category_id: z.string().uuid().nullable().optional(),
   is_fixed: z.boolean().optional(),
+  excluded: z.boolean().optional(),
+  excluded_reason: z.enum(['account', 'duplicate', 'manual']).optional(),
 })
 
 // PATCH /api/transactions/[id]
@@ -41,10 +44,21 @@ export async function PATCH(
         .single()
     : { data: null }
 
+  // excluded が指定された場合のみ理由を整合させる（除外時は既定 'manual'、戻し時は null）。
+  // excluded を伴わない excluded_reason 単独指定は無視し、reason↔state の不変条件を守る。
+  const updatePayload: Record<string, unknown> = { ...parsed.data }
+  if (parsed.data.excluded !== undefined) {
+    updatePayload.excluded_reason = parsed.data.excluded
+      ? (parsed.data.excluded_reason ?? 'manual')
+      : null
+  } else {
+    delete updatePayload.excluded_reason
+  }
+
   // 取引が自分の世帯に属するか確認してから更新
   const { data: updated, error } = await supabase
     .from('transactions')
-    .update({ ...parsed.data })
+    .update(updatePayload)
     .eq('id', id)
     .eq('household_id', householdId)
     .select('occurred_on, payee, category_id')
@@ -88,6 +102,13 @@ export async function PATCH(
     const month = updated.occurred_on.slice(0, 7)
     await recalculateScore(supabase, householdId, month)
   } catch { /* スコア再計算の失敗は保存に影響させない */ }
+
+  // excluded=true に変更された場合、パターンを学習（完了を待つ）
+  if (parsed.data.excluded === true) {
+    try {
+      await learnExcludePattern(householdId, id, supabase)
+    } catch { /* 学習失敗は保存に影響させない */ }
+  }
 
   return NextResponse.json({ success: true })
 }

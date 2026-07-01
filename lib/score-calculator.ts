@@ -49,6 +49,7 @@ export async function recalculateScore(
     .from('transactions')
     .select('amount, categories(name, parent:categories(name))')
     .eq('household_id', householdId)
+    .eq('excluded', false)
     .lt('amount', 0)
     .gte('occurred_on', monthDate)
     .lt('occurred_on', nextMonthDate)
@@ -117,6 +118,7 @@ export async function recalculateScore(
     .from('transactions')
     .select('amount, categories(name, parent:categories(name))')
     .eq('household_id', householdId)
+    .eq('excluded', false)
     .lt('amount', 0)
     .gte('occurred_on', prevMonthDate)
     .lt('occurred_on', monthDate)
@@ -151,6 +153,7 @@ export async function recalculateScore(
     .from('transactions')
     .select('id', { count: 'exact', head: true })
     .eq('household_id', householdId)
+    .eq('excluded', false)
     .gte('occurred_on', twoMonthsAgo)
     .lt('occurred_on', monthDate)
 

@@ -25,6 +25,7 @@ export async function GET(req: NextRequest) {
       .from('transactions')
       .select('occurred_on, amount')
       .eq('household_id', householdId)
+      .eq('excluded', false)
       .gte('occurred_on', cutoffStr)
 
     if (txErr) return NextResponse.json({ error: txErr.message }, { status: 500 })

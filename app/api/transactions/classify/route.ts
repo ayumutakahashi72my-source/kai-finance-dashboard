@@ -39,6 +39,7 @@ export async function POST() {
       .from('transactions')
       .select('id, payee')
       .eq('household_id', householdId)
+      .eq('excluded', false)
       .is('category_id', null)
       .order('occurred_on', { ascending: false })
       .range(from, from + CHUNK - 1)

@@ -176,6 +176,7 @@ export async function POST(req: NextRequest) {
     amount: t.amount,
     source: 'auto' as const,
     source_hash: buildSourceHash(t.raw_id, t.occurred_on, t.amount, t.payee),
+    source_account: t.source_account || null,
     is_fixed: false,
   }))
 
