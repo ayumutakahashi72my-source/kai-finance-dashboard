@@ -537,6 +537,37 @@ async function syncUserKnowledge(
   if (error) console.error('[classifier] user_category_knowledge upsert failed:', error.message)
 }
 
+/**
+ * category_rag への書き込みを一本化するヘルパー（R-3/R-7）。
+ *
+ * category_rag_upsert_batch RPC は以下を保証する:
+ *   - 同一カテゴリでの再分類: confidence は GREATEST（低い再分類結果で退行させない）
+ *   - カテゴリが変わった場合: 新しい値でそのまま置き換え（古いカテゴリの高confidenceを
+ *     引き継がない）＋ hit_count を 1 にリセット（別カテゴリとしての学習をやり直す）
+ *   - hit_count はDB側でアトミックに +1（JS側での読み取り→計算のレースを避ける）
+ *
+ * ENABLE_RAG_GREATEST_UPSERT=false で旧実装（無条件上書き）にフォールバック可能。
+ */
+export async function upsertCategoryRag(
+  supabase: SupabaseClient,
+  householdId: string,
+  rows: RagUpsert[],
+): Promise<void> {
+  if (!rows.length) return
+
+  if (process.env.ENABLE_RAG_GREATEST_UPSERT === 'false') {
+    const { error } = await supabase.from('category_rag').upsert(rows, { onConflict: 'household_id,payee_key' })
+    if (error) console.error('[classifier] category_rag upsert (legacy) failed:', error.message)
+    return
+  }
+
+  const { error } = await supabase.rpc('category_rag_upsert_batch', {
+    p_household_id: householdId,
+    p_rows: rows,
+  })
+  if (error) console.error('[classifier] category_rag_upsert_batch failed:', error.message)
+}
+
 // ===== classifyTransactions =====
 // Pipeline: corrections → exact cache → vector top-k → LLM rerank (ambiguous) → full LLM (no candidates)
 
@@ -615,15 +646,30 @@ export async function classifyTransactions(
     }
   }
 
+  // ragUpserts はここから全ステージで使う（exact_cache / regex / vector / LLM 全て書き込む）
+  const ragUpserts: RagUpsert[] = []
+  const today = todayJST()
+
   const itemsAfterExactCache: ClassifyItem[] = []
   for (const item of itemsAfterCorrections) {
-    const cached = exactCacheMap.get(normalizeKeyword(item.payee))
+    const payeeKey = normalizeKeyword(item.payee)
+    const cached = exactCacheMap.get(payeeKey)
     if (cached) {
       categoryIdMap.set(item.index, cached.category_id)
+      // R-7: exact_cacheヒットでもhit_countを+1する（従来は増分されず repeat 閾値判定が不正確だった）
+      ragUpserts.push({
+        household_id: householdId,
+        payee_key: payeeKey,
+        category_id: cached.category_id,
+        confidence: cached.confidence,
+        embedding: null,
+        hit_count: (ragHitCountMap.get(payeeKey) ?? 0) + 1,
+        last_seen: today,
+      })
       logs.push({
         household_id: householdId,
         payee: item.payee,
-        payee_key: normalizeKeyword(item.payee),
+        payee_key: payeeKey,
         category_hint: item.category_hint,
         category_id: cached.category_id,
         category_name: idToName.get(cached.category_id),
@@ -637,13 +683,10 @@ export async function classifyTransactions(
     }
   }
   if (!itemsAfterExactCache.length) {
+    if (ragUpserts.length) await upsertCategoryRag(supabase, householdId, ragUpserts)
     void writeClassificationLogs(logs, supabase)
     return { categoryIdMap }
   }
-
-  // ragUpserts はここから全ステージで使う（regex / vector / LLM 全て書き込む）
-  const ragUpserts: RagUpsert[] = []
-  const today = todayJST()
 
   // ② Regex rule（DB 不要 — in-memory キーワードマッチ、純粋な perf optimization）
   const remaining: ClassifyItem[] = []
@@ -987,10 +1030,7 @@ export async function classifyTransactions(
   }
 
   if (ragUpserts.length) {
-    const { error: ragErr } = await supabase
-      .from('category_rag')
-      .upsert(ragUpserts, { onConflict: 'household_id,payee_key' })
-    if (ragErr) console.error('[classifier] category_rag upsert failed:', ragErr.message)
+    await upsertCategoryRag(supabase, householdId, ragUpserts)
     if (userId) void syncUserKnowledge(ragUpserts, idToName, userId, supabase)
   }
 
@@ -1068,12 +1108,25 @@ export async function classifyFreeForm(
     }
   }
 
+  const ragUpsertsF: RagUpsert[] = []
+  const todayF = todayJST()
+
   const itemsAfterExactCache: ClassifyItem[] = []
   for (const item of itemsAfterCorrections) {
     const payeeKey = normalizeKeyword(item.payee)
     const cached = exactCacheMapFree.get(payeeKey)
     if (cached) {
       categoryIdMap.set(item.index, cached.category_id)
+      // R-7: exact_cacheヒットでもhit_countを+1する
+      ragUpsertsF.push({
+        household_id: householdId,
+        payee_key: payeeKey,
+        category_id: cached.category_id,
+        confidence: cached.confidence,
+        embedding: null,
+        hit_count: (ragHitCountMapFree.get(payeeKey) ?? 0) + 1,
+        last_seen: todayF,
+      })
       logs.push({
         household_id: householdId,
         payee: item.payee,
@@ -1091,6 +1144,7 @@ export async function classifyFreeForm(
     }
   }
   if (!itemsAfterExactCache.length) {
+    if (ragUpsertsF.length) await upsertCategoryRag(supabase, householdId, ragUpsertsF)
     void writeClassificationLogs(logs, supabase)
     return categoryIdMap
   }
@@ -1151,8 +1205,6 @@ export async function classifyFreeForm(
   }
 
   const vecCandidates = await vectorSearchTopK(remaining, remainingEmbeddings, householdId, supabase)
-  const ragUpsertsF: RagUpsert[] = []
-  const todayF = todayJST()
   const needsLLM: ClassifyItem[] = []
 
   for (const item of remaining) {
@@ -1194,8 +1246,7 @@ export async function classifyFreeForm(
 
   if (!needsLLM.length || !process.env.ANTHROPIC_API_KEY) {
     if (ragUpsertsF.length) {
-      const { error: ragErr } = await supabase.from('category_rag').upsert(ragUpsertsF, { onConflict: 'household_id,payee_key' })
-      if (ragErr) console.error('[classifier] category_rag upsert failed:', ragErr.message)
+      await upsertCategoryRag(supabase, householdId, ragUpsertsF)
       if (userId) void syncUserKnowledge(ragUpsertsF, existingIdToName, userId, supabase)
     }
     void writeClassificationLogs(logs, supabase)
@@ -1256,8 +1307,7 @@ export async function classifyFreeForm(
       }
     } catch { /* force select 失敗はスキップ */ }
     if (ragUpsertsF.length) {
-      const { error: ragErr } = await supabase.from('category_rag').upsert(ragUpsertsF, { onConflict: 'household_id,payee_key' })
-      if (ragErr) console.error('[classifier] category_rag upsert failed:', ragErr.message)
+      await upsertCategoryRag(supabase, householdId, ragUpsertsF)
       if (userId) void syncUserKnowledge(ragUpsertsF, existingIdToName, userId, supabase)
     }
     void writeClassificationLogs(logs, supabase)
@@ -1374,8 +1424,7 @@ export async function classifyFreeForm(
   }
 
   if (ragUpsertsF.length) {
-    const { error: ragErr } = await supabase.from('category_rag').upsert(ragUpsertsF, { onConflict: 'household_id,payee_key' })
-    if (ragErr) console.error('[classifier] category_rag upsert failed:', ragErr.message)
+    await upsertCategoryRag(supabase, householdId, ragUpsertsF)
     if (userId) void syncUserKnowledge(ragUpsertsF, existingIdToName, userId, supabase)
   }
 
