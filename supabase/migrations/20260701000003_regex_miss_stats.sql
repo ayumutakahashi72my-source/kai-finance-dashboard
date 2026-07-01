@@ -8,7 +8,11 @@
 -- そのため total / cache_hits / avg_latency 等の主要指標には含めず、
 -- 独立した regex_miss 列としてのみ集計する（含めるとhitRateが不当に低く見えてしまう）。
 
-CREATE OR REPLACE VIEW public.ai_classification_daily_stats AS
+-- security_invoker を明示（20260617000002 で設定済みだが、CREATE OR REPLACE で
+-- 指定漏れするとビューが作成者権限に戻り、下層テーブルのRLSをバイパスしてしまう）
+CREATE OR REPLACE VIEW public.ai_classification_daily_stats
+WITH (security_invoker = on)
+AS
 WITH base AS (
   SELECT
     date_trunc('day', created_at) AS day,

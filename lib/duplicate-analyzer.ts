@@ -218,9 +218,11 @@ async function autoExcludeInDuplicateGroups(
 
   if (!toExclude.length) return 0
 
+  // excluded_reason='duplicate' を必ず付ける（口座復元は reason='account' のみ対象のため、
+  // reason なしで除外すると UI 上の区別も復元保護の意図も失われる）
   const { error } = await supabase
     .from('transactions')
-    .update({ excluded: true })
+    .update({ excluded: true, excluded_reason: 'duplicate' })
     .eq('household_id', householdId)
     .in('id', toExclude)
 

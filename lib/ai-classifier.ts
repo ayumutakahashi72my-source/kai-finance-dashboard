@@ -182,7 +182,7 @@ async function vectorSearchTopK(
   await Promise.all(
     items.map(async (item, i) => {
       const vec = embeddings[i]
-      if (!vec) return
+      if (!vec?.length) return  // embedTextsWithCache は欠損時に [] を返すため length も確認
 
       const { data } = await supabase.rpc('match_category_rag', {
         query_embedding: vec,
@@ -214,6 +214,12 @@ interface RerankInput {
   candidates: Array<{ category_id: string; category_name: string; similarity: number }>
 }
 
+/**
+ * rerank 対象を MAX_BATCH 件ずつに分割して並列実行する。
+ * 従来は全件を1回の呼び出しに詰めていたため、件数が多いと max_tokens で
+ * JSON出力が途中で切れ、rerank全体がパース失敗 → 全件 full LLM 行きになっていた。
+ * チャンク単位の失敗はそのチャンクだけ full LLM にフォールバックさせる。
+ */
 async function rerankBatch(
   rerankItems: RerankInput[],
   client: Anthropic,
@@ -221,6 +227,28 @@ async function rerankBatch(
 ): Promise<Array<{ index: number; category_id: string; confidence: number }>> {
   if (!rerankItems.length) return []
 
+  const chunks: RerankInput[][] = []
+  for (let i = 0; i < rerankItems.length; i += MAX_BATCH) {
+    chunks.push(rerankItems.slice(i, i + MAX_BATCH))
+  }
+
+  const results: Array<{ index: number; category_id: string; confidence: number }> = []
+  await runWithConcurrency(chunks, async (chunk) => {
+    try {
+      results.push(...await rerankChunk(chunk, client, accum))
+    } catch (err) {
+      // このチャンク分は呼び出し側で full LLM にフォールバックされる
+      console.warn('[classifier] rerank chunk failed:', err instanceof Error ? err.message : err)
+    }
+  })
+  return results
+}
+
+async function rerankChunk(
+  rerankItems: RerankInput[],
+  client: Anthropic,
+  accum: TokenUsageAccum
+): Promise<Array<{ index: number; category_id: string; confidence: number }>> {
   const sections = rerankItems.map((item, i) => {
     const candidateList = item.candidates
       .map((c, j) => `  ${j + 1}.${c.category_name}(${(c.similarity * 100).toFixed(0)}%)`)
@@ -228,9 +256,10 @@ async function rerankBatch(
     return `取引${i + 1}: 「${item.payee}」\n候補:${candidateList}`
   })
 
+  // MAX_BATCH(10)件 × 約30トークン/件 + 余裕 → 512
   const msg = await createMessageWithRetry(client, {
     model: 'claude-haiku-4-5-20251001',
-    max_tokens: 256,
+    max_tokens: 512,
     temperature: 0,
     messages: [{
       role: 'user',
@@ -264,7 +293,7 @@ JSON配列のみ出力（他テキスト不要）:
       }]
     })
   } catch (err) {
-    console.warn('[classifier] rerankBatch JSON parse failed:', err instanceof Error ? err.message : err)
+    console.warn('[classifier] rerankChunk JSON parse failed:', err instanceof Error ? err.message : err)
     return []
   }
 }

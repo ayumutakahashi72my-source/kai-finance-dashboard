@@ -43,6 +43,10 @@ export async function checkAndSendBudgetAlerts(
     .in('id', uniqueCatIds)
   const catNameMap = new Map((cats ?? []).map((c) => [c.id as string, c.name as string]))
 
+  // 当月分のみ集計（上限がないと未来日付の取引が当月アラートに混入する）
+  const nextMonthStr = month === 12
+    ? `${year + 1}-01-01`
+    : `${year}-${String(month + 1).padStart(2, '0')}-01`
   const { data: txs } = await supabase
     .from('transactions')
     .select('category_id, amount')
@@ -50,6 +54,7 @@ export async function checkAndSendBudgetAlerts(
     .eq('excluded', false)
     .lt('amount', 0)
     .gte('occurred_on', `${monthStr}-01`)
+    .lt('occurred_on', nextMonthStr)
     .in('category_id', uniqueCatIds)
 
   const spentByCategory = new Map<string, number>()
@@ -69,14 +74,15 @@ export async function checkAndSendBudgetAlerts(
     const ratio = spent / suggestion.suggested_amount
     if (ratio < 0.90) continue
 
+    // limit(1) で存在確認（maybeSingle は該当2行以上でエラー→再送につながる）
     const { data: existing } = await supabase
       .from('notifications')
       .select('id')
       .eq('household_id', householdId)
       .eq('type', 'budget_alert')
       .contains('payload', { month: monthStr, category_id: catId })
-      .maybeSingle()
-    if (existing) continue
+      .limit(1)
+    if (existing?.length) continue
 
     const pct = Math.round(ratio * 100)
     const { sent } = await sendPushToHousehold(supabase, householdId, {
