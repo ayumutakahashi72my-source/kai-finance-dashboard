@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
+import { checkAndSendBudgetAlerts } from '@/lib/budget-alerts'
 
 const TransactionSchema = z.object({
   amount: z.coerce
@@ -74,6 +75,13 @@ export async function createTransaction(
 
   if (error) return { message: `保存に失敗しました: ${error.message}` }
 
+  // 予算超過アラート（支出のみ・失敗しても取引作成自体は成功扱い）
+  if (parsed.data.amount < 0 && parsed.data.category_id) {
+    checkAndSendBudgetAlerts(supabase, householdId, [parsed.data.category_id]).catch((e) =>
+      console.warn('[budget-alert] check failed:', e)
+    )
+  }
+
   revalidatePath('/')
   return { success: true }
 }
@@ -89,6 +97,7 @@ export async function getUncategorizedCount(): Promise<number> {
       .from('transactions')
       .select('id', { count: 'exact', head: true })
       .eq('household_id', householdId)
+      .eq('excluded', false)
       .is('category_id', null),
     supabase
       .from('categories')
@@ -104,6 +113,7 @@ export async function getUncategorizedCount(): Promise<number> {
       .from('transactions')
       .select('id', { count: 'exact', head: true })
       .eq('household_id', householdId)
+      .eq('excluded', false)
       .in('category_id', ids)
     badCount = count ?? 0
   }

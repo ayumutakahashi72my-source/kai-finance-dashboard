@@ -155,6 +155,7 @@ export async function GET(req: NextRequest) {
         .from('transactions')
         .select('payee, amount, occurred_on, categories(name)')
         .eq('household_id', hid)
+        .eq('excluded', false)
         .lt('amount', 0)
         .gte('occurred_on', since)
 
@@ -182,6 +183,7 @@ export async function GET(req: NextRequest) {
         .from('transactions')
         .select('amount, categories(id, name)')
         .eq('household_id', hid)
+        .eq('excluded', false)
         .gte('occurred_on', monthDate(prevYear, pMonth))
         .lt('occurred_on', monthDate(curYear, curMonth))
         .lt('amount', 0)
@@ -197,6 +199,7 @@ export async function GET(req: NextRequest) {
           .from('transactions')
           .select('amount, occurred_on, categories(id, name)')
           .eq('household_id', hid)
+          .eq('excluded', false)
           .gte('occurred_on', refStartStr)
           .lt('occurred_on', refEndStr)
           .lt('amount', 0)
@@ -260,6 +263,24 @@ export async function GET(req: NextRequest) {
           await supabase
             .from('monthly_anomaly_flags')
             .upsert(flags, { onConflict: 'household_id,month,category_id' })
+
+          // 「プッシュ通知」設定の副題は「月次レポート・異常検知」と謳っているが、
+          // 従来は異常検知の結果がダッシュボード表示のみでプッシュされていなかったため送信する。
+          // 急増(spike)のみ対象（drop=支出減はユーザーへの緊急性が低いため対象外）。
+          const spikes = flags.filter((f) => f.anomaly_type === 'spike')
+          if (spikes.length) {
+            const top = [...spikes].sort((a, b) => b.deviation_rate - a.deviation_rate)[0]
+            const pct = Math.round(top.deviation_rate * 100)
+            const body = spikes.length === 1
+              ? `「${top.category_name}」が前3ヶ月平均より${pct}%増加しています`
+              : `「${top.category_name}」など${spikes.length}カテゴリで支出が急増しています`
+            await sendPushToHousehold(supabase, hid, {
+              title: 'KAI 支出異常アラート',
+              body,
+              url: '/',
+              tag: `anomaly-${targetMonth}`,
+            })
+          }
         }
       }
       steps['anomaly_detection'] = 'ok'

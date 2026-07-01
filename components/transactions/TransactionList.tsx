@@ -576,10 +576,13 @@ export function TransactionList({ initial, categories, uncategorizedCount = 0 }:
                           color={tx.amount >= 0 ? '#4ade80' : color}
                         />
                       </div>
-                      <div className="min-w-0 flex-1">
+                      <div className="min-w-0 flex-1" style={tx.excluded ? { opacity: 0.45 } : undefined}>
                         <p className="truncate text-[14px] font-medium text-[var(--kai-text1)]">{tx.payee}</p>
                         <p className="mono mt-0.5 text-[12px] text-[var(--kai-text3)]">
                           {categoryLabel(tx)}
+                          {tx.excluded && (
+                            <span className="ml-1.5 rounded bg-[#fbbf24]/15 px-1 py-px text-[10px] text-[#fbbf24]">除外</span>
+                          )}
                           {tx.source === 'csv' && (
                             <span className="ml-1.5 rounded bg-[#a78bfa]/10 px-1 py-px text-[10px] text-[#a78bfa]">CSV</span>
                           )}
@@ -588,6 +591,9 @@ export function TransactionList({ initial, categories, uncategorizedCount = 0 }:
                           )}
                           {tx.is_fixed && (
                             <span className="ml-1.5 rounded bg-[#a78bfa]/10 px-1 py-px text-[10px] text-[#a78bfa]">固定費</span>
+                          )}
+                          {tx.source_account && (
+                            <span className="ml-1.5 rounded bg-[#38bdf8]/10 px-1 py-px text-[10px] text-[#38bdf8]">{tx.source_account}</span>
                           )}
                         </p>
                       </div>

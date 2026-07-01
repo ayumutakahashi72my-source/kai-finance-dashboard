@@ -81,7 +81,46 @@ export function PushNotificationToggle() {
   return <Toggle on={subscribed} loading={loading} onClick={toggle} />
 }
 
-export function StaticToggle({ defaultOn = true }: { defaultOn?: boolean }) {
-  const [on, setOn] = useState(defaultOn)
-  return <Toggle on={on} onClick={() => setOn(!on)} />
+type NotificationFlags = {
+  budget_alert_enabled: boolean
+  receipt_auto_classify_enabled: boolean
+}
+
+/**
+ * households.settings に保存される通知系フラグのトグル。
+ * field で対象フラグを指定する（budget_alert_enabled / receipt_auto_classify_enabled）。
+ * 以前は StaticToggle というローカルstateのみの見せかけトグルだったが、
+ * 実際に households.settings を読み書きするよう差し替えた。
+ */
+export function HouseholdFlagToggle({ field }: { field: keyof NotificationFlags }) {
+  const [on, setOn] = useState(true)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetch('/api/settings/notifications')
+      .then((r) => r.json())
+      .then((data: NotificationFlags) => setOn(data[field] !== false))
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [field])
+
+  async function toggle() {
+    const next = !on
+    setOn(next) // 楽観的更新
+    setLoading(true)
+    try {
+      const res = await fetch('/api/settings/notifications', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [field]: next }),
+      })
+      if (!res.ok) setOn(!next) // 失敗時は元に戻す
+    } catch {
+      setOn(!next)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return <Toggle on={on} loading={loading} onClick={toggle} />
 }

@@ -1,17 +1,16 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { KAI } from '@/lib/kai-tokens'
-import { resolveIconName } from '@/lib/category-icons'
-import { CategoryIcon } from '@/components/ui/CategoryIcon'
-import { Skeleton } from '@/components/ui/Skeleton'
 import { TransactionFilters, readFiltersFromUrl, isFilterActive } from '@/components/transactions/TransactionFilters'
-import { EditDialog, DeleteConfirmDialog } from '@/components/transactions/TransactionList'
+import { EditDialog } from '@/components/transactions/TransactionList'
+import { TransactionRow } from '@/components/transactions/TransactionRow'
 import { DuplicateChecker } from '@/components/transactions/DuplicateChecker'
 import { CalendarView } from '@/components/calendar/CalendarView'
 import { MonthSwitcher } from '@/components/dashboard/MonthSwitcher'
+import { Skeleton } from '@/components/ui/Skeleton'
 import type { Transaction, Category } from '@/lib/types'
 
 const MONO: React.CSSProperties = {
@@ -23,6 +22,10 @@ const CAT_COLORS = [
   KAI.warning, KAI.mint, KAI.cyan, KAI.danger,
   KAI.amber, KAI.mintExtra,
 ]
+
+const UNDO_DELAY_MS = 5000
+// 一括削除がこの件数以上のときは確認ステップを挟む
+const BULK_CONFIRM_THRESHOLD = 5
 
 /* ── SVG icons ─────────────────────────────────────────────── */
 const ListIcon = () => (
@@ -71,12 +74,25 @@ function ViewToggle({ view, onChange }: { view: 'list' | 'calendar'; onChange: (
   )
 }
 
-/* ── Summary Chips ─────────────────────────────────────────── */
-function SummaryChips({ income, expense, balance }: { income: number; expense: number; balance: number }) {
-  const chips: { label: string; value: number; color: string; bgAlpha: string; borderAlpha: string }[] = [
-    { label: '収入', value: income, color: KAI.success, bgAlpha: 'rgba(74,222,128,.07)', borderAlpha: 'rgba(74,222,128,.2)' },
-    { label: '支出', value: expense, color: KAI.danger, bgAlpha: 'rgba(251,113,133,.07)', borderAlpha: 'rgba(251,113,133,.2)' },
-    { label: '残り', value: balance, color: KAI.blue, bgAlpha: 'rgba(122,167,255,.07)', borderAlpha: 'rgba(122,167,255,.2)' },
+/* ── Summary Chips（前月比較付き） ────────────────────────────── */
+function trendLabel(current: number, prev: number | undefined): string | null {
+  if (prev === undefined || prev === 0) return null
+  const diff = ((current - prev) / prev) * 100
+  if (Math.abs(diff) < 1) return '前月並み'
+  const sign = diff > 0 ? '+' : ''
+  return `${sign}${diff.toFixed(0)}% 前月比`
+}
+
+function SummaryChips({
+  income, expense, balance, prevIncome, prevExpense,
+}: {
+  income: number; expense: number; balance: number
+  prevIncome?: number; prevExpense?: number
+}) {
+  const chips: { label: string; value: number; color: string; bgAlpha: string; borderAlpha: string; trend: string | null }[] = [
+    { label: '収入', value: income, color: KAI.success, bgAlpha: 'rgba(74,222,128,.07)', borderAlpha: 'rgba(74,222,128,.2)', trend: trendLabel(income, prevIncome) },
+    { label: '支出', value: expense, color: KAI.danger, bgAlpha: 'rgba(251,113,133,.07)', borderAlpha: 'rgba(251,113,133,.2)', trend: trendLabel(expense, prevExpense) },
+    { label: '残り', value: balance, color: KAI.blue, bgAlpha: 'rgba(122,167,255,.07)', borderAlpha: 'rgba(122,167,255,.2)', trend: null },
   ]
   return (
     <div style={{ display: 'flex', gap: 8 }}>
@@ -87,26 +103,28 @@ function SummaryChips({ income, expense, balance }: { income: number; expense: n
         }}>
           <div style={{ fontSize: 8.5, color: KAI.text3, fontWeight: 700, letterSpacing: '.06em', marginBottom: 2 }}>{c.label}</div>
           <div style={{ fontSize: 13, fontWeight: 700, color: c.color, ...MONO }}>
-            {c.label === '残り' && c.value >= 0 ? '+' : c.label === '残り' && c.value < 0 ? '' : ''}¥{Math.abs(c.value).toLocaleString('ja-JP')}
+            {c.label === '残り' && c.value >= 0 ? '+' : ''}¥{Math.abs(c.value).toLocaleString('ja-JP')}
           </div>
+          {c.trend && (
+            <div style={{ fontSize: 8, color: KAI.text4, marginTop: 1, ...MONO }}>{c.trend}</div>
+          )}
         </div>
       ))}
     </div>
   )
 }
 
-/* ── Category Filled Icon Display ──────────────────────────── */
-function CategoryFilledIcon({ name, size = 14, color }: { name: string; size?: number; color?: string }) {
-  const iconName = resolveIconName(name) ?? 'Tag'
-  return <CategoryIcon name={iconName} size={size} color={color} />
-}
-
-
 /* ── TransactionsView (main) ───────────────────────────────── */
 
 interface Props {
   month: string
   initialView?: 'list' | 'calendar'
+}
+
+function prevMonthOf(month: string): string {
+  const [y, m] = month.split('-').map(Number)
+  const d = new Date(y, m - 2, 1) // m は1-12、Dateのmonthは0-11なので -2
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
 }
 
 export function TransactionsView({ month, initialView = 'list' }: Props) {
@@ -121,11 +139,94 @@ export function TransactionsView({ month, initialView = 'list' }: Props) {
   const [classifying,    setClassifying]    = useState(false)
   const [classifyResult, setClassifyResult] = useState<{ classified: number; total: number } | null>(null)
 
-  const [editingTx,   setEditingTx]   = useState<Transaction | null>(null)
-  const [deletingTx,  setDeletingTx]  = useState<Transaction | null>(null)
-  const [menuId,      setMenuId]      = useState<string | null>(null)
-  const [menuPos,     setMenuPos]     = useState<{ top: number; right: number } | null>(null)
-  const [menuTx,      setMenuTx]      = useState<Transaction | null>(null)
+  const [editingTx, setEditingTx] = useState<Transaction | null>(null)
+
+  // 選択モード（複数選択→一括削除）
+  const [selectMode, setSelectMode] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [bulkConfirming, setBulkConfirming] = useState(false)
+  const [bulkBusy, setBulkBusy] = useState(false)
+
+  // 削除のUndo（確認ダイアログの代わりに、5秒間だけ取り消せる猶予を挟む）
+  const [pendingDelete, setPendingDelete] = useState<{ ids: string[]; label: string } | null>(null)
+  const pendingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const pendingIdsRef = useRef<string[]>([])
+
+  async function commitDelete(ids: string[]) {
+    try {
+      if (ids.length === 1) {
+        await fetch(`/api/transactions/${ids[0]}`, { method: 'DELETE' })
+      } else {
+        await fetch('/api/transactions/bulk-delete', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ids }),
+        })
+      }
+    } finally {
+      qc.invalidateQueries({ queryKey: ['transactions'] })
+    }
+  }
+
+  useEffect(() => {
+    pendingIdsRef.current = pendingDelete?.ids ?? []
+  }, [pendingDelete])
+
+  // アンマウント時（画面遷移等）は保留中の削除を即確定させる（消え忘れ防止）
+  useEffect(() => () => {
+    if (pendingTimerRef.current) clearTimeout(pendingTimerRef.current)
+    if (pendingIdsRef.current.length) commitDelete(pendingIdsRef.current)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  function scheduleDelete(ids: string[], label: string) {
+    if (!ids.length) return
+    // 既に保留中の削除があれば即確定してから新しい保留を開始（Undoは常に直近1件分のみ）
+    if (pendingTimerRef.current) {
+      clearTimeout(pendingTimerRef.current)
+      if (pendingIdsRef.current.length) commitDelete(pendingIdsRef.current)
+    }
+    setPendingDelete({ ids, label })
+    pendingTimerRef.current = setTimeout(() => {
+      commitDelete(ids)
+      setPendingDelete(null)
+      pendingTimerRef.current = null
+    }, UNDO_DELAY_MS)
+  }
+
+  function undoDelete() {
+    if (pendingTimerRef.current) clearTimeout(pendingTimerRef.current)
+    pendingTimerRef.current = null
+    setPendingDelete(null)
+  }
+
+  function toggleSelect(tx: Transaction) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(tx.id)) next.delete(tx.id); else next.add(tx.id)
+      return next
+    })
+  }
+  function exitSelectMode() {
+    setSelectMode(false)
+    setSelectedIds(new Set())
+    setBulkConfirming(false)
+  }
+  async function handleBulkDeleteClick() {
+    if (!selectedIds.size) return
+    if (selectedIds.size >= BULK_CONFIRM_THRESHOLD && !bulkConfirming) {
+      setBulkConfirming(true)
+      return
+    }
+    setBulkBusy(true)
+    try {
+      scheduleDelete([...selectedIds], `${selectedIds.size}件`)
+      // 選択されていた行は一覧から即座に消えるため、選択状態はここでクリアしてよい
+      exitSelectMode()
+    } finally {
+      setBulkBusy(false)
+    }
+  }
 
   async function handleClassify() {
     setClassifying(true)
@@ -165,38 +266,51 @@ export function TransactionsView({ month, initialView = 'list' }: Props) {
     queryFn:  () => fetch('/api/categories').then((r) => { if (!r.ok) throw new Error('取得に失敗しました'); return r.json() }),
   })
 
+  // 前月比較用（フィルタなし・カレンダー切替に関わらず軽量に取得。比較目的のみなので合計しか使わない）
+  const prevMonth = prevMonthOf(month)
+  const { data: prevTxRes } = useQuery<{ data: Transaction[] }>({
+    queryKey: ['transactions', prevMonth, 'summary-only'],
+    queryFn:  () => fetch(`/api/transactions?month=${prevMonth}`).then((r) => { if (!r.ok) throw new Error('取得に失敗しました'); return r.json() }),
+    enabled: !hasFilter,
+    staleTime: 5 * 60_000,
+  })
+
   const rawTransactions = txRes?.data ?? []
-  const transactions = filters.dir
+  const transactions = (filters.dir
     ? rawTransactions.filter((tx) => filters.dir === 'expense' ? tx.amount < 0 : tx.amount > 0)
     : rawTransactions
+  ).filter((tx) => !pendingDelete?.ids.includes(tx.id)) // Undo猶予中の取引は即座に一覧から隠す
   const allCats      = catRes?.data ?? []
 
-  const totalIncome  = transactions.filter((tx) => tx.amount > 0).reduce((s, tx) => s + tx.amount, 0)
-  const totalExpense = transactions.filter((tx) => tx.amount < 0).reduce((s, tx) => s + Math.abs(tx.amount), 0)
+  // 集計除外（MoneyForward方式）: excluded な取引は一覧には薄く残すが、
+  // 合計・残高・カテゴリ別集計には含めない
+  const aggregatable = transactions.filter((tx) => !tx.excluded)
+
+  const totalIncome  = aggregatable.filter((tx) => tx.amount > 0).reduce((s, tx) => s + tx.amount, 0)
+  const totalExpense = aggregatable.filter((tx) => tx.amount < 0).reduce((s, tx) => s + Math.abs(tx.amount), 0)
   const balance      = totalIncome - totalExpense
 
+  const prevAggregatable = (prevTxRes?.data ?? []).filter((tx) => !tx.excluded)
+  const prevIncome  = prevAggregatable.filter((tx) => tx.amount > 0).reduce((s, tx) => s + tx.amount, 0)
+  const prevExpense = prevAggregatable.filter((tx) => tx.amount < 0).reduce((s, tx) => s + Math.abs(tx.amount), 0)
+
   const actualByCategory: Record<string, number> = {}
-  for (const tx of transactions) {
+  for (const tx of aggregatable) {
     if (tx.amount >= 0) continue
     const name = tx.categories?.name ?? 'その他'
     actualByCategory[name] = (actualByCategory[name] ?? 0) + Math.abs(tx.amount)
   }
+  // カテゴリマスタの登録順で固定表示（使用金額順に毎月並び替えると指の記憶が使えなくなるため）
+  const catOrder = new Map(allCats.map((c, i) => [c.name, i]))
   const categories = Object.entries(actualByCategory)
     .map(([name, used], i) => {
       const catMeta = allCats.find((c) => c.name === name)
       return { id: catMeta?.id ?? '', name, color: catMeta?.color ?? CAT_COLORS[i % CAT_COLORS.length], used }
     })
-    .sort((a, b) => b.used - a.used)
+    .sort((a, b) => (catOrder.get(a.name) ?? 999) - (catOrder.get(b.name) ?? 999))
 
   function handleRefresh() {
     qc.invalidateQueries({ queryKey: ['transactions'] })
-  }
-
-  function openMenu(e: React.MouseEvent, tx: Transaction) {
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-    setMenuPos({ top: rect.bottom + 6, right: window.innerWidth - rect.right })
-    setMenuTx(tx)
-    setMenuId(tx.id)
   }
 
   if (isLoading) {
@@ -220,38 +334,31 @@ export function TransactionsView({ month, initialView = 'list' }: Props) {
           onSaved={() => { handleRefresh(); setEditingTx(null) }}
         />
       )}
-      {deletingTx && (
-        <DeleteConfirmDialog
-          tx={deletingTx}
-          onClose={() => setDeletingTx(null)}
-          onDeleted={() => { handleRefresh(); setDeletingTx(null) }}
-        />
-      )}
 
-      {/* ── Context menu ── */}
-      {menuId && menuPos && menuTx && (
-        <>
-          <div style={{ position: 'fixed', inset: 0, zIndex: 40 }} onClick={() => setMenuId(null)} />
-          <div style={{
-            position: 'fixed', zIndex: 50,
-            top: menuPos.top, right: menuPos.right,
-            minWidth: 120, borderRadius: 12,
-            background: KAI.dropdownBg,
-            border: `1px solid ${KAI.border2}`,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
-            overflow: 'hidden',
-          }}>
-            <button
-              onClick={() => { setMenuId(null); setEditingTx(menuTx) }}
-              style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '10px 14px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: KAI.text2, fontFamily: 'inherit' }}
-            >✏ 編集</button>
-            <div style={{ height: 1, background: KAI.border }} />
-            <button
-              onClick={() => { setMenuId(null); setDeletingTx(menuTx) }}
-              style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '10px 14px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: KAI.danger, fontFamily: 'inherit' }}
-            >🗑 削除</button>
-          </div>
-        </>
+      {/* ── Undoトースト ── */}
+      {pendingDelete && (
+        <div style={{
+          position: 'fixed', left: '50%', bottom: 'calc(env(safe-area-inset-bottom, 12px) + 76px)',
+          transform: 'translateX(-50%)', zIndex: 70,
+          display: 'flex', alignItems: 'center', gap: 12,
+          background: KAI.dropdownBg, border: `1px solid ${KAI.borderStrong}`,
+          borderRadius: 14, padding: '10px 10px 10px 16px',
+          boxShadow: '0 12px 32px rgba(0,0,0,0.5)',
+          width: 'min(340px, calc(100vw - 32px))',
+        }}>
+          <span style={{ flex: 1, fontSize: 12.5, color: KAI.text1 }}>{pendingDelete.label}を削除しました</span>
+          <button
+            type="button"
+            onClick={undoDelete}
+            style={{
+              fontSize: 12, fontWeight: 700, padding: '7px 12px', borderRadius: 9,
+              background: 'rgba(122,167,255,.14)', border: '1px solid rgba(122,167,255,.3)',
+              color: KAI.blue, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
+            }}
+          >
+            元に戻す
+          </button>
+        </div>
       )}
 
       {/* ══════ Header Area ══════ */}
@@ -263,7 +370,7 @@ export function TransactionsView({ month, initialView = 'list' }: Props) {
       </div>
 
       {/* Search bar (always visible) */}
-      {view === 'list' && (
+      {view === 'list' && !selectMode && (
         <div
           onClick={() => setShowFilters((v) => !v)}
           style={{
@@ -282,8 +389,65 @@ export function TransactionsView({ month, initialView = 'list' }: Props) {
       )}
 
       {/* Filters (expanded) */}
-      {view === 'list' && <DuplicateChecker />}
-      {view === 'list' && showFilters && <TransactionFilters categories={allCats} />}
+      {view === 'list' && !selectMode && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ flex: 1 }}><DuplicateChecker /></div>
+          <button
+            type="button"
+            onClick={() => setSelectMode(true)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              padding: '7px 14px', borderRadius: 10,
+              border: `1px solid ${KAI.border2}`, background: KAI.overlayWeak,
+              color: KAI.text3, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+            }}
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            選択
+          </button>
+        </div>
+      )}
+      {view === 'list' && !selectMode && showFilters && <TransactionFilters categories={allCats} />}
+
+      {/* 選択モードバー */}
+      {selectMode && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          background: 'rgba(251,113,133,.06)', border: `1px solid ${KAI.danger}33`,
+          borderRadius: 12, padding: '9px 13px',
+        }}>
+          <span style={{ flex: 1, fontSize: 13, color: KAI.text1, fontWeight: 600 }}>{selectedIds.size}件選択中</span>
+          {!bulkConfirming ? (
+            <>
+              <button
+                type="button" onClick={exitSelectMode}
+                style={{ fontSize: 12, padding: '7px 12px', borderRadius: 9, background: KAI.overlayWeak, border: `1px solid ${KAI.border2}`, color: KAI.text3, cursor: 'pointer', fontFamily: 'inherit' }}
+              >キャンセル</button>
+              <button
+                type="button" onClick={handleBulkDeleteClick} disabled={!selectedIds.size || bulkBusy}
+                style={{
+                  fontSize: 12, fontWeight: 700, padding: '7px 12px', borderRadius: 9,
+                  background: 'rgba(251,113,133,.16)', border: `1px solid ${KAI.danger}4d`,
+                  color: KAI.danger, cursor: selectedIds.size ? 'pointer' : 'not-allowed', fontFamily: 'inherit',
+                  opacity: selectedIds.size ? 1 : 0.5,
+                }}
+              >削除</button>
+            </>
+          ) : (
+            <>
+              <span style={{ fontSize: 11.5, color: KAI.text2 }}>{selectedIds.size}件を本当に削除しますか？</span>
+              <button
+                type="button" onClick={() => setBulkConfirming(false)}
+                style={{ fontSize: 12, padding: '7px 12px', borderRadius: 9, background: KAI.overlayWeak, border: `1px solid ${KAI.border2}`, color: KAI.text3, cursor: 'pointer', fontFamily: 'inherit' }}
+              >やめる</button>
+              <button
+                type="button" onClick={handleBulkDeleteClick} disabled={bulkBusy}
+                style={{ fontSize: 12, fontWeight: 700, padding: '7px 12px', borderRadius: 9, background: KAI.danger, border: 'none', color: '#fff', cursor: 'pointer', fontFamily: 'inherit', opacity: bulkBusy ? 0.6 : 1 }}
+              >{bulkBusy ? '実行中…' : '削除する'}</button>
+            </>
+          )}
+        </div>
+      )}
 
       {/* Month Switcher */}
       <div style={{ display: 'flex', justifyContent: 'center' }}>
@@ -291,7 +455,11 @@ export function TransactionsView({ month, initialView = 'list' }: Props) {
       </div>
 
       {/* Summary Chips */}
-      <SummaryChips income={totalIncome} expense={totalExpense} balance={balance} />
+      <SummaryChips
+        income={totalIncome} expense={totalExpense} balance={balance}
+        prevIncome={!hasFilter ? prevIncome : undefined}
+        prevExpense={!hasFilter ? prevExpense : undefined}
+      />
 
       {/* AI auto-classify button (shown only when uncategorized exist) */}
       {view === 'list' && (() => {
@@ -386,31 +554,13 @@ export function TransactionsView({ month, initialView = 'list' }: Props) {
                 </div>
               ) : (
                 transactions.slice(0, 100).map((t, i) => (
-                  <div key={t.id} style={{
-                    display: 'flex', alignItems: 'center', gap: 10,
-                    padding: '10px 14px',
-                    borderBottom: i < Math.min(transactions.length, 100) - 1 ? `1px solid ${KAI.border}` : 'none',
-                  }}>
-                    <div style={{
-                      width: 28, height: 28, borderRadius: 8, flexShrink: 0,
-                      background: `${t.categories?.color ?? KAI.text3}1c`,
-                      border: `1px solid ${t.categories?.color ?? KAI.text3}33`,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13,
-                    }}>
-                      <CategoryIcon name={resolveIconName(t.categories?.name ?? '') ?? 'Tag'} size={13} />
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ fontSize: 12.5, color: KAI.text2, fontWeight: 500, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.payee}</p>
-                      <p style={{ fontSize: 10, color: KAI.text4, margin: '2px 0 0', ...MONO }}>{t.occurred_on} · {t.categories?.name ?? '未分類'}</p>
-                    </div>
-                    <span style={{ fontSize: 13, fontWeight: 700, ...MONO, flexShrink: 0, color: t.amount < 0 ? KAI.danger : KAI.success }}>
-                      {t.amount < 0 ? '−' : '+'}¥{Math.abs(t.amount).toLocaleString('ja-JP')}
-                    </span>
-                    <button
-                      onClick={(e) => { if (menuId === t.id) { setMenuId(null) } else { openMenu(e, t) } }}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: KAI.text4, fontSize: 18, padding: '8px 4px', lineHeight: 1, flexShrink: 0, minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', marginLeft: 2 }}
-                      aria-label="メニュー"
-                    >⋯</button>
+                  <div key={t.id} style={{ borderBottom: i < Math.min(transactions.length, 100) - 1 ? `1px solid ${KAI.border}` : 'none' }}>
+                    <TransactionRow
+                      tx={t} compact rowBg={KAI.overlayWeak}
+                      onEdit={setEditingTx}
+                      onDeleteRequest={(tx) => scheduleDelete([tx.id], `「${tx.payee}」`)}
+                      selectMode={selectMode} selected={selectedIds.has(t.id)} onToggleSelect={toggleSelect}
+                    />
                   </div>
                 ))
               )}
@@ -458,52 +608,16 @@ export function TransactionsView({ month, initialView = 'list' }: Props) {
                         background: KAI.cardBg, border: `1px solid ${KAI.border2}`,
                         borderRadius: 16, overflow: 'hidden',
                       }}>
-                        {dayTxs.map((t, i) => {
-                          const catColor = t.categories?.color ?? KAI.text3
-                          return (
-                            <div key={t.id} style={{
-                              display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px',
-                              borderBottom: i < dayTxs.length - 1 ? `1px solid ${KAI.border}` : 'none',
-                            }}>
-                              <div style={{
-                                width: 38, height: 38, borderRadius: 12, flexShrink: 0,
-                                background: `${catColor}1c`, border: `1px solid ${catColor}33`,
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                fontSize: 18,
-                              }}>
-                                  <CategoryFilledIcon name={t.categories?.name ?? ''} size={16} />
-                              </div>
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={{ fontSize: 13, fontWeight: 500, color: KAI.text1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                  {t.payee}
-                                </div>
-                                <div style={{ fontSize: 10, color: KAI.text3, marginTop: 2, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                                  <span>{t.categories?.name ?? '未分類'}</span>
-                                  {t.source === 'auto' && (
-                                    <>
-                                      <span style={{ width: 3, height: 3, borderRadius: '50%', background: KAI.text4, display: 'inline-block' }} />
-                                      <span style={{ ...MONO }}>MF同期</span>
-                                    </>
-                                  )}
-                                  {t.source === 'csv' && (
-                                    <>
-                                      <span style={{ width: 3, height: 3, borderRadius: '50%', background: KAI.text4, display: 'inline-block' }} />
-                                      <span style={{ background: `${KAI.violet}1c`, border: `1px solid ${KAI.violet}4d`, borderRadius: 4, padding: '1px 5px', color: KAI.violet, fontSize: 9, fontWeight: 700 }}>CSV</span>
-                                    </>
-                                  )}
-                                </div>
-                              </div>
-                              <div style={{ fontSize: 14, fontWeight: 700, color: t.amount < 0 ? KAI.danger : KAI.success, ...MONO, flexShrink: 0 }}>
-                                {t.amount < 0 ? '−' : '+'}¥{Math.abs(t.amount).toLocaleString('ja-JP')}
-                              </div>
-                              <button
-                                onClick={(e) => { if (menuId === t.id) { setMenuId(null) } else { openMenu(e, t) } }}
-                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: KAI.text4, fontSize: 18, padding: '8px 4px', lineHeight: 1, flexShrink: 0, minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', marginLeft: 2 }}
-                                aria-label="メニュー"
-                              >⋯</button>
-                            </div>
-                          )
-                        })}
+                        {dayTxs.map((t, i) => (
+                          <div key={t.id} style={{ borderBottom: i < dayTxs.length - 1 ? `1px solid ${KAI.border}` : 'none' }}>
+                            <TransactionRow
+                              tx={t} rowBg={KAI.cardBg}
+                              onEdit={setEditingTx}
+                              onDeleteRequest={(tx) => scheduleDelete([tx.id], `「${tx.payee}」`)}
+                              selectMode={selectMode} selected={selectedIds.has(t.id)} onToggleSelect={toggleSelect}
+                            />
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )
