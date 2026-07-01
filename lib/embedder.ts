@@ -1,6 +1,7 @@
 import { createHash } from 'crypto'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { canonicalizeMerchant } from './merchant-canonical'
+import { retryWithBackoff, isRetryableHttpError } from './retry'
 
 const VOYAGE_API_URL = 'https://api.voyageai.com/v1/embeddings'
 const EMBED_MODEL = 'voyage-3-lite' // 512次元、日本語対応、最安値
@@ -19,22 +20,27 @@ export async function embedTexts(texts: string[]): Promise<number[][]> {
   const apiKey = process.env.VOYAGE_API_KEY
   if (!apiKey) throw new Error('VOYAGE_API_KEY が設定されていません')
 
-  const res = await fetch(VOYAGE_API_URL, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ input: texts, model: EMBED_MODEL }),
-  })
+  // R-5: 429/5xx/ネットワークエラーはbackoff付きでリトライ
+  return retryWithBackoff(async () => {
+    const res = await fetch(VOYAGE_API_URL, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ input: texts, model: EMBED_MODEL }),
+    })
 
-  if (!res.ok) {
-    const body = await res.text()
-    throw new Error(`Voyage API error ${res.status}: ${body}`)
-  }
+    if (!res.ok) {
+      const body = await res.text()
+      const err = new Error(`Voyage API error ${res.status}: ${body}`) as Error & { status?: number }
+      err.status = res.status
+      throw err
+    }
 
-  const json = (await res.json()) as VoyageResponse
-  return json.data.map((d) => d.embedding)
+    const json = (await res.json()) as VoyageResponse
+    return json.data.map((d) => d.embedding)
+  }, { maxRetries: 2, shouldRetry: isRetryableHttpError })
 }
 
 export async function embedText(text: string): Promise<number[]> {

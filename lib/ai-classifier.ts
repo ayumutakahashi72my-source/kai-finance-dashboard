@@ -7,9 +7,32 @@ import { classifyByKeyword } from './keyword-rules'
 import { writeClassificationLogs, errorLogFields, type ClassificationLogEntry } from './classification-logger'
 import { trackCost, type TokenUsageAccum } from './cost-tracker'
 import { canonicalizeMerchant } from './merchant-canonical'
+import { retryWithBackoff, isRetryableHttpError } from './retry'
 import { todayJST } from '@/lib/jst'
 
+// R-9: 上限付き並列実行（MAX_PARALLEL_BATCHES ずつのウィンドウで Promise.all）
+async function runWithConcurrency<T>(
+  batches: T[],
+  worker: (batch: T) => Promise<void>,
+): Promise<void> {
+  for (let i = 0; i < batches.length; i += MAX_PARALLEL_BATCHES) {
+    await Promise.all(batches.slice(i, i + MAX_PARALLEL_BATCHES).map(worker))
+  }
+}
+
+// R-5: Anthropic呼び出しの共通リトライラッパー（429/5xx/ネットワークのみ、backoff 1s→2s）
+function createMessageWithRetry(
+  client: Anthropic,
+  params: Anthropic.MessageCreateParamsNonStreaming
+): Promise<Anthropic.Message> {
+  return retryWithBackoff(() => client.messages.create(params), {
+    maxRetries: 2,
+    shouldRetry: isRetryableHttpError,
+  })
+}
+
 const MAX_BATCH = 10
+const MAX_PARALLEL_BATCHES = 5  // R-9: 同時に投げるLLMバッチ数の上限（レート制限対策）
 const RAG_EXACT_THRESHOLD = 0.80   // exact キャッシュの直接採用ライン（LLM分類結果を再利用）
 const RAG_DIRECT_THRESHOLD = 0.88  // ベクトル検索で直接採用するライン
 const RAG_RERANK_THRESHOLD = 0.65  // LLM rerank の候補として使う下限
@@ -205,7 +228,7 @@ async function rerankBatch(
     return `取引${i + 1}: 「${item.payee}」\n候補:${candidateList}`
   })
 
-  const msg = await client.messages.create({
+  const msg = await createMessageWithRetry(client, {
     model: 'claude-haiku-4-5-20251001',
     max_tokens: 256,
     temperature: 0,
@@ -262,7 +285,7 @@ async function callHaiku(
     hint: it.category_hint,
   }))
 
-  const msg = await client.messages.create({
+  const msg = await createMessageWithRetry(client, {
     model: 'claude-haiku-4-5-20251001',
     max_tokens: 512,
     temperature: 0,
@@ -321,7 +344,7 @@ async function callHaikuFreeForm(
     payee: it.payee,
   }))
 
-  const msg = await client.messages.create({
+  const msg = await createMessageWithRetry(client, {
     model: 'claude-haiku-4-5-20251001',
     max_tokens: 512,
     temperature: 0,
@@ -377,7 +400,7 @@ async function callHaikuForceSelect(
   const categoryList = validCategoryNames.join('、')
   const inputJson = items.map((it, localIndex) => ({ index: localIndex, payee: it.payee }))
 
-  const msg = await client.messages.create({
+  const msg = await createMessageWithRetry(client, {
     model: 'claude-haiku-4-5-20251001',
     max_tokens: 512,
     temperature: 0,
@@ -461,7 +484,7 @@ export async function fetchCategoryIcons(names: string[]): Promise<Map<string, s
 使用可能なアイコン一覧: ${LUCIDE_ICON_NAMES_LIST.join(', ')}
 カテゴリ: ${unresolved.join(', ')}
 必ずJSON形式のみで返してください（説明不要）: {"カテゴリ名": "IconName", ...}`
-    const msg = await client.messages.create({
+    const msg = await createMessageWithRetry(client, {
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 256,
       messages: [{ role: 'user', content: prompt }],
@@ -918,8 +941,13 @@ export async function classifyTransactions(
   // 各グループの先頭のみ分類対象にする（重複排除）
   const dedupedNeedsLLM = [...llmKeyToItems.values()].map((g) => g[0]!)
 
+  // R-9: バッチを並列実行（逐次awaitだとバッチ数×レイテンシで線形に遅くなる。
+  // logs/ragUpserts への push は await 後の同期処理なので競合しない）
+  const llmBatches: ClassifyItem[][] = []
   for (let i = 0; i < dedupedNeedsLLM.length; i += MAX_BATCH) {
-    const batch = dedupedNeedsLLM.slice(i, i + MAX_BATCH)
+    llmBatches.push(dedupedNeedsLLM.slice(i, i + MAX_BATCH))
+  }
+  await runWithConcurrency(llmBatches, async (batch) => {
     try {
       const classified = await callHaiku(batch, categoryMap, client, hierarchyCategoryList, tokenAccum)
       const resolvedByLLM = new Set(classified.map((c) => c.index))
@@ -984,7 +1012,7 @@ export async function classifyTransactions(
         })
       }
     }
-  }
+  })
 
   // 重複排除で省略したアイテムに代表の分類結果を展開
   for (const [key, groupItems] of llmKeyToItems) {
@@ -1282,12 +1310,16 @@ export async function classifyFreeForm(
   const client = new Anthropic({ apiKey: getEnvKey('ANTHROPIC_API_KEY') })
   const allNamed: Array<{ index: number; categoryName: string }> = []
 
+  // R-9: バッチを並列実行（結果は index を持つため到着順に依存しない）
+  const freeformBatches: ClassifyItem[][] = []
   for (let i = 0; i < needsLLM.length; i += MAX_BATCH) {
-    const batch = needsLLM.slice(i, i + MAX_BATCH)
+    freeformBatches.push(needsLLM.slice(i, i + MAX_BATCH))
+  }
+  await runWithConcurrency(freeformBatches, async (batch) => {
     try {
       allNamed.push(...await callHaikuFreeForm(batch, client, tokenAccum))
     } catch { /* バッチ失敗はスキップ */ }
-  }
+  })
 
   if (!allNamed.length) {
     // freeform が全滅した場合も force select を試みる
