@@ -1,8 +1,23 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { Mail, Globe } from 'lucide-react'
 import { CORAL, BLUE, GREEN, RED, AMBER, TEXT1, TEXT2, TEXT3, TEXT4, BG, OVERLAY_WEAK, BORDER2, BORDER_STRONG, SyncResult, BackBtn } from './_shared'
+
+type OtpErrorInfo = { headline: string; detail?: string }
+
+/**
+ * サーバーが返す生のエラー（Playwright/HTTPの例外メッセージがそのまま入る）を
+ * 家族利用者にも分かる文言に変換する。原文は「詳細を見る」に残す。
+ */
+function friendlyOtpMessage(raw: string): string {
+  if (/OTP認証失敗/.test(raw)) return '認証コードが正しくないか、有効期限切れの可能性があります。MoneyForwardから届いた最新のコードでお試しください。'
+  if (/timeout/i.test(raw)) return '通信がタイムアウトしました。電波状況の良い場所で再度お試しください。'
+  if (/MFログイン失敗/.test(raw)) return 'MoneyForwardへのログインに失敗しました。設定画面のID・パスワードをご確認ください。'
+  if (/MFデータ取得失敗/.test(raw)) return '取引データの取得に失敗しました。時間をおいて再度お試しください。'
+  return 'エラーが発生しました。時間をおいて再度お試しください。'
+}
 
 const MF_FEATURES = [
   {
@@ -38,7 +53,7 @@ export function MfSyncTab({ onBack, onDone }: { onBack: () => void; onDone: () =
   const [showNoCredsAlert, setShowNoCredsAlert] = useState(false)
   const [otpPending,   setOtpPending]   = useState<OtpPending | null>(null)
   const [otpCode,      setOtpCode]      = useState('')
-  const [otpError,     setOtpError]     = useState<string | null>(null)
+  const [otpError,     setOtpError]     = useState<OtpErrorInfo | null>(null)
   const [browserMode,  setBrowserMode]  = useState(false)
   const [sessionCookie, setSessionCookie] = useState('')
 
@@ -82,25 +97,26 @@ export function MfSyncTab({ onBack, onDone }: { onBack: () => void; onDone: () =
     })
     const data = await res.json() as SyncResult & { error?: string }
     setSyncing(false)
-    if (data.error) { setOtpError(data.error) }
+    if (data.error) { setOtpError({ headline: friendlyOtpMessage(data.error), detail: data.error }) }
     else { clearOtp(); setSyncResult(data) }
   }
 
-  async function handleOtpSubmit() {
-    if (!otpPending || otpCode.length < 6) return
+  async function handleOtpSubmit(codeOverride?: string) {
+    const code = codeOverride ?? otpCode
+    if (!otpPending || code.length < 6 || syncing) return
     setSyncing(true); setOtpError(null)
     const res = await fetch('/api/settings/mf/sync', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ year: syncYear, month: syncMonth, otp_code: otpCode, otp_url: otpPending.otp_url, otp_storage_state: otpPending.otp_storage_state }),
+      body: JSON.stringify({ year: syncYear, month: syncMonth, otp_code: code, otp_url: otpPending.otp_url, otp_storage_state: otpPending.otp_storage_state }),
     })
     const data = await res.json() as SyncResult & { error?: string; needs_otp?: boolean; trace?: { step: string; note: string }[] }
     setSyncing(false)
     if (data.error) {
       const otpTrace = data.trace?.filter(t => t.step.startsWith('otp_')).map(t => `[${t.step}] ${t.note}`).join('\n') ?? ''
-      setOtpError(data.error + (otpTrace ? `\n\n${otpTrace}` : ''))
+      setOtpError({ headline: friendlyOtpMessage(data.error), detail: [data.error, otpTrace].filter(Boolean).join('\n\n') })
     } else if (data.needs_otp) {
-      setOtpError('認証コードが正しくありません。再度お試しください。')
+      setOtpError({ headline: '認証コードが正しくありません。MoneyForwardから届いた最新のコードでお試しください。' })
     } else {
       clearOtp(); setSyncResult(data)
     }
@@ -212,8 +228,13 @@ export function MfSyncTab({ onBack, onDone }: { onBack: () => void; onDone: () =
             </button>
           </div>
 
-          {/* OTP modal */}
-          {otpPending && (
+          {/* OTP modal
+             * position:fixed の子を親のSheetChrome（backdropFilter付き）の中に置くと、
+             * backdropFilterが新しいcontaining blockを作ってしまい、fixed要素がビューポート
+             * 全体ではなくシート領域だけを基準に配置される（＝背後の画面が透けて見える）。
+             * document.body直下にポータルして回避する。
+             */}
+          {otpPending && typeof document !== 'undefined' && createPortal(
             <>
               <div onClick={clearOtp} style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}/>
               <div style={{ position: 'fixed', left: '50%', top: '50%', zIndex: 61, transform: 'translate(-50%, -50%)', width: 'min(360px, calc(100vw - 40px))', background: BG, border: `1px solid ${BORDER_STRONG}`, borderRadius: 20, padding: '24px 22px 20px', display: 'flex', flexDirection: 'column', gap: 14, boxShadow: '0 24px 64px rgba(0,0,0,0.7)' }}>
@@ -230,11 +251,31 @@ export function MfSyncTab({ onBack, onDone }: { onBack: () => void; onDone: () =
                       <div style={{ fontSize: 14, fontWeight: 700, color: TEXT1, marginBottom: 5 }}>メール認証コードを入力</div>
                       <div style={{ fontSize: 11, color: TEXT3, lineHeight: 1.6 }}>MoneyForwardから届いたメールの6桁コード</div>
                     </div>
-                    <input type="text" inputMode="numeric" maxLength={6} value={otpCode} onChange={e => setOtpCode(e.target.value.replace(/\D/g, ''))} onKeyDown={e => { if (e.key === 'Enter') handleOtpSubmit() }} placeholder="123456" autoFocus style={{ width: '100%', boxSizing: 'border-box', padding: '14px 16px', borderRadius: 12, background: OVERLAY_WEAK, border: `1px solid ${otpError ? RED + '66' : BORDER_STRONG}`, color: TEXT1, fontSize: 24, fontWeight: 800, letterSpacing: '0.3em', textAlign: 'center', fontFamily: 'var(--font-mono),monospace', outline: 'none' }}/>
-                    {otpError && <div style={{ fontSize: 11, color: RED, whiteSpace: 'pre-wrap', lineHeight: 1.5, maxHeight: 100, overflowY: 'auto', background: `${RED}0a`, border: `1px solid ${RED}33`, borderRadius: 8, padding: '8px 10px' }}>⚠ {otpError}</div>}
+                    <input
+                      type="text" inputMode="numeric" maxLength={6} value={otpCode}
+                      onChange={e => {
+                        const v = e.target.value.replace(/\D/g, '').slice(0, 6)
+                        setOtpCode(v)
+                        if (v.length === 6) handleOtpSubmit(v) // 6桁揃ったら自動送信
+                      }}
+                      onKeyDown={e => { if (e.key === 'Enter') handleOtpSubmit() }}
+                      placeholder="123456" autoFocus
+                      style={{ width: '100%', boxSizing: 'border-box', padding: '14px 16px', borderRadius: 12, background: OVERLAY_WEAK, border: `1px solid ${otpError ? RED + '66' : BORDER_STRONG}`, color: TEXT1, fontSize: 24, fontWeight: 800, letterSpacing: '0.3em', textAlign: 'center', fontFamily: 'var(--font-mono),monospace', outline: 'none' }}
+                    />
+                    {otpError && (
+                      <div style={{ fontSize: 11, color: RED, lineHeight: 1.5, background: `${RED}0a`, border: `1px solid ${RED}33`, borderRadius: 8, padding: '8px 10px' }}>
+                        <div>⚠ {otpError.headline}</div>
+                        {otpError.detail && (
+                          <details style={{ marginTop: 6 }}>
+                            <summary style={{ cursor: 'pointer', fontSize: 10, color: TEXT4 }}>詳細を見る</summary>
+                            <div style={{ marginTop: 4, fontSize: 10, color: TEXT4, whiteSpace: 'pre-wrap', maxHeight: 100, overflowY: 'auto' }}>{otpError.detail}</div>
+                          </details>
+                        )}
+                      </div>
+                    )}
                     <div style={{ display: 'flex', gap: 8 }}>
                       <button onClick={clearOtp} style={{ flex: 1, padding: '11px', borderRadius: 12, fontSize: 13, fontWeight: 600, background: OVERLAY_WEAK, border: `1px solid ${BORDER2}`, color: TEXT2, cursor: 'pointer', fontFamily: 'inherit' }}>キャンセル</button>
-                      <button onClick={handleOtpSubmit} disabled={otpCode.length < 6 || syncing} style={{ flex: 2, padding: '11px', borderRadius: 12, fontSize: 13, fontWeight: 700, background: otpCode.length >= 6 && !syncing ? `linear-gradient(135deg,${CORAL} 0%,${BLUE} 100%)` : OVERLAY_WEAK, border: 'none', color: otpCode.length >= 6 && !syncing ? '#0c0a14' : TEXT3, cursor: otpCode.length >= 6 && !syncing ? 'pointer' : 'not-allowed', fontFamily: 'inherit', opacity: syncing ? 0.7 : 1 }}>{syncing ? '認証中…' : '認証する'}</button>
+                      <button onClick={() => handleOtpSubmit()} disabled={otpCode.length < 6 || syncing} style={{ flex: 2, padding: '11px', borderRadius: 12, fontSize: 13, fontWeight: 700, background: otpCode.length >= 6 && !syncing ? `linear-gradient(135deg,${CORAL} 0%,${BLUE} 100%)` : OVERLAY_WEAK, border: 'none', color: otpCode.length >= 6 && !syncing ? '#0c0a14' : TEXT3, cursor: otpCode.length >= 6 && !syncing ? 'pointer' : 'not-allowed', fontFamily: 'inherit', opacity: syncing ? 0.7 : 1 }}>{syncing ? '認証中…' : '認証する'}</button>
                     </div>
                   </>
                 ) : (
@@ -251,7 +292,17 @@ export function MfSyncTab({ onBack, onDone }: { onBack: () => void; onDone: () =
                       <Globe size={13} strokeWidth={2}/> MoneyForwardを開く ↗
                     </a>
                     <input type="password" value={sessionCookie} onChange={e => setSessionCookie(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') handleBrowserSessionSubmit() }} placeholder="_moneyforward_session=... または値のみ" style={{ width: '100%', boxSizing: 'border-box', padding: '11px 14px', borderRadius: 12, background: OVERLAY_WEAK, border: `1px solid ${otpError ? RED + '66' : BORDER_STRONG}`, color: TEXT1, fontSize: 11, fontFamily: 'var(--font-mono),monospace', outline: 'none' }}/>
-                    {otpError && <div style={{ fontSize: 11, color: RED, lineHeight: 1.5, background: `${RED}0a`, border: `1px solid ${RED}33`, borderRadius: 8, padding: '8px 10px' }}>⚠ {otpError}</div>}
+                    {otpError && (
+                      <div style={{ fontSize: 11, color: RED, lineHeight: 1.5, background: `${RED}0a`, border: `1px solid ${RED}33`, borderRadius: 8, padding: '8px 10px' }}>
+                        <div>⚠ {otpError.headline}</div>
+                        {otpError.detail && (
+                          <details style={{ marginTop: 6 }}>
+                            <summary style={{ cursor: 'pointer', fontSize: 10, color: TEXT4 }}>詳細を見る</summary>
+                            <div style={{ marginTop: 4, fontSize: 10, color: TEXT4, whiteSpace: 'pre-wrap' }}>{otpError.detail}</div>
+                          </details>
+                        )}
+                      </div>
+                    )}
                     <div style={{ display: 'flex', gap: 8 }}>
                       <button onClick={clearOtp} style={{ flex: 1, padding: '11px', borderRadius: 12, fontSize: 13, fontWeight: 600, background: OVERLAY_WEAK, border: `1px solid ${BORDER2}`, color: TEXT2, cursor: 'pointer', fontFamily: 'inherit' }}>キャンセル</button>
                       <button onClick={handleBrowserSessionSubmit} disabled={!sessionCookie.trim() || syncing} style={{ flex: 2, padding: '11px', borderRadius: 12, fontSize: 13, fontWeight: 700, background: sessionCookie.trim() && !syncing ? `linear-gradient(135deg,${CORAL} 0%,${BLUE} 100%)` : OVERLAY_WEAK, border: 'none', color: sessionCookie.trim() && !syncing ? '#0c0a14' : TEXT3, cursor: sessionCookie.trim() && !syncing ? 'pointer' : 'not-allowed', fontFamily: 'inherit', opacity: syncing ? 0.7 : 1 }}>{syncing ? '取込中…' : '取込む'}</button>
@@ -259,11 +310,12 @@ export function MfSyncTab({ onBack, onDone }: { onBack: () => void; onDone: () =
                   </>
                 )}
               </div>
-            </>
+            </>,
+            document.body,
           )}
 
-          {/* 未登録アラート */}
-          {showNoCredsAlert && (
+          {/* 未登録アラート（同じ理由でポータルする） */}
+          {showNoCredsAlert && typeof document !== 'undefined' && createPortal(
             <>
               <div onClick={() => setShowNoCredsAlert(false)} style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}/>
               <div style={{ position: 'fixed', left: '50%', top: '50%', zIndex: 61, transform: 'translate(-50%, -50%)', width: 'min(320px, calc(100vw - 40px))', background: BG, border: `1px solid ${BORDER_STRONG}`, borderRadius: 20, padding: '28px 24px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, boxShadow: '0 24px 64px rgba(0,0,0,0.7)' }}>
@@ -277,7 +329,8 @@ export function MfSyncTab({ onBack, onDone }: { onBack: () => void; onDone: () =
                   <a href="/settings/integrations/mf" style={{ flex: 2, padding: '11px', borderRadius: 12, fontSize: 13, fontWeight: 700, background: `linear-gradient(135deg, ${CORAL} 0%, ${BLUE} 100%)`, color: 'var(--kai-bg)', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>設定画面へ</a>
                 </div>
               </div>
-            </>
+            </>,
+            document.body,
           )}
         </>
       )}
