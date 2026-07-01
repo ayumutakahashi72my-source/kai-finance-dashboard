@@ -61,6 +61,7 @@ export interface MfTransaction {
   amount: number
   category_hint: string
   raw_id: string
+  source_account: string
 }
 
 /** ログイン処理の各ステップを記録する型 */
@@ -920,5 +921,6 @@ export async function fetchMfTransactions(
     amount:         r.amount,
     category_hint:  r.category_hint,
     raw_id:         r.raw_id,
+    source_account: r.source_account,
   }))
 }

@@ -39,6 +39,18 @@ describe('parseMfCsv', () => {
     expect(rows[0].category_hint).toBe('食費 / 食料品')
   })
 
+  it('source_account（保有金融機関）をパースする', () => {
+    const { rows } = parseMfCsv(SAMPLE_CSV)
+    expect(rows[0].source_account).toBe('三菱UFJ銀行')
+    expect(rows[2].source_account).toBe('Suica')
+  })
+
+  it('保有金融機関が空の場合は空文字を返す', () => {
+    const csv = `${HEADER}2026/05/01,テスト,-500,,食費,食料品,,FALSE,x1\n`
+    const { rows } = parseMfCsv(csv)
+    expect(rows[0].source_account).toBe('')
+  })
+
   it('BOM 付き CSV を正常にパースする', () => {
     const bom = '﻿'
     const { rows, errors } = parseMfCsv(bom + SAMPLE_CSV)

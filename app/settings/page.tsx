@@ -11,8 +11,9 @@ import { ExportButton } from '@/components/settings/ExportButton'
 import { LeaveHouseholdButton } from '@/components/settings/LeaveHouseholdButton'
 import { CleanupCardTransfersButton } from '@/components/settings/CleanupCardTransfersButton'
 import { FixCategoryColorsButton } from '@/components/settings/FixCategoryColorsButton'
+import { AccountSettingsPanel } from '@/components/settings/AccountSettingsPanel'
 import { ThemeSegmented } from '@/components/settings/ThemeSegmented'
-import { PushNotificationToggle, StaticToggle } from '@/components/settings/SettingsToggle'
+import { PushNotificationToggle, HouseholdFlagToggle } from '@/components/settings/SettingsToggle'
 import { LogoutButton } from '@/components/auth/LogoutButton'
 import { AdminAccordion } from '@/components/settings/AdminAccordion'
 
@@ -235,7 +236,7 @@ export default async function SettingsPage() {
           <Panel>
             <Row icon={<BellIcon2 />} iconBg="rgba(251,191,36,.12)" title="プッシュ通知" subtitle="月次レポート・異常検知" rightSlot={<PushNotificationToggle />} />
             <RowDivider />
-            <Row icon={<AlertIcon />} iconBg="rgba(251,113,133,.12)" title="予算超過アラート" subtitle="カテゴリ予算の90%到達時" rightSlot={<StaticToggle defaultOn />} />
+            <Row icon={<AlertIcon />} iconBg="rgba(251,113,133,.12)" title="予算超過アラート" subtitle="カテゴリ予算の90%到達時" rightSlot={<HouseholdFlagToggle field="budget_alert_enabled" />} />
           </Panel>
 
           {/* ── 表示 ── */}
@@ -260,6 +261,12 @@ export default async function SettingsPage() {
             <Row icon={<InfoIcon />} iconBg="var(--kai-overlay-weak)" title="プライバシー・データ取扱い" href="/legal/privacy" />
             <RowDivider />
             <Row icon={<InfoIcon />} iconBg="var(--kai-overlay-weak)" title="データ取り扱いに関する方針" href="/legal/data" />
+          </Panel>
+
+          {/* ── 口座・集計 ── */}
+          <GrpLabel>口座・集計</GrpLabel>
+          <Panel>
+            <AccountSettingsPanel />
           </Panel>
 
           {/* ── 管理者（アコーディオン、管理者のみ表示） ── */}
@@ -288,7 +295,7 @@ export default async function SettingsPage() {
                   />
                 </div>
                 <RowDivider />
-                <Row icon={<OcrIcon />} iconBg="rgba(34,211,238,.12)" title="レシート自動分類" subtitle="OCR後にAIで自動カテゴリ付け" rightSlot={<StaticToggle defaultOn />} />
+                <Row icon={<OcrIcon />} iconBg="rgba(34,211,238,.12)" title="レシート自動分類" subtitle="OCR後にAIで自動カテゴリ付け" rightSlot={<HouseholdFlagToggle field="receipt_auto_classify_enabled" />} />
               </Panel>
 
               <GrpLabel color={KAI.coral}>運用監視</GrpLabel>

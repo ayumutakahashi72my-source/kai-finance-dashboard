@@ -24,8 +24,8 @@ function buildRecords(
 }
 
 const SAMPLE_TX: MfTransaction[] = [
-  { occurred_on: '2026-05-01', payee: 'セブンイレブン', amount: -1200, category_hint: '食費 / 食料品', raw_id: 'tx001' },
-  { occurred_on: '2026-05-02', payee: '給与',          amount: 250000, category_hint: '収入 / 給与',   raw_id: 'tx002' },
+  { occurred_on: '2026-05-01', payee: 'セブンイレブン', amount: -1200, category_hint: '食費 / 食料品', raw_id: 'tx001', source_account: '三菱UFJ銀行' },
+  { occurred_on: '2026-05-02', payee: '給与',          amount: 250000, category_hint: '収入 / 給与',   raw_id: 'tx002', source_account: '三菱UFJ銀行' },
 ]
 
 describe('手動取り込み: レコード変換', () => {

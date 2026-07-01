@@ -4,6 +4,7 @@ import { todayJST } from '@/lib/jst'
 import { parseMfCsv, buildSourceHash, decodeCsvBuffer } from '@/lib/csv-parser'
 import { classifyFreeForm, normalizeKeyword, pickCategoryColor, fetchCategoryIcons } from '@/lib/ai-classifier'
 import { writeClassificationLogs, type ClassificationLogEntry } from '@/lib/classification-logger'
+import { checkAndSendBudgetAlerts } from '@/lib/budget-alerts'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 /** category_hint "食費 / 外食" → "食費"。空・「その他」系は空文字を返す */
@@ -160,6 +161,7 @@ export async function POST(req: NextRequest) {
     amount: r.amount,
     source: 'csv' as const,
     source_hash: buildSourceHash(r.raw_id, r.occurred_on, r.amount, r.payee),
+    source_account: r.source_account || null,
     is_fixed: false,
     category_id: categoryIdMap.get(i) ?? null,
   }))
@@ -192,6 +194,14 @@ export async function POST(req: NextRequest) {
 
   const insertedCount = inserted?.length ?? 0
   const skippedCount = records.length - insertedCount
+
+  // 予算超過アラート（支出行が影響したカテゴリのみ・バッチにつき1回）
+  const expenseCatIds = records.filter((r) => r.amount < 0).map((r) => r.category_id)
+  if (expenseCatIds.length) {
+    checkAndSendBudgetAlerts(supabase, householdId, expenseCatIds).catch((e) =>
+      console.warn('[budget-alert] check failed:', e)
+    )
+  }
 
   return NextResponse.json({
     inserted: insertedCount,

@@ -1,11 +1,12 @@
 import Papa from 'papaparse'
 
 export interface ParsedRow {
-  occurred_on: string   // YYYY-MM-DD
+  occurred_on: string        // YYYY-MM-DD
   payee: string
-  amount: number        // 正=収入, 負=支出
-  category_hint: string // 大項目 / 中項目
-  raw_id: string        // MF の ID フィールド（ハッシュ生成用）
+  amount: number             // 正=収入, 負=支出
+  category_hint: string      // 大項目 / 中項目
+  raw_id: string             // MF の ID フィールド（ハッシュ生成用）
+  source_account: string     // 保有金融機関（MF CSV）
 }
 
 export interface CsvParseResult {
@@ -81,6 +82,7 @@ export function parseMfCsv(csvText: string): CsvParseResult {
     const rawAmount = findCol(row, '金額（円）', '金額(円)', '金額')?.trim().replace(/,/g, '')
     const rawPayee = findCol(row, '内容')?.trim()
     const rawId = findCol(row, 'ID')?.trim() ?? ''
+    const sourceAccount = findCol(row, '保有金融機関')?.trim() ?? ''
 
     if (!rawDate || !rawAmount || !rawPayee) {
       errors.push(`${i + 2}行目: 必須フィールド（日付/内容/金額）が空です`)
@@ -106,7 +108,7 @@ export function parseMfCsv(csvText: string): CsvParseResult {
       findCol(row, '中項目'),
     ].filter(Boolean).join(' / ')
 
-    rows.push({ occurred_on, payee: rawPayee, amount, category_hint, raw_id: rawId })
+    rows.push({ occurred_on, payee: rawPayee, amount, category_hint, raw_id: rawId, source_account: sourceAccount })
   })
 
   return { rows, errors }

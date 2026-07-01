@@ -20,8 +20,10 @@ export interface Transaction {
   occurred_on: string // YYYY-MM-DD
   category_id: string | null
   is_fixed: boolean
+  excluded: boolean
   source: TransactionSource | null
   source_hash: string | null
+  source_account: string | null
   created_at: string
   categories?: {
     name: string

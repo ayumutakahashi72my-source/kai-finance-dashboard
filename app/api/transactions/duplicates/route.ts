@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/api-guard'
+import { normalizePayee, fetchAllTransactionsWithCategory } from '@/lib/duplicate-analyzer'
 
 export async function GET() {
   const auth = await requireAuth()
@@ -7,20 +8,15 @@ export async function GET() {
 
   const { supabase, householdId } = auth
 
-  const { data, error } = await supabase
-    .from('transactions')
-    .select('id, occurred_on, amount, payee, category_id, categories(name, color, icon)')
-    .eq('household_id', householdId)
-    .order('occurred_on', { ascending: false })
-    .order('amount')
+  // 取引数が1000件（Supabaseのデフォルト上限）を超える世帯でも
+  // 重複を漏れなく検出できるよう、ページネーション付きの取得を使う。
+  const data = await fetchAllTransactionsWithCategory(householdId, supabase)
+  if (!data.length) return NextResponse.json({ groups: [] })
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  if (!data?.length) return NextResponse.json({ groups: [] })
-
-  // 同日・同金額のグループを検出
+  // 同日・同額・同payee（正規化）のグループを検出
   const seen = new Map<string, typeof data>()
   for (const tx of data) {
-    const key = `${tx.occurred_on}__${tx.amount}`
+    const key = `${tx.occurred_on}__${tx.amount}__${normalizePayee(tx.payee)}`
     const existing = seen.get(key) ?? []
     existing.push(tx)
     seen.set(key, existing)
