@@ -3,17 +3,19 @@
 import React, { useState, useRef } from 'react'
 import { parseMfCsv, decodeCsvBuffer } from '@/lib/csv-parser'
 import {
-  CORAL, BLUE, VIOLET, GREEN, AMBER,
+  CORAL, BLUE, VIOLET, GREEN, AMBER, RED,
   TEXT1, TEXT3, TEXT4, TEXT5,
   OVERLAY_WEAK, BORDER2, BORDER_STRONG,
   ImportResult, BackBtn,
 } from './_shared'
 
+// 実際のフローは「選択 → プレビュー（この時点で取込ボタンを押すと即実行）→ 完了」。
+// 列マッピングや取込前の最終確認画面は存在しないため、それを示唆する文言は使わない。
 function CsvStepIndicator({ activeStep }: { activeStep: 1 | 2 | 3 }) {
   const steps: { n: 1 | 2 | 3; label: string }[] = [
     { n: 1, label: '選択' },
-    { n: 2, label: 'マッピング' },
-    { n: 3, label: '確認' },
+    { n: 2, label: 'プレビュー' },
+    { n: 3, label: '完了' },
   ]
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -50,10 +52,13 @@ export function CsvImportTab({ onBack, onDone }: { onBack: () => void; onDone: (
   const [result, setResult]     = useState<ImportResult | null>(null)
   const [loading, setLoading]   = useState(false)
   const [dragOver, setDragOver] = useState(false)
+  // パース警告（軽微・部分的にスキップされた行）とは重大度が異なるため、
+  // サーバー側の致命的な失敗は別のstateで管理し、別の見た目（赤）で表示する。
+  const [serverError, setServerError] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   async function handleFile(f: File) {
-    setFile(f); setResult(null)
+    setFile(f); setResult(null); setServerError(null)
     const buffer = await f.arrayBuffer()
     const text = decodeCsvBuffer(buffer)
     const { rows, errors } = parseMfCsv(text)
@@ -63,13 +68,14 @@ export function CsvImportTab({ onBack, onDone }: { onBack: () => void; onDone: (
   async function handleImport() {
     if (!file) return
     setLoading(true)
+    setServerError(null)
     try {
       const fd = new FormData()
       fd.append('file', file)
       const res = await fetch('/api/transactions/import/csv', { method: 'POST', body: fd })
       const data = await res.json() as ImportResult & { error?: string }
       if (data.error) {
-        setPreview(p => p ? { ...p, errors: [data.error!, ...(p.errors ?? [])] } : null)
+        setServerError(data.error)
       } else {
         setResult(data)
       }
@@ -78,10 +84,16 @@ export function CsvImportTab({ onBack, onDone }: { onBack: () => void; onDone: (
     }
   }
 
+  // ヘッダーが見つからない等、MF形式として全く認識できなかった場合の目印。
+  // 「◯行目が空です」という行単位エラーの羅列だけでは原因（形式違い）が伝わらないため、
+  // 有効行が0件のときは先に一言で伝える。
+  const looksUnrecognized = !!(file && preview && preview.count === 0 && preview.errors.length > 0)
+
   if (result) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <BackBtn onClick={onBack}/>
+        <CsvStepIndicator activeStep={3}/>
         <div style={{ textAlign: 'center', padding: '16px 0 8px' }}>
           <div style={{ width: 56, height: 56, borderRadius: '50%', background: `${GREEN}1a`, border: `1px solid ${GREEN}33`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
@@ -137,9 +149,25 @@ export function CsvImportTab({ onBack, onDone }: { onBack: () => void; onDone: (
         </div>
       )}
 
+      {/* サーバー側の致命的な失敗（インポート自体が0件） — 軽微な警告とは別枠・赤で表示 */}
+      {serverError && (
+        <div style={{ padding: '10px 12px', background: `${RED}0a`, border: `1px solid ${RED}33`, borderRadius: 12 }}>
+          <p style={{ fontSize: 11, fontWeight: 700, color: RED }}>✕ 取込みに失敗しました</p>
+          <p style={{ fontSize: 11, color: `${RED}dd`, marginTop: 2 }}>{serverError}</p>
+        </div>
+      )}
+
+      {/* MF形式として認識できなかった（有効行0件）場合の一言サマリー */}
+      {looksUnrecognized && (
+        <div style={{ padding: '10px 12px', background: `${AMBER}0a`, border: `1px solid ${AMBER}28`, borderRadius: 12 }}>
+          <p style={{ fontSize: 11, fontWeight: 700, color: AMBER }}>⚠ MoneyForward Me形式のCSVとして認識できませんでした</p>
+          <p style={{ fontSize: 11, color: `${AMBER}cc`, marginTop: 2 }}>「日付」「内容」「金額（円）」列を含むMF形式のエクスポートファイルかご確認ください。</p>
+        </div>
+      )}
+
       {preview?.errors && preview.errors.length > 0 && (
         <div style={{ padding: '10px 12px', background: `${AMBER}0a`, border: `1px solid ${AMBER}28`, borderRadius: 12 }}>
-          <p style={{ fontSize: 11, fontWeight: 700, color: AMBER, marginBottom: 4 }}>⚠ 警告</p>
+          <p style={{ fontSize: 11, fontWeight: 700, color: AMBER, marginBottom: 4 }}>⚠ 警告（{preview.errors.length}件中一部を表示）</p>
           {preview.errors.slice(0, 3).map((e, i) => <p key={i} style={{ fontSize: 11, color: `${AMBER}cc` }}>{e}</p>)}
           {preview.errors.length > 3 && <p style={{ fontSize: 11, color: `${AMBER}88` }}>…他 {preview.errors.length - 3} 件</p>}
         </div>
@@ -147,7 +175,7 @@ export function CsvImportTab({ onBack, onDone }: { onBack: () => void; onDone: (
 
       <div style={{ display: 'flex', gap: 8, marginTop: 2 }}>
         <button onClick={onBack} className="kai-btn kai-btn-secondary" style={{ flex: 1 }}>キャンセル</button>
-        <button onClick={handleImport} disabled={!file || !preview || loading} className="kai-btn kai-btn-primary" style={{ flex: 2 }}>
+        <button onClick={handleImport} disabled={!file || !preview || !preview.count || loading} className="kai-btn kai-btn-primary" style={{ flex: 2 }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
           {loading ? '取込み中…' : preview ? `${preview.count}件を取り込む` : '取り込む'}
         </button>

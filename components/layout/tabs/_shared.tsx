@@ -40,6 +40,8 @@ export interface OcrPrefill {
   amount?: number
   occurred_on?: string
   confidence?: number
+  /** OCR自体が失敗した場合の理由（通信エラー等）。低confidence警告の文言を出し分けるために使う。 */
+  errorReason?: string
 }
 
 export function BackBtn({ onClick }: { onClick: () => void }) {
