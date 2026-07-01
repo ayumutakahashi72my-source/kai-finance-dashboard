@@ -27,6 +27,15 @@ export interface ClassificationLogEntry {
   api_calls?: number
   is_cache_hit: boolean
   error_message?: string
+  error_stack?: string
+}
+
+/** Error から error_message / error_stack ペアを組み立てる（stack は2000文字に切り詰め） */
+export function errorLogFields(err: unknown): { error_message: string; error_stack?: string } {
+  if (err instanceof Error) {
+    return { error_message: err.message, error_stack: err.stack?.slice(0, 2000) }
+  }
+  return { error_message: String(err) }
 }
 
 /**

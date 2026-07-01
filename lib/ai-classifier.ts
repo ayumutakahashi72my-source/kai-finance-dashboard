@@ -4,7 +4,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { ClassificationResponseSchema } from './ai-schemas'
 import { embedTextsWithCache } from './embedder'
 import { classifyByKeyword } from './keyword-rules'
-import { writeClassificationLogs, type ClassificationLogEntry } from './classification-logger'
+import { writeClassificationLogs, errorLogFields, type ClassificationLogEntry } from './classification-logger'
 import { trackCost, type TokenUsageAccum } from './cost-tracker'
 import { canonicalizeMerchant } from './merchant-canonical'
 import { todayJST } from '@/lib/jst'
@@ -35,6 +35,25 @@ export function normalizeKeyword(payee: string): string {
     // 非単語文字を除去
     .replace(/[^\p{L}\p{N}]/gu, '')
     .slice(0, 64)
+}
+
+// ===== Cache Lookup with Canonical Fallback =====
+// 「マクドナルド渋谷店」(normalized) が「マクドナルド」(canonical) の既学習行にヒットするよう、
+// 読み取り時のみ canonical キーへのフォールバックを行う。
+// 書き込みキーは従来通り normalizeKeyword 出力のまま（変更禁止）。
+
+export function buildCacheLookupKeys(normalizedKeys: string[]): string[] {
+  const set = new Set<string>()
+  for (const k of normalizedKeys) {
+    if (!k) continue
+    set.add(k)
+    set.add(canonicalizeMerchant(k))
+  }
+  return [...set]
+}
+
+export function resolveCacheEntry<T>(map: Map<string, T>, normalizedKey: string): T | undefined {
+  return map.get(normalizedKey) ?? map.get(canonicalizeMerchant(normalizedKey))
 }
 
 // ===== Types =====
@@ -593,11 +612,12 @@ export async function classifyTransactions(
   const tokenAccum: TokenUsageAccum = { inputTokens: 0, outputTokens: 0 }
 
   // ⓪ 修正履歴（最優先：ユーザーが手動修正した payee は即時確定）
+  // canonical キーもまとめて引き、チェーン店の別店舗表記にも修正学習を波及させる
   const allPayeeKeys = items.map((it) => normalizeKeyword(it.payee))
-  const correctionMap = await checkCorrectionsBatch(allPayeeKeys, householdId, supabase)
+  const correctionMap = await checkCorrectionsBatch(buildCacheLookupKeys(allPayeeKeys), householdId, supabase)
   const itemsAfterCorrections: ClassifyItem[] = []
   for (const item of items) {
-    const correctedId = correctionMap.get(normalizeKeyword(item.payee))
+    const correctedId = resolveCacheEntry(correctionMap, normalizeKeyword(item.payee))
     if (correctedId) {
       categoryIdMap.set(item.index, correctedId)
       logs.push({
@@ -630,7 +650,7 @@ export async function classifyTransactions(
     .from('category_rag')
     .select('payee_key, category_id, confidence, hit_count')
     .eq('household_id', householdId)
-    .in('payee_key', payeeKeysForCache)
+    .in('payee_key', buildCacheLookupKeys(payeeKeysForCache))
 
   // 既存 hit_count マップ（全件 — 閾値未満も含む）
   const ragHitCountMap = new Map<string, number>()
@@ -653,17 +673,18 @@ export async function classifyTransactions(
   const itemsAfterExactCache: ClassifyItem[] = []
   for (const item of itemsAfterCorrections) {
     const payeeKey = normalizeKeyword(item.payee)
-    const cached = exactCacheMap.get(payeeKey)
+    const cached = resolveCacheEntry(exactCacheMap, payeeKey)
     if (cached) {
       categoryIdMap.set(item.index, cached.category_id)
       // R-7: exact_cacheヒットでもhit_countを+1する（従来は増分されず repeat 閾値判定が不正確だった）
+      // canonical フォールバックヒット時は normalized キーの行として新規学習される
       ragUpserts.push({
         household_id: householdId,
         payee_key: payeeKey,
         category_id: cached.category_id,
         confidence: cached.confidence,
         embedding: null,
-        hit_count: (ragHitCountMap.get(payeeKey) ?? 0) + 1,
+        hit_count: (resolveCacheEntry(ragHitCountMap, payeeKey) ?? 0) + 1,
         last_seen: today,
       })
       logs.push({
@@ -959,7 +980,7 @@ export async function classifyTransactions(
           is_cache_hit: false,
           api_calls: 1,
           latency_ms: Date.now() - startTime,
-          error_message: err instanceof Error ? err.message : String(err),
+          ...errorLogFields(err),
         })
       }
     }
@@ -1065,12 +1086,12 @@ export async function classifyFreeForm(
   const logs: ClassificationLogEntry[] = []
   const tokenAccum: TokenUsageAccum = { inputTokens: 0, outputTokens: 0 }
 
-  // ⓪ 修正履歴
+  // ⓪ 修正履歴（canonical フォールバック付き）
   const allKeys = items.map((it) => normalizeKeyword(it.payee))
-  const correctionMap = await checkCorrectionsBatch(allKeys, householdId, supabase)
+  const correctionMap = await checkCorrectionsBatch(buildCacheLookupKeys(allKeys), householdId, supabase)
   const itemsAfterCorrections: ClassifyItem[] = []
   for (const item of items) {
-    const correctedId = correctionMap.get(normalizeKeyword(item.payee))
+    const correctedId = resolveCacheEntry(correctionMap, normalizeKeyword(item.payee))
     if (correctedId) {
       categoryIdMap.set(item.index, correctedId)
     } else {
@@ -1093,7 +1114,7 @@ export async function classifyFreeForm(
     .from('category_rag')
     .select('payee_key, category_id, confidence, hit_count')
     .eq('household_id', householdId)
-    .in('payee_key', payeeKeysForCache)
+    .in('payee_key', buildCacheLookupKeys(payeeKeysForCache))
 
   const ragHitCountMapFree = new Map<string, number>()
   for (const row of ragRowsFree ?? []) ragHitCountMapFree.set(row.payee_key, row.hit_count ?? 1)
@@ -1114,7 +1135,7 @@ export async function classifyFreeForm(
   const itemsAfterExactCache: ClassifyItem[] = []
   for (const item of itemsAfterCorrections) {
     const payeeKey = normalizeKeyword(item.payee)
-    const cached = exactCacheMapFree.get(payeeKey)
+    const cached = resolveCacheEntry(exactCacheMapFree, payeeKey)
     if (cached) {
       categoryIdMap.set(item.index, cached.category_id)
       // R-7: exact_cacheヒットでもhit_countを+1する
@@ -1124,7 +1145,7 @@ export async function classifyFreeForm(
         category_id: cached.category_id,
         confidence: cached.confidence,
         embedding: null,
-        hit_count: (ragHitCountMapFree.get(payeeKey) ?? 0) + 1,
+        hit_count: (resolveCacheEntry(ragHitCountMapFree, payeeKey) ?? 0) + 1,
         last_seen: todayF,
       })
       logs.push({
@@ -1407,7 +1428,7 @@ export async function classifyFreeForm(
           })
         }
       }
-    } catch {
+    } catch (err) {
       for (const item of unresolvedFreeForm) {
         logs.push({
           household_id: householdId,
@@ -1418,6 +1439,7 @@ export async function classifyFreeForm(
           is_cache_hit: false,
           api_calls: 1,
           latency_ms: Date.now() - startTime,
+          ...errorLogFields(err),
         })
       }
     }

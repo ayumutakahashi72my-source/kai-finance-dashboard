@@ -34,6 +34,7 @@ export async function POST(req: NextRequest) {
     .from('categories')
     .select('name')
     .eq('id', categoryId)
+    .eq('household_id', householdId)
     .single()
 
   return NextResponse.json({

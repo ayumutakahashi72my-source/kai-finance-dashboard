@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/api-guard'
 import { classifyByKeyword } from '@/lib/keyword-rules'
 import { normalizeKeyword } from '@/lib/ai-classifier'
+import { canonicalizeMerchant } from '@/lib/merchant-canonical'
 import goldenData from '../../../../__tests__/fixtures/category-golden.json'
 
 export async function GET() {
@@ -14,7 +15,7 @@ export async function GET() {
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
   const thirtyDaysAgoIso = thirtyDaysAgo.toISOString()
 
-  // 8クエリを並列実行 ─────────────────────────────────────────────
+  // 9クエリを並列実行 ─────────────────────────────────────────────
   const [
     { data: aggData },
     { data: dailyViewData, error: viewError },
@@ -24,6 +25,7 @@ export async function GET() {
     { data: costData },
     { data: ragStatsData },
     { data: snapshotData },
+    { data: ragKeysData },
   ] = await Promise.all([
     // 1. メソッド内訳・信頼度サンプル（直近分のみ・件数はPostgREST上限に依存）
     supabase
@@ -87,6 +89,14 @@ export async function GET() {
       .eq('household_id', householdId)
       .order('snapshot_date', { ascending: true })
       .limit(90),
+
+    // 9. RAG学習キー（Top merchant / canonical集約監視用・hit_count上位から）
+    supabase
+      .from('category_rag')
+      .select('payee_key, hit_count, confidence, last_seen, categories(name)')
+      .eq('household_id', householdId)
+      .order('hit_count', { ascending: false })
+      .limit(5000),
   ])
 
   if (viewError) {
@@ -290,7 +300,69 @@ export async function GET() {
     },
   }
 
+  // ── Top merchant × hit_count / canonical 集約監視 ─────────────
+  // canonical フォールバック学習は normalized キーの行を増やす（例: マクドナルド渋谷/池袋…）。
+  // 重複率と集約状況を可視化し、キー増殖の傾向を監視できるようにする。
+  type RagKeyRow = {
+    payee_key: string
+    hit_count: number | null
+    confidence: number | null
+    last_seen: string | null
+    categories: { name: string } | { name: string }[] | null
+  }
+  const ragKeyRows = (ragKeysData ?? []) as RagKeyRow[]
+  const categoryNameOf = (r: RagKeyRow): string | null => {
+    if (!r.categories) return null
+    return Array.isArray(r.categories) ? (r.categories[0]?.name ?? null) : r.categories.name
+  }
+
+  const topMerchants = ragKeyRows.slice(0, 100).map((r) => {
+    const canonical = canonicalizeMerchant(r.payee_key)
+    return {
+      payee_key: r.payee_key,
+      canonical_key: canonical !== r.payee_key ? canonical : null,  // null = 既にcanonical or 未知店舗
+      category_name: categoryNameOf(r),
+      hit_count: r.hit_count ?? 0,
+      confidence: r.confidence != null ? Number(r.confidence) : null,
+      last_seen: r.last_seen,
+    }
+  })
+
+  const clusterMap = new Map<string, { keyCount: number; totalHits: number; hasCanonicalRow: boolean }>()
+  for (const r of ragKeyRows) {
+    const canonical = canonicalizeMerchant(r.payee_key)
+    const existing = clusterMap.get(canonical) ?? { keyCount: 0, totalHits: 0, hasCanonicalRow: false }
+    existing.keyCount++
+    existing.totalHits += r.hit_count ?? 0
+    if (canonical === r.payee_key) existing.hasCanonicalRow = true
+    clusterMap.set(canonical, existing)
+  }
+  const totalKeys = ragKeyRows.length
+  const canonicalGroups = clusterMap.size
+  const duplicateKeys = totalKeys - canonicalGroups   // 同一canonicalに畳める余剰キー数
+  const topClusters = [...clusterMap.entries()]
+    .filter(([, v]) => v.keyCount > 1)
+    .sort(([, a], [, b]) => b.keyCount - a.keyCount)
+    .slice(0, 10)
+    .map(([canonical_key, v]) => ({
+      canonical_key,
+      key_count: v.keyCount,
+      total_hits: v.totalHits,
+      has_canonical_row: v.hasCanonicalRow,
+    }))
+
+  const ragKeys = {
+    totalKeys,                                        // 学習済みキー総数（サンプル上限5000）
+    canonicalGroups,                                  // canonical単位のグループ数
+    duplicateKeys,                                    // 正規化キーの重複数
+    duplicationRate: totalKeys > 0 ? Math.round((duplicateKeys / totalKeys) * 1000) / 1000 : 0,
+    aggregationRate: totalKeys > 0 ? Math.round((canonicalGroups / totalKeys) * 1000) / 1000 : 0,
+    topClusters,
+    topMerchants,
+  }
+
   return NextResponse.json({
+    ragKeys,
     summary: {
       total,           // 全期間累計（ビューから・件数制限なし）
       cacheHits,       // 全期間累計（ビューから）

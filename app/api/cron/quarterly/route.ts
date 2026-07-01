@@ -7,6 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
+import { requireCronAuth } from '@/lib/api-guard'
 import { createAdminClient } from '@/lib/supabase/admin'
 import Anthropic from '@anthropic-ai/sdk'
 import { trackCost } from '@/lib/cost-tracker'
@@ -97,10 +98,8 @@ const QUARTERLY_PROMPT = `あなたは家計の専門アドバイザーです。
 数値は具体的に引用し、ポジティブな点も必ず含めてください。絵文字は使用せず、プレーンテキストとMarkdownのみで記述してください。`
 
 export async function GET(req: NextRequest) {
-  const authHeader = req.headers.get('authorization')
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const denied = requireCronAuth(req)
+  if (denied) return denied
 
   if (!process.env.ANTHROPIC_API_KEY) {
     return NextResponse.json({ error: 'ANTHROPIC_API_KEY 未設定' }, { status: 503 })

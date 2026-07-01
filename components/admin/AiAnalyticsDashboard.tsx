@@ -4,6 +4,10 @@ import { useMutation } from '@tanstack/react-query'
 import Link from 'next/link'
 import { KAI } from '@/lib/kai-tokens'
 import { Sparkles } from 'lucide-react'
+import { RagMerchantPanel, type RagKeysData } from './RagMerchantPanel'
+
+// ⚠ component size warning: 本体は約550行（500行超）。新規セクションは
+// RagMerchantPanel のように別コンポーネントへ切り出すこと（feedback-dev-rules）。
 
 const MONO: React.CSSProperties = {
   fontFamily: 'var(--font-jetbrains), "JetBrains Mono", monospace',
@@ -56,6 +60,7 @@ interface AnalyticsData {
     totalLearned: number; highConfidence: number
     hitCountDist: { once: number; twice: number; threeFour: number; fiveNine: number; tenPlus: number }
   }
+  ragKeys?: RagKeysData
 }
 
 /* ─── Pipeline tier config ─── */
@@ -384,6 +389,9 @@ export function AiAnalyticsDashboard({ data }: {
           </div>
         </Panel>
       </div>
+
+      {/* ── RAG学習キー監視（canonical集約・Top merchant） ── */}
+      {data.ragKeys && <RagMerchantPanel data={data.ragKeys} />}
 
       {/* ── Cost Breakdown ── */}
       <Panel style={{ padding: '15px 16px' }}>

@@ -1,4 +1,6 @@
+import { timingSafeEqual } from 'crypto'
 import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/server'
 
@@ -27,6 +29,28 @@ export type AuthFail = {
  * オプション:
  *   { requireAdmin: true } を渡すと管理者でない場合 403 を返す。
  */
+/**
+ * Vercel Cron ルート共通の認証ガード。
+ * - CRON_SECRET 未設定時は 503（`Bearer undefined` での突破を防ぐ）
+ * - 比較は timingSafeEqual（タイミング攻撃対策）
+ *
+ * 使い方:
+ *   const denied = requireCronAuth(req)
+ *   if (denied) return denied
+ */
+export function requireCronAuth(req: NextRequest): NextResponse | null {
+  const secret = process.env.CRON_SECRET
+  if (!secret) {
+    return NextResponse.json({ error: 'CRON_SECRET が設定されていません' }, { status: 503 })
+  }
+  const given = Buffer.from(req.headers.get('authorization') ?? '', 'utf8')
+  const expected = Buffer.from(`Bearer ${secret}`, 'utf8')
+  if (given.length !== expected.length || !timingSafeEqual(given, expected)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  return null
+}
+
 export async function requireAuth(
   opts: { requireAdmin?: boolean } = {}
 ): Promise<AuthOk | AuthFail> {

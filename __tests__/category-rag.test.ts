@@ -464,3 +464,45 @@ describe('日次ヘルス・スナップショット計算', () => {
   })
 
 })
+
+// ── canonical フォールバック lookup ──────────────────────────────
+
+import { buildCacheLookupKeys, resolveCacheEntry } from '../lib/ai-classifier'
+
+describe('canonical フォールバック lookup', () => {
+  it('buildCacheLookupKeys は normalized と canonical の和集合を返す', () => {
+    const keys = buildCacheLookupKeys(['マクドナルド渋谷', 'セブンイレブン新宿'])
+    expect(keys).toContain('マクドナルド渋谷')
+    expect(keys).toContain('マクドナルド')
+    expect(keys).toContain('セブンイレブン新宿')
+    expect(keys).toContain('セブンイレブン')
+  })
+
+  it('buildCacheLookupKeys は重複と空文字を除外する', () => {
+    const keys = buildCacheLookupKeys(['マクドナルド', 'マクドナルド', ''])
+    expect(keys).toEqual(['マクドナルド'])
+  })
+
+  it('resolveCacheEntry は normalized キーの完全一致を優先する', () => {
+    const map = new Map([
+      ['マクドナルド渋谷', 'exact-hit'],
+      ['マクドナルド', 'canonical-hit'],
+    ])
+    expect(resolveCacheEntry(map, 'マクドナルド渋谷')).toBe('exact-hit')
+  })
+
+  it('resolveCacheEntry は完全一致がなければ canonical にフォールバックする', () => {
+    const map = new Map([['マクドナルド', 'canonical-hit']])
+    expect(resolveCacheEntry(map, 'マクドナルド渋谷')).toBe('canonical-hit')
+  })
+
+  it('resolveCacheEntry はどちらもなければ undefined を返す', () => {
+    const map = new Map([['スターバックス', 'x']])
+    expect(resolveCacheEntry(map, '個人商店やまだ')).toBeUndefined()
+  })
+
+  it('未知の店舗名は canonical 変換されず二重登録されない', () => {
+    const keys = buildCacheLookupKeys(['個人商店やまだ'])
+    expect(keys).toEqual(['個人商店やまだ'])
+  })
+})

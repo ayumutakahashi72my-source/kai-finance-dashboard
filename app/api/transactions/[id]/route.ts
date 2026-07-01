@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/api-guard'
 import { todayJST } from '@/lib/jst'
 import { recalculateScore } from '@/lib/score-calculator'
-import { normalizeKeyword, logCorrection } from '@/lib/ai-classifier'
+import { normalizeKeyword, logCorrection, upsertCategoryRag } from '@/lib/ai-classifier'
+import { embedTextsWithCache } from '@/lib/embedder'
 import { learnExcludePattern } from '@/lib/duplicate-analyzer'
 import { z } from 'zod'
 
@@ -32,6 +33,17 @@ export async function PATCH(
   const parsed = UpdateSchema.safeParse(body)
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 })
+  }
+
+  // category_id が指定された場合は自世帯のカテゴリであることを検証
+  if (parsed.data.category_id) {
+    const { data: cat } = await supabase
+      .from('categories')
+      .select('id')
+      .eq('id', parsed.data.category_id)
+      .eq('household_id', householdId)
+      .maybeSingle()
+    if (!cat) return NextResponse.json({ error: 'カテゴリが不正です' }, { status: 422 })
   }
 
   // カテゴリ変更時は修正前の値を取得
@@ -82,19 +94,24 @@ export async function PATCH(
           supabase
         )
       }
-      await supabase
-        .from('category_rag')
-        .upsert(
-          {
-            household_id: householdId,
-            payee_key: payeeKey,
-            category_id: parsed.data.category_id,
-            confidence: 1.0,
-            hit_count: 1,
-            last_seen: todayJST(),
-          },
-          { onConflict: 'household_id,payee_key' }
-        )
+      // RPC 経由で書き込む（同一カテゴリなら hit_count 加算・カテゴリ変更ならリセット）。
+      // embedding も付与し、類似店舗名の vector 検索にも学習を波及させる。
+      let embedding: number[] | null = null
+      if (process.env.VOYAGE_API_KEY) {
+        try {
+          const [vec] = await embedTextsWithCache([payeeKey], supabase)
+          embedding = vec?.length ? vec : null
+        } catch { /* embedding 失敗は無視 */ }
+      }
+      await upsertCategoryRag(supabase, householdId, [{
+        household_id: householdId,
+        payee_key: payeeKey,
+        category_id: parsed.data.category_id,
+        confidence: 1.0,
+        embedding,
+        hit_count: 1,
+        last_seen: todayJST(),
+      }])
     } catch { /* ログ・RAG更新の失敗は保存に影響させない */ }
   }
 
