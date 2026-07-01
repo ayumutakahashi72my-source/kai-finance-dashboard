@@ -3,6 +3,7 @@ import { requireAuth } from '@/lib/api-guard'
 import { createClient } from '@/lib/supabase/server'
 import { mfLogin, fetchMfTransactions, MfOtpRequiredError, type MfLoginStep } from '@/lib/moneyforward-client'
 import { mfBrowserSubmitOtp, type MfBrowserLoginStep } from '@/lib/mf-browser'
+import { decryptSecret } from '@/lib/credential-crypto'
 import { buildSourceHash } from '@/lib/csv-parser'
 
 export const maxDuration = 60
@@ -117,10 +118,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: `OTP認証失敗: ${error_msg}`, trace: otpTrace }, { status: 502 })
     }
   } else {
-    // 通常ログイン（HTTP）
+    // 通常ログイン（HTTP）— このモードのみパスワードの復号が必要
+    let mfPassword: string
+    try {
+      mfPassword = decryptSecret(mfSetting.ext_secret)
+    } catch (err) {
+      console.error('[mf-sync] decryptSecret failed:', err instanceof Error ? err.message : err)
+      await supabase.from('api_error_logs').insert({
+        household_id: household.id,
+        feature: 'mf_credential_decrypt',
+        error_msg: err instanceof Error ? err.message : '復号エラー',
+      }).then(() => {}, () => {})
+      return NextResponse.json({ error: 'MF連携情報が壊れています。設定画面で再登録してください。' }, { status: 400 })
+    }
+
     const loginTrace: MfLoginStep[] = []
     try {
-      session = await mfLogin(mfSetting.ext_uid, mfSetting.ext_secret, loginTrace)
+      session = await mfLogin(mfSetting.ext_uid, mfPassword, loginTrace)
       trace.push(...loginTrace)
     } catch (err) {
       trace.push(...(err as { trace?: MfLoginStep[] }).trace ?? [])

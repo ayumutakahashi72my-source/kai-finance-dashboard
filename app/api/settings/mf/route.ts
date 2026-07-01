@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/api-guard'
+import { encryptSecret } from '@/lib/credential-crypto'
 
 // GET: MF設定の取得（パスワードはマスク）
 export async function GET() {
@@ -39,13 +40,21 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: 'メールアドレスとパスワードは必須です' }, { status: 400 })
   }
 
+  let encryptedSecret: string
+  try {
+    encryptedSecret = encryptSecret(body.mf_password)
+  } catch (err) {
+    console.error('[mf-settings] encryptSecret failed:', err)
+    return NextResponse.json({ error: '保存処理に失敗しました' }, { status: 500 })
+  }
+
   const { error } = await supabase
     .from('user_settings')
     .upsert(
       {
         user_id:      user.id,
         ext_uid:      body.mf_email,
-        ext_secret:   body.mf_password,
+        ext_secret:   encryptedSecret,
         ext_provider: 'mf',
         updated_at:   new Date().toISOString(),
       },
