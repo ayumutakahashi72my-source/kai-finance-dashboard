@@ -35,7 +35,9 @@ interface AnalyticsData {
 interface Layer { label: string; color: string; tag: string; tagColor: string; count: number }
 
 function computeLayers(mb: Record<string, number>): { layers: Layer[]; total: number } {
-  const total = Object.values(mb).reduce((s, v) => s + v, 0) || 1
+  // regex_miss は「キーワードは一致したがカテゴリ未検出」という診断用の追加ログであり、
+  // 同一取引について別のmethodでも必ず1行記録されるため、分母に含めると二重カウントになる。
+  const total = Object.entries(mb).reduce((s, [k, v]) => (k === 'regex_miss' ? s : s + v), 0) || 1
   const layers: Layer[] = [
     { label: '① キーワードルール',   color: KAI.mint,    tag: '無料', tagColor: KAI.mint,    count: mb['regex_rule'] ?? 0 },
     { label: '② 完全一致キャッシュ', color: KAI.success, tag: '無料', tagColor: KAI.success, count: (mb['exact_cache'] ?? 0) + (mb['correction'] ?? 0) },
@@ -261,6 +263,17 @@ function MobileContent({ data }: { data: AnalyticsData }) {
           <span>無料・即時 ←</span><span>→ 有料・LLM</span>
         </div>
         {layers.map(l => <TierRow key={l.label} layer={l} total={total} />)}
+        {(data.methodBreakdown['regex_miss'] ?? 0) > 0 && (
+          <div style={{
+            marginTop: 10, padding: '8px 10px', borderRadius: 10,
+            background: `${KAI.coral}14`, border: `1px solid ${KAI.coral}33`,
+            fontSize: 10.5, color: KAI.text2, lineHeight: 1.6,
+          }}>
+            キーワードルールは一致したがカテゴリが見つからず、LLM分類にフォールバックした件数:{' '}
+            <b style={{ color: KAI.coral }}>{data.methodBreakdown['regex_miss']}件</b>
+            （カテゴリのリネーム・削除等でルールが実質機能していない可能性があります）
+          </div>
+        )}
       </Panel>
 
       {/* Cache growth */}

@@ -3,6 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 export type ClassificationMethod =
   | 'correction'
   | 'regex_rule'
+  | 'regex_miss'
   | 'exact_cache'
   | 'vector_direct'
   | 'vector_rerank'

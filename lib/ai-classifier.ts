@@ -678,6 +678,20 @@ export async function classifyTransactions(
         latency_ms: Date.now() - startTime,
       })
     } else {
+      // R-6: キーワードルールは一致したがカテゴリ未登録（世帯側でリネーム/削除済み等）。
+      // 自動作成はせず（重複再発防止）、可視化のためログのみ残してLLM経路にフォールバックする。
+      if (categoryName) {
+        logs.push({
+          household_id: householdId,
+          payee: item.payee,
+          payee_key: payeeKey,
+          category_hint: item.category_hint,
+          category_name: categoryName,
+          method: 'regex_miss',
+          is_cache_hit: false,
+          latency_ms: Date.now() - startTime,
+        })
+      }
       remaining.push(item)
     }
   }
@@ -1102,6 +1116,19 @@ export async function classifyFreeForm(
         latency_ms: Date.now() - startTime,
       })
     } else {
+      // R-6: キーワードルールは一致したがカテゴリ未登録。自動作成はせず可視化のみ行う。
+      if (categoryName) {
+        logs.push({
+          household_id: householdId,
+          payee: item.payee,
+          payee_key: payeeKey,
+          category_hint: item.category_hint,
+          category_name: categoryName,
+          method: 'regex_miss',
+          is_cache_hit: false,
+          latency_ms: Date.now() - startTime,
+        })
+      }
       remaining.push(item)
     }
   }

@@ -82,45 +82,36 @@ export async function embedTextsWithCache(
     }
   }
 
-  // ③ ミスしたインデックスと canonical key を収集
-  const missIndexes: number[] = []
-  const missKeys: string[] = []
+  // ③ ミスした一意ハッシュだけを収集（同一バッチ内の重複店舗名を1回に集約。
+  //    重複排除しないと同一hashへの多重INSERTでunique制約違反が起き得るため）
+  const missHashToKey = new Map<string, string>()
   for (let i = 0; i < canonicalKeys.length; i++) {
-    if (!hitMap.has(hashes[i])) {
-      missIndexes.push(i)
-      missKeys.push(canonicalKeys[i])
+    if (!hitMap.has(hashes[i]) && !missHashToKey.has(hashes[i])) {
+      missHashToKey.set(hashes[i], canonicalKeys[i])
     }
   }
+  const missHashes = [...missHashToKey.keys()]
+  const missKeys = missHashes.map((h) => missHashToKey.get(h)!)
 
   // ④ ミス分を Voyage AI で取得（canonical form をそのまま送る）
-  let freshVectors: number[][] = []
   if (missKeys.length) {
-    freshVectors = await embedTexts(missKeys)
+    const freshVectors = await embedTexts(missKeys)
+    for (let j = 0; j < missHashes.length; j++) {
+      hitMap.set(missHashes[j], freshVectors[j])
+    }
 
-    // ⑤ キャッシュに保存（競合は無視）
-    const inserts = missKeys.map((key, j) => ({
-      normalized_hash: hashes[missIndexes[j]],
-      normalized_key:  key,                    // canonical form を格納
+    // ⑤ キャッシュに保存。同時実行時の重複INSERTにも耐えるよう upsert + ignoreDuplicates。
+    const inserts = missHashes.map((hash, j) => ({
+      normalized_hash: hash,
+      normalized_key:  missKeys[j],             // canonical form を格納
       embedding: freshVectors[j],
     }))
-    const { error: cacheErr } = await supabase.from('merchant_embedding_cache').insert(inserts, { count: 'none' })
-    if (cacheErr) console.error('[embedder] cache insert failed:', cacheErr.message)
+    const { error: cacheErr } = await supabase
+      .from('merchant_embedding_cache')
+      .upsert(inserts, { onConflict: 'normalized_hash', ignoreDuplicates: true })
+    if (cacheErr) console.error('[embedder] cache upsert failed:', cacheErr.message)
   }
 
-  // ⑥ 元の順序で結果を組み立てて返す（missIndexes.indexOf はO(n²)になるためMapに変換）
-  const missIndexMap = new Map<number, number>()
-  for (let j = 0; j < missIndexes.length; j++) {
-    missIndexMap.set(missIndexes[j], j)
-  }
-  const result: number[][] = new Array(normalizedKeys.length)
-  for (let i = 0; i < normalizedKeys.length; i++) {
-    const fromCache = hitMap.get(hashes[i])
-    if (fromCache) {
-      result[i] = fromCache
-    } else {
-      const missPos = missIndexMap.get(i) ?? -1
-      result[i] = missPos >= 0 ? freshVectors[missPos] : []
-    }
-  }
-  return result
+  // ⑥ 元の順序で結果を組み立てて返す（hitMapに全hashの埋め込みが揃っている）
+  return hashes.map((h) => hitMap.get(h) ?? [])
 }
