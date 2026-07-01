@@ -43,9 +43,11 @@ export function renderMarkdown(content: string) {
 
     if (line.startsWith('## ')) {
       const raw = line.slice(3)
+      // 和文は letter-spacing を広げると間延びし、uppercase/monospace は漢字に効果がないため
+      // 本文と同じ書体のまま、サイズ・太さ・下線で見出し階層を作る（本文14pxに対し16px）。
       elements.push(
-        <h2 key={key++} style={{ fontSize: 14, fontWeight: 700, color: '#a78bfa', letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 10, marginTop: 22, paddingBottom: 6, borderBottom: '1px solid rgba(167,139,250,0.18)', fontFamily: 'var(--font-mono),monospace' }}>
-          {raw}
+        <h2 key={key++} style={{ fontSize: 16, fontWeight: 700, color: '#a78bfa', marginBottom: 10, marginTop: 22, paddingBottom: 6, borderBottom: '1px solid rgba(167,139,250,0.18)' }}>
+          {inlineMarkdown(raw)}
         </h2>
       )
       continue
@@ -53,7 +55,7 @@ export function renderMarkdown(content: string) {
 
     if (line.startsWith('### ')) {
       elements.push(
-        <h3 key={key++} style={{ fontSize: 14, fontWeight: 700, color: '#fb9477', marginBottom: 6, marginTop: 14 }}>
+        <h3 key={key++} style={{ fontSize: 15, fontWeight: 700, color: '#fb9477', marginBottom: 6, marginTop: 14 }}>
           {inlineMarkdown(line.slice(4))}
         </h3>
       )
@@ -71,7 +73,7 @@ export function renderMarkdown(content: string) {
     }
 
     elements.push(
-      <p key={key++} style={{ fontSize: 14, lineHeight: 1.85, color: 'var(--kai-text2)', marginBottom: 4 }}>
+      <p key={key++} style={{ fontSize: 14, lineHeight: 1.75, color: 'var(--kai-text2)', marginBottom: 4 }}>
         {inlineMarkdown(line)}
       </p>
     )

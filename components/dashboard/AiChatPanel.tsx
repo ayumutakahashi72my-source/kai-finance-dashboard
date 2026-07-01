@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { SendIcon, HistoryIcon, ArrowLeftIcon } from 'lucide-react'
 import { KAI } from '@/lib/kai-tokens'
+import { renderMarkdown } from '@/lib/markdown'
 
 interface ChatMessage {
   role: 'user' | 'assistant'
@@ -110,6 +111,7 @@ export function AiChatPanel({ alwaysOpen = false }: Props) {
       if (!res.ok) {
         setError(json.error === 'limit_exceeded' ? '今月の利用上限に達しました（20回 / ¥2,000）' : (json.error ?? '送信失敗'))
         setMessages((prev) => prev.slice(0, -1))
+        setInput(msg) // 送信失敗時は打ち直しにならないよう入力を復元する
         return
       }
 
@@ -118,6 +120,7 @@ export function AiChatPanel({ alwaysOpen = false }: Props) {
     } catch {
       setError('通信エラーが発生しました')
       setMessages((prev) => prev.slice(0, -1))
+      setInput(msg) // 送信失敗時は打ち直しにならないよう入力を復元する
     } finally {
       setSending(false)
     }
@@ -220,7 +223,7 @@ export function AiChatPanel({ alwaysOpen = false }: Props) {
                       )}
                       <div
                         style={{
-                          maxWidth: '78%', borderRadius: 16, padding: '10px 14px', fontSize: 14, lineHeight: 1.65,
+                          maxWidth: '78%', borderRadius: 16, padding: '10px 14px', fontSize: 14, lineHeight: 1.75,
                           background: m.role === 'user' ? 'rgba(251,148,119,0.15)' : KAI.overlayWeak,
                           color: m.role === 'user' ? KAI.text1 : KAI.text2,
                           border: m.role === 'user' ? '1px solid rgba(251,148,119,0.22)' : `1px solid ${KAI.overlayBorder}`,
@@ -229,7 +232,7 @@ export function AiChatPanel({ alwaysOpen = false }: Props) {
                           opacity: 0.8,
                         }}
                       >
-                        {m.content}
+                        {m.role === 'assistant' ? renderMarkdown(m.content) : m.content}
                       </div>
                     </div>
                   ))}
@@ -315,7 +318,7 @@ export function AiChatPanel({ alwaysOpen = false }: Props) {
               )}
               <div
                 style={{
-                  maxWidth: '78%', borderRadius: 16, padding: '10px 14px', fontSize: 14, lineHeight: 1.65,
+                  maxWidth: '78%', borderRadius: 16, padding: '10px 14px', fontSize: 14, lineHeight: 1.75,
                   background: m.role === 'user' ? 'rgba(251,148,119,0.15)' : KAI.overlayWeak,
                   color: m.role === 'user' ? KAI.text1 : KAI.text2,
                   border: m.role === 'user' ? '1px solid rgba(251,148,119,0.22)' : `1px solid ${KAI.overlayBorder}`,
@@ -323,7 +326,7 @@ export function AiChatPanel({ alwaysOpen = false }: Props) {
                   borderBottomLeftRadius: m.role === 'assistant' ? 4 : 16,
                 }}
               >
-                {m.content}
+                {m.role === 'assistant' ? renderMarkdown(m.content) : m.content}
               </div>
             </div>
           ))}
@@ -422,13 +425,13 @@ export function AiChatPanel({ alwaysOpen = false }: Props) {
               <div key={i} style={{ display: 'flex', justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start' }}>
                 <div
                   style={{
-                    maxWidth: '80%', borderRadius: 16, padding: '8px 14px', fontSize: 14, lineHeight: 1.6,
+                    maxWidth: '80%', borderRadius: 16, padding: '8px 14px', fontSize: 14, lineHeight: 1.75,
                     background: m.role === 'user' ? 'rgba(251,148,119,0.15)' : KAI.overlayWeak,
                     color: m.role === 'user' ? KAI.text1 : KAI.text2,
                     border: m.role === 'user' ? '1px solid rgba(251,148,119,0.20)' : `1px solid ${KAI.overlayBorder}`,
                   }}
                 >
-                  {m.content}
+                  {m.role === 'assistant' ? renderMarkdown(m.content) : m.content}
                 </div>
               </div>
             ))}

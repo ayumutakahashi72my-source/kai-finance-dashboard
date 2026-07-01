@@ -2,7 +2,9 @@
 // 起動画面 ①-B "Hairline Frame" の Next.js 実装。
 //
 // 用途:
-//   - PWA 起動直後に React 側で短時間 (約 1.6s) 表示する fade-out 付きスプラッシュ。
+//   - PWA 起動直後に React 側で短時間 (既定 3.0s) 表示する fade-out 付きスプラッシュ。
+//     内部の要素は .2s〜2.6s にかけて順番にフェードインする設計のため、
+//     autoHideMs をこれより大きく短縮すると下端メタ情報等が表示途中で消える。
 //   - Server Component layout.tsx から <HairlineSplash> を出すか、
 //     /app/loading.tsx のフォールバックとして使う。
 //

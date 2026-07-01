@@ -269,9 +269,13 @@ export default function AdminMembersPage() {
           </div>
         )}
 
-        <p style={{ fontSize: 11, color: KAI.text4, marginTop: 16, paddingLeft: 4, lineHeight: 1.7 }}>
-          最初の管理者はデータベースで直接 <code style={{ ...MONO, fontSize: 10, background: KAI.overlayWeak, padding: '1px 5px', borderRadius: 4 }}>is_admin = true</code> に設定してください。
-        </p>
+        {/* 管理者が1人もいない場合のみ表示する初期セットアップ手順。
+            通常時（管理者が既にいる）は家族利用者にとって意味不明な文言になるため常時表示しない。 */}
+        {members && members.every((m) => !m.is_admin) && (
+          <p style={{ fontSize: 11, color: KAI.text4, marginTop: 16, paddingLeft: 4, lineHeight: 1.7 }}>
+            最初の管理者はデータベースで直接 <code style={{ ...MONO, fontSize: 10, background: KAI.overlayWeak, padding: '1px 5px', borderRadius: 4 }}>is_admin = true</code> に設定してください。
+          </p>
+        )}
       </div>
     </div>
   )

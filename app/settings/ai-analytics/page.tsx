@@ -77,7 +77,7 @@ function TierRow({ layer, total }: { layer: Layer; total: number }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '8px 0', borderTop: `1px solid ${KAI.border}` }}>
       <span style={{ width: 9, height: 9, borderRadius: 3, background: layer.color, flexShrink: 0 }} />
-      <span style={{ flex: 1, fontSize: 12, color: KAI.text2 }}>{layer.label}</span>
+      <span style={{ flex: 1, minWidth: 0, fontSize: 12, color: KAI.text2 }}>{layer.label}</span>
       <span style={{ fontSize: 8.5, fontWeight: 700, letterSpacing: '.04em', padding: '2px 6px', borderRadius: 5, color: layer.tagColor, background: `${layer.tagColor}1e`, ...MONO }}>{layer.tag}</span>
       <span style={{ fontSize: 12.5, fontWeight: 700, width: 42, textAlign: 'right' as const, color: layer.color, ...MONO }}>{pct}%</span>
     </div>
@@ -229,7 +229,9 @@ function MobileContent({ data }: { data: AnalyticsData }) {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
           <Donut layers={layers} total={total} cacheRate={cacheRate} />
-          <div style={{ flex: 1 }}>
+          {/* minWidth:0 が無いと固定幅158pxのドーナツの隣で、金額等が長い場合にこの列が
+              自身の内容幅を確保しようとしてパネル外へはみ出す（flexアイテムの既定min-widthはauto） */}
+          <div style={{ flex: 1, minWidth: 0 }}>
             <Label color={KAI.mint}>キャッシュ率</Label>
             <p style={{ fontSize: 11.5, color: KAI.text2, lineHeight: 1.6, margin: '8px 0 0' }}>
               ルール・完全一致・ベクター検索で<strong style={{ color: KAI.text1 }}>LLMを介さず</strong>自動分類できた割合。
@@ -427,7 +429,7 @@ function DesktopContent({ data }: { data: AnalyticsData }) {
               background: KAI.overlayWeak, border: `1px solid ${KAI.border}`, borderRadius: 10,
             }}>
               <span style={{ width: 7, height: 7, borderRadius: 2, background: (item.confidence ?? 0) < 0.5 ? KAI.danger : KAI.warning, flexShrink: 0 }} />
-              <span style={{ flex: 1, fontSize: 12.5, color: KAI.text2 }}>{item.payee}</span>
+              <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, color: KAI.text2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.payee}</span>
               <span style={{ fontSize: 11, color: KAI.text4, ...MONO }}>conf {(item.confidence ?? 0).toFixed(2)}</span>
               <span style={{ fontSize: 11, color: KAI.text3, width: 96 }}>{item.category_name ?? '未分類'}</span>
               <Link href="/settings/corrections" style={{

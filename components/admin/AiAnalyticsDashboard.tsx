@@ -279,7 +279,9 @@ export function AiAnalyticsDashboard({ data }: {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
           <CacheRateDonut rate={cacheRate} />
-          <div style={{ flex: 1 }}>
+          {/* minWidth:0 が無いと固定幅158pxのドーナツの隣で、金額等が長い場合にこの列が
+              自身の内容幅を確保しようとしてパネル外へはみ出す（flexアイテムの既定min-widthはauto） */}
+          <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.12em', color: MINT, textTransform: 'uppercase', ...MONO }}>
               キャッシュ率
             </div>
@@ -325,7 +327,7 @@ export function AiAnalyticsDashboard({ data }: {
             borderTop: `1px solid ${KAI.border}`,
           }}>
             <span style={{ width: 9, height: 9, borderRadius: 3, background: t.color, flexShrink: 0 }} />
-            <span style={{ flex: 1, fontSize: 12, color: KAI.text2 }}>{t.label}</span>
+            <span style={{ flex: 1, minWidth: 0, fontSize: 12, color: KAI.text2 }}>{t.label}</span>
             <span style={{
               fontSize: 8.5, ...MONO, letterSpacing: '.04em', padding: '2px 6px', borderRadius: 5, fontWeight: 700,
               color: t.color, background: `${t.color}1e`,
@@ -447,7 +449,7 @@ export function AiAnalyticsDashboard({ data }: {
                     width: 7, height: 7, borderRadius: 2, flexShrink: 0,
                     background: isFailed ? DOWN : AMBER,
                   }} />
-                  <span style={{ flex: 1, fontSize: 12.5, color: KAI.text2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, color: KAI.text2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {row.payee}
                   </span>
                   {typeof conf === 'number' && (

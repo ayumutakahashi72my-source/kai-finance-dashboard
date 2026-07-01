@@ -66,8 +66,8 @@ export function BudgetSuggestCard({ suggestions, actualByCategory }: Props) {
                 </p>
               )}
 
-              {/* reason tooltip-like */}
-              <p className="mt-0.5 text-[11px] text-[var(--kai-text4)]">{s.reason}</p>
+              {/* AIによる提案理由。金額より小さくならないよう可読性を優先 */}
+              <p className="mt-1 text-[12.5px] leading-[1.5] text-[var(--kai-text3)]">{s.reason}</p>
             </div>
           )
         })}

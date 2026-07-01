@@ -28,16 +28,25 @@ function LiveDot() {
   )
 }
 
-/** 本文の最初の段落（見出し・空行を除いた最初の文章）を返す */
+/**
+ * 本文の最初の段落（見出し・空行を除いた最初の文章）を返す。
+ * 「20文字を超える行」まで探すと、AIが意図的に書いた短い書き出しを飛ばして
+ * 文脈の薄い後続文を拾ってしまうことがあるため、まず先頭行をそのまま採用する。
+ * 先頭行が極端に短い場合のみ次行と連結して意味を補う。
+ */
 function extractFirstParagraph(content: string): string {
-  const lines = content.split('\n')
-  for (const line of lines) {
-    const stripped = line.replace(/^#{1,3}\s+/, '').replace(/\*\*/g, '').trim()
-    if (stripped.length > 20) {
-      return stripped.length > 120 ? stripped.slice(0, 120) + '…' : stripped
-    }
+  const lines = content
+    .split('\n')
+    .map((line) => line.replace(/^#{1,3}\s+/, '').replace(/\*\*/g, '').trim())
+    .filter((line) => line.length > 0)
+
+  if (lines.length === 0) return content.slice(0, 120)
+
+  let text = lines[0]
+  if (text.length < 10 && lines.length > 1) {
+    text = `${text}　${lines[1]}`
   }
-  return content.slice(0, 120)
+  return text.length > 120 ? text.slice(0, 120) + '…' : text
 }
 
 export function AiSummaryCard() {

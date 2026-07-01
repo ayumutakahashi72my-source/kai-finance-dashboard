@@ -5,14 +5,16 @@ import { useEffect, useState } from 'react'
 import { KAI } from '@/lib/kai-tokens'
 
 export function ThemeToggle() {
-  const { theme, setTheme } = useTheme()
+  // resolvedTheme を使うことで、"system" 保存済みの古いユーザーでも
+  // 実際に適用中の見た目を正しく判定できる（theme のままだと system 時に誤判定していた）。
+  const { resolvedTheme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
 
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => setMounted(true), [])
   if (!mounted) return <div style={{ width: 36, height: 36 }} />
 
-  const isDark = theme === 'dark'
+  const isDark = resolvedTheme === 'dark'
 
   return (
     <button
