@@ -93,10 +93,13 @@ describe('extractAmount', () => {
     expect(result.amount).toBe(-3500)
   })
 
-  it('小計を二次キーワードとして認識する', () => {
+  it('小計を二次キーワードとして認識する（ただしAIダブルチェック閾値未満に留める）', () => {
+    // 合計行を拾えず小計止まりの場合、税抜/税込の取り違えリスクがあるため
+    // confidenceはAIフォールバック閾値(0.60)未満に据え置く。
     const result = extractAmount([norm('小計 ¥980', 0)])
     expect(result.amount).toBe(-980)
-    expect(result.confidence).toBe(0.7)
+    expect(result.confidence).toBe(0.55)
+    expect(result.confidence).toBeLessThan(0.60)
   })
 
   it('お預り・お釣りは除外する', () => {

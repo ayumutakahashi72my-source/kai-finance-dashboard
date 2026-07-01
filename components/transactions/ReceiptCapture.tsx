@@ -8,11 +8,13 @@ import type { OcrResult } from '@/lib/ocr'
 interface Props {
   onResult: (data: OcrResult) => void
   onCancel: () => void
+  /** OCR自体が失敗した場合の理由を親に伝える（未指定なら従来通り confidence:0 として扱う） */
+  onError?: (reason: string) => void
 }
 
 const CORAL = '#fb9477'
 
-export function ReceiptCapture({ onResult, onCancel }: Props) {
+export function ReceiptCapture({ onResult, onCancel, onError }: Props) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
 
@@ -29,9 +31,10 @@ export function ReceiptCapture({ onResult, onCancel }: Props) {
           setSelectedFile(null)
           onResult(result)
         }}
-        onError={() => {
+        onError={(reason) => {
           setSelectedFile(null)
-          onResult({ payee: '', amount: 0, occurred_on: new Date().toISOString().split('T')[0], confidence: 0 })
+          if (onError) onError(reason)
+          else onResult({ payee: '', amount: 0, occurred_on: new Date().toISOString().split('T')[0], confidence: 0 })
         }}
         onCancel={() => setSelectedFile(null)}
       />

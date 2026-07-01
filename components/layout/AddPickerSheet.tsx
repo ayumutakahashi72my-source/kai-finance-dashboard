@@ -146,12 +146,17 @@ export function AddPickerSheet({ open, onClose, onDone }: Props) {
     setStep('manual')
   }
 
+  function handleOcrError(reason: string) {
+    setOcrPrefill({ confidence: 0, errorReason: reason })
+    setStep('manual')
+  }
+
   if (!open) return null
 
   return (
     <SheetChrome onBackdropClick={handleClose}>
       {step === 'picker'  && <PickerStep onPick={setStep} onClose={handleClose} isDemo={isDemo}/>}
-      {step === 'receipt' && <ReceiptCapture onResult={handleOcrResult} onCancel={() => setStep('picker')}/>}
+      {step === 'receipt' && <ReceiptCapture onResult={handleOcrResult} onError={handleOcrError} onCancel={() => setStep('picker')}/>}
       {step === 'manual'  && <ManualEntryTab onBack={() => { setStep('picker'); setOcrPrefill(undefined) }} onDone={handleDone} prefill={ocrPrefill}/>}
       {step === 'csv'     && <CsvImportTab   onBack={() => setStep('picker')} onDone={handleImportDone}/>}
       {step === 'mf'      && <MfSyncTab      onBack={() => setStep('picker')} onDone={handleImportDone}/>}

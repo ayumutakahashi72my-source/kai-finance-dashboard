@@ -108,11 +108,17 @@ ${keyLines}`,
   const parsed = ResponseSchema.safeParse(JSON.parse(jsonMatch[0]))
   if (!parsed.success) throw new Error(`AI JSON invalid: ${parsed.error.message}`)
 
+  // LLMの自己申告confidenceは過信されがちで、これを無条件に信じると
+  // 誤った1回の高confidence回答が ocr_store_cache に永続化され、
+  // 以降そのお店の全レシートがヒューリスティックすら経由せず誤答を返し続ける
+  // （OCR決定論化方針に反する）。AI経由の結果は上限をクランプする。
+  const AI_CONFIDENCE_CAP = 0.85
+
   return {
     payee:          parsed.data.payee,
     amount:         parsed.data.amount,
     occurred_on:    parsed.data.occurred_on,
-    confidence:     parsed.data.confidence,
+    confidence:     Math.min(parsed.data.confidence, AI_CONFIDENCE_CAP),
     canonicalChain: parsed.data.canonical_chain,
   }
 }

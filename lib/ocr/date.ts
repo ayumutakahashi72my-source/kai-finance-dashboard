@@ -29,8 +29,11 @@ function parseGregorian(text: string): { y: number; m: number; d: number } | nul
   return null
 }
 
+// 絶対値のレンジだと将来（2035年以降など）にサイレントに全滅するため、
+// 実行時点の年を基準にした相対レンジにする。
 function valid(y: number, m: number, d: number): boolean {
-  return y >= 2020 && y <= 2035 && m >= 1 && m <= 12 && d >= 1 && d <= 31
+  const currentYear = new Date().getFullYear()
+  return y >= currentYear - 5 && y <= currentYear + 1 && m >= 1 && m <= 12 && d >= 1 && d <= 31
 }
 
 function fmt(y: number, m: number, d: number): string {

@@ -62,7 +62,10 @@ export function extractAmount(blocks: NormalizedBlock[]): AmountResult {
 
   hits.sort((a, b) => b.priority - a.priority || b.idx - a.idx)
   const best = hits[0]
-  const confidence = best.priority >= 3 ? 0.90 : best.priority >= 1 ? 0.70 : 0.50
+  // 「小計」等（priority=1）はAIフォールバック閾値(0.60)未満に留める。
+  // 合計行が見つからず小計を拾っただけの状態を高信頼扱いにすると、
+  // 税抜き/税込みの取り違えという金額誤りが二重チェックされずに確定してしまう。
+  const confidence = best.priority >= 3 ? 0.90 : best.priority >= 1 ? 0.55 : 0.50
 
   // ── 返金判定: レシート全文ではなく「合計行の前後3行 or 先頭5行」のみ検索 ──
   // 全文スキャンだと「返金相当ポイント」などが通常レシートで誤検出される。

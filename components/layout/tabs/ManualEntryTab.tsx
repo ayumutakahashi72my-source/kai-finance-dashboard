@@ -13,6 +13,15 @@ import {
 
 const BORDER = 'var(--kai-border2)'
 
+/** OCR失敗理由（通信エラー等の生の技術文字列）を人間向けに整形する */
+function friendlyOcrErrorMessage(reason: string): string {
+  const r = reason.toLowerCase()
+  if (r.includes('timeout') || r.includes('timed out')) return '解析がタイムアウトしました。電波状況の良い場所でもう一度お試しください。'
+  if (r.includes('network') || r.includes('fetch')) return '通信エラーが発生しました。もう一度お試しください。'
+  if (r.includes('画像形式') || r.includes('サイズ')) return reason
+  return '解析中にエラーが発生しました。もう一度お試しいただくか、このまま手動で入力してください。'
+}
+
 function Keypad({ onKey }: { onKey: (k: string) => void }) {
   const keys = ['1','2','3','4','5','6','7','8','9','00','0','del']
   return (
@@ -64,10 +73,17 @@ export function ManualEntryTab({ onBack, onDone, prefill }: {
   const [saving, setSaving]     = useState(false)
   const [error, setError]       = useState('')
   const [done, setDone]         = useState(false)
+  const [autoClassifyEnabled, setAutoClassifyEnabled] = useState(true)
   const classifyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     getCategories().then((cats) => setCategories(cats as Category[]))
+    fetch('/api/settings/notifications')
+      .then((r) => r.json())
+      .then((data: { receipt_auto_classify_enabled?: boolean }) => {
+        if (data.receipt_auto_classify_enabled === false) setAutoClassifyEnabled(false)
+      })
+      .catch(() => {})
   }, [])
 
   useEffect(() => {
@@ -82,7 +98,7 @@ export function ManualEntryTab({ onBack, onDone, prefill }: {
     if (classifyTimerRef.current) clearTimeout(classifyTimerRef.current)
     const trimmed = memo.trim()
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (trimmed.length < 2) { setAiSuggestId(null); return }
+    if (!autoClassifyEnabled || trimmed.length < 2) { setAiSuggestId(null); return }
     classifyTimerRef.current = setTimeout(async () => {
       setClassifying(true)
       try {
@@ -100,7 +116,7 @@ export function ManualEntryTab({ onBack, onDone, prefill }: {
         setClassifying(false)
       }
     }, 700)
-  }, [memo, userOverrode])
+  }, [memo, userOverrode, autoClassifyEnabled])
 
   const handleKey = useCallback((k: string) => {
     setAmount(prev => {
@@ -173,7 +189,11 @@ export function ManualEntryTab({ onBack, onDone, prefill }: {
       </div>
 
       {/* OCR confidence warnings */}
-      {prefill && prefill.confidence !== undefined && prefill.confidence < 0.50 && (
+      {prefill?.errorReason ? (
+        <div style={{ padding: '8px 12px', background: `${RED}0d`, border: `1px solid ${RED}33`, borderRadius: 10, fontSize: 11, color: RED, marginBottom: 8 }}>
+          ⚠ {friendlyOcrErrorMessage(prefill.errorReason)}
+        </div>
+      ) : prefill && prefill.confidence !== undefined && prefill.confidence < 0.50 && (
         <div style={{ padding: '8px 12px', background: `${RED}0d`, border: `1px solid ${RED}33`, borderRadius: 10, fontSize: 11, color: RED, marginBottom: 8 }}>
           ⚠ 読み取れませんでした。手動で入力してください。
         </div>
