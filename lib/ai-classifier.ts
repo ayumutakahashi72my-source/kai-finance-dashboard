@@ -646,8 +646,13 @@ export async function classifyTransactions(
   items: ClassifyItem[],
   householdId: string,
   supabase: SupabaseClient,
-  userId?: string
+  userId?: string,
+  opts: { learn?: boolean } = {}
 ): Promise<ClassifyResult> {
+  // learn=false: 提案のみのドライラン（入力中のインクリメンタル分類等）。
+  // category_rag / user_category_knowledge / 分類ログへの書き込みを一切行わない。
+  // 入力途中の断片文字列（「サイ」等）が学習資産を汚染するのを防ぐ。
+  const learn = opts.learn !== false
   const categoryIdMap = new Map<number, string>()
   if (!items.length) return { categoryIdMap }
   if (!process.env.ANTHROPIC_API_KEY) {
@@ -689,7 +694,7 @@ export async function classifyTransactions(
     }
   }
   if (!itemsAfterCorrections.length) {
-    void writeClassificationLogs(logs, supabase)
+    if (learn) void writeClassificationLogs(logs, supabase)
     return { categoryIdMap }
   }
 
@@ -756,8 +761,10 @@ export async function classifyTransactions(
     }
   }
   if (!itemsAfterExactCache.length) {
-    if (ragUpserts.length) await upsertCategoryRag(supabase, householdId, ragUpserts)
-    void writeClassificationLogs(logs, supabase)
+    if (learn) {
+      if (ragUpserts.length) await upsertCategoryRag(supabase, householdId, ragUpserts)
+      void writeClassificationLogs(logs, supabase)
+    }
     return { categoryIdMap }
   }
 
@@ -813,7 +820,7 @@ export async function classifyTransactions(
   }
 
   if (!remaining.length) {
-    void writeClassificationLogs(logs, supabase)
+    if (learn) void writeClassificationLogs(logs, supabase)
     return { categoryIdMap }
   }
 
@@ -1107,12 +1114,12 @@ export async function classifyTransactions(
     } catch { /* force select 失敗はスキップ */ }
   }
 
-  if (ragUpserts.length) {
+  if (learn && ragUpserts.length) {
     await upsertCategoryRag(supabase, householdId, ragUpserts)
     if (userId) void syncUserKnowledge(ragUpserts, idToName, userId, supabase)
   }
 
-  void writeClassificationLogs(logs, supabase)
+  if (learn) void writeClassificationLogs(logs, supabase)
 
   if (tokenAccum.inputTokens > 0 || tokenAccum.outputTokens > 0) {
     void trackCost({

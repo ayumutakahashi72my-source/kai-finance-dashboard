@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { KAI } from '@/lib/kai-tokens'
 import { todayJST } from '@/lib/jst'
+import { isHeatExcluded } from '@/lib/heat-exclusion'
 import { useSwipeDismiss } from '@/lib/hooks/use-swipe-dismiss'
 import type { Transaction, Category } from '@/lib/types'
 
@@ -10,7 +11,7 @@ interface DayData {
   date: string
   income: number
   expense: number
-  heatExpense: number // fixed費・クレカ除外後の支出
+  heatExpense: number // fixed費・引き落とし系除外後の支出
   transactions: Transaction[]
 }
 
@@ -18,30 +19,8 @@ interface Props {
   transactions: Transaction[]
   categories: Category[]
   month: string
-}
-
-// ヒートマップから除外すべき取引かどうか判定
-// MFのCSVはカタカナ長音を半角ハイフン「-」や全角「－」で表すことがある
-function isHeatExcluded(tx: Transaction): boolean {
-  if (tx.is_fixed) return true
-
-  // 各種ハイフン・ダッシュをすべてーに統一して比較
-  const p = tx.payee.replace(/[-－‐–—ｰ]/g, 'ー')
-
-  // 「カード」を含む = クレジットカード会社への月次支払い
-  if (p.includes('カード')) return true
-
-  // その他の除外キーワード（クレカ・ローン・投資・通信費・決済サービス）
-  const keywords = [
-    'クレジット', 'オリコ', 'ガクセイシエン', '奨学金', 'ローン',
-    '証券', '投信', '積立', '投資',
-    'ジエーシービ',  // JCB（ジエ-シ-ビ- → 正規化後）
-    'スミトモ',      // 三井住友クレジット
-    'クオーク',      // 三井住友クレジット（クオーク）
-    'ペイデイ',      // PayDay決済
-    '携帯電話',      // au・ドコモ等の携帯料金
-  ]
-  return keywords.some((k) => p.includes(k))
+  /** 指定すると詳細パネルの取引行がタップで編集できるようになる */
+  onEdit?: (tx: Transaction) => void
 }
 
 function heatColor(ratio: number): string {
@@ -59,10 +38,12 @@ function DayDetailOverlay({
   data,
   categoryMap,
   onClose,
+  onEdit,
 }: {
   data: DayData
   categoryMap: Record<string, Category>
   onClose: () => void
+  onEdit?: (tx: Transaction) => void
 }) {
   const { sheetRef, onTouchStart, onTouchMove, onTouchEnd } = useSwipeDismiss({ onDismiss: onClose })
 
@@ -72,10 +53,17 @@ function DayDetailOverlay({
     return () => window.removeEventListener('keydown', handler)
   }, [onClose])
 
+  // 表示中は背景（カレンダー本体）のスクロールをロックする
+  useEffect(() => {
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = prev }
+  }, [])
+
   const catBreakdown = useMemo(() => {
     const map: Record<string, { name: string; color: string | null; total: number }> = {}
     for (const tx of data.transactions) {
-      if (tx.amount >= 0) continue
+      if (tx.amount >= 0 || tx.excluded) continue
       const cat = tx.category_id ? categoryMap[tx.category_id] : null
       const key = cat?.name ?? '未分類'
       if (!map[key]) map[key] = { name: key, color: cat?.color ?? null, total: 0 }
@@ -162,11 +150,18 @@ function DayDetailOverlay({
           <div className="space-y-1.5">
             {data.transactions.map((tx) => {
               const cat = tx.category_id ? categoryMap[tx.category_id] : null
+              const Tag = onEdit ? 'button' : 'div'
               return (
-                <div
+                <Tag
                   key={tx.id}
-                  className="flex items-center gap-2 rounded-[10px] px-3 py-2.5"
-                  style={{ background: KAI.overlayWeak, border: `1px solid ${KAI.border}` }}
+                  {...(onEdit ? { type: 'button' as const, onClick: () => onEdit(tx) } : {})}
+                  className="flex w-full items-center gap-2 rounded-[10px] px-3 py-2.5 text-left"
+                  style={{
+                    background: KAI.overlayWeak, border: `1px solid ${KAI.border}`,
+                    opacity: tx.excluded ? 0.5 : 1,
+                    cursor: onEdit ? 'pointer' : undefined,
+                    fontFamily: 'inherit',
+                  }}
                 >
                   <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                     <span className="truncate text-sm font-medium" style={{ color: KAI.text1 }}>{tx.payee}</span>
@@ -177,6 +172,11 @@ function DayDetailOverlay({
                           <span className="text-[11px]" style={{ color: KAI.text3 }}>{cat.name}</span>
                         </>
                       )}
+                      {tx.excluded && (
+                        <span className="rounded px-1 text-[10px] font-semibold" style={{ background: 'rgba(251,191,36,0.12)', color: '#fbbf24' }}>
+                          集計除外
+                        </span>
+                      )}
                       {tx.is_fixed && (
                         <span className="rounded px-1 text-[10px] font-semibold" style={{ background: 'rgba(167,139,250,0.15)', color: KAI.violet }}>
                           固定
@@ -184,7 +184,7 @@ function DayDetailOverlay({
                       )}
                       {isHeatExcluded(tx) && !tx.is_fixed && (
                         <span className="rounded px-1 text-[10px] font-semibold" style={{ background: 'rgba(34,211,238,0.12)', color: KAI.cyan }}>
-                          クレカ
+                          引落
                         </span>
                       )}
                     </div>
@@ -192,7 +192,7 @@ function DayDetailOverlay({
                   <span className="shrink-0 text-sm font-bold" style={{ color: tx.amount > 0 ? KAI.success : KAI.danger }}>
                     {tx.amount > 0 ? '+' : ''}¥{tx.amount.toLocaleString()}
                   </span>
-                </div>
+                </Tag>
               )
             })}
           </div>
@@ -283,7 +283,7 @@ function DayDetailOverlay({
 // ──────────────────────────────────────────────
 // Main CalendarView
 // ──────────────────────────────────────────────
-export function CalendarView({ transactions, categories, month }: Props) {
+export function CalendarView({ transactions, categories, month, onEdit }: Props) {
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
 
   const categoryMap = useMemo(
@@ -300,14 +300,18 @@ export function CalendarView({ transactions, categories, month }: Props) {
     for (const tx of transactions) {
       const d = tx.occurred_on.slice(0, 10)
       if (!map[d]) map[d] = { date: d, income: 0, expense: 0, heatExpense: 0, transactions: [] }
-      if (tx.amount > 0) {
-        map[d].income += tx.amount
-      } else {
-        const abs = Math.abs(tx.amount)
-        map[d].expense += abs
-        // ヒートマップ: 固定費・クレカ引き落としは除外
-        if (!isHeatExcluded(tx)) {
-          map[d].heatExpense += abs
+      // 一覧には excluded 取引も（薄く）表示するが、日別収支・ヒートマップの集計からは
+      // 除外する（リストビューの月合計と整合させる）
+      if (!tx.excluded) {
+        if (tx.amount > 0) {
+          map[d].income += tx.amount
+        } else {
+          const abs = Math.abs(tx.amount)
+          map[d].expense += abs
+          // ヒートマップ: 固定費・引き落とし系は除外
+          if (!isHeatExcluded(tx)) {
+            map[d].heatExpense += abs
+          }
         }
       }
       map[d].transactions.push(tx)
@@ -321,7 +325,7 @@ export function CalendarView({ transactions, categories, month }: Props) {
   )
 
   const excludedCount = useMemo(
-    () => transactions.filter((tx) => tx.amount < 0 && isHeatExcluded(tx)).length,
+    () => transactions.filter((tx) => !tx.excluded && tx.amount < 0 && isHeatExcluded(tx)).length,
     [transactions]
   )
 
@@ -341,12 +345,6 @@ export function CalendarView({ transactions, categories, month }: Props) {
 
   return (
     <>
-      {/* animation styles */}
-      <style>{`
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        @keyframes fadeScaleIn { from { opacity:0; transform: translate(-50%,-50%) scale(0.95); } to { opacity:1; transform: translate(-50%,-50%) scale(1); } }
-      `}</style>
-
       {/* Day-of-week headers */}
       <div className="mb-1 grid grid-cols-7 text-center">
         {['日', '月', '火', '水', '木', '金', '土'].map((d, i) => (
@@ -398,7 +396,9 @@ export function CalendarView({ transactions, categories, month }: Props) {
                 <div className="flex w-full flex-col items-start gap-0.5">
                   {data.expense > 0 && (
                     <span className="text-[8px] font-bold leading-none" style={{ color: KAI.danger, fontFamily: 'var(--font-jetbrains),monospace' }}>
-                      {data.expense >= 10000 ? `${(data.expense / 10000).toFixed(data.expense >= 100000 ? 0 : 1)}万` : `${Math.round(data.expense / 100) * 100}`}
+                      {data.expense >= 10000
+                        ? `${(data.expense / 10000).toFixed(data.expense >= 100000 ? 0 : 1)}万`
+                        : `¥${data.expense.toLocaleString('ja-JP')}`}
                     </span>
                   )}
                   <div className="flex items-center gap-[3px]">
@@ -422,7 +422,7 @@ export function CalendarView({ transactions, categories, month }: Props) {
           <p className="text-[11px] font-semibold" style={{ color: KAI.text3 }}>
             日別支出ヒートマップ{' '}
             <span style={{ color: 'rgba(139,139,160,0.6)', fontWeight: 400 }}>
-              （固定費・クレカ除外 — {excludedCount}件除外中）
+              （固定費・カード/ローン等の引き落とし除外 — {excludedCount}件除外中）
             </span>
           </p>
           <div className="flex items-center gap-1">
@@ -465,6 +465,7 @@ export function CalendarView({ transactions, categories, month }: Props) {
           data={selectedData}
           categoryMap={categoryMap}
           onClose={() => setSelectedDate(null)}
+          onEdit={onEdit}
         />
       )}
     </>

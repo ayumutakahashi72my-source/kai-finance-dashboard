@@ -6,20 +6,15 @@ import { createClient } from '@/lib/supabase/server'
 import { checkAndSendBudgetAlerts } from '@/lib/budget-alerts'
 import { normalizeKeyword, upsertCategoryRag } from '@/lib/ai-classifier'
 import { embedTextsWithCache } from '@/lib/embedder'
-import { todayJST } from '@/lib/jst'
-
-// カレンダー上実在する日付かどうか（2026-02-31 等を弾く）
-function isValidCalendarDate(s: string): boolean {
-  const [y, m, d] = s.split('-').map(Number)
-  const dt = new Date(Date.UTC(y, m - 1, d))
-  return dt.getUTCFullYear() === y && dt.getUTCMonth() === m - 1 && dt.getUTCDate() === d
-}
+import { todayJST, isValidCalendarDate } from '@/lib/jst'
 
 const TransactionSchema = z.object({
   amount: z.coerce
     .number({ error: '金額を入力してください' })
     .int('金額は整数で入力してください')
-    .refine((n) => n !== 0, '金額は0以外の値を入力してください'),
+    .refine((n) => n !== 0, '金額は0以外の値を入力してください')
+    // DBのint4上限(約21.4億)より手前で明示的に弾く
+    .refine((n) => Math.abs(n) <= 999_999_999, '金額は9億9,999万円以内で入力してください'),
   payee: z
     .string()
     .trim()

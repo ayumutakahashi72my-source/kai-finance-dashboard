@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { KAI } from '@/lib/kai-tokens'
 import { TransactionFilters, readFiltersFromUrl, isFilterActive } from '@/components/transactions/TransactionFilters'
 import { EditDialog } from '@/components/transactions/TransactionList'
@@ -89,10 +89,17 @@ function SummaryChips({
   income: number; expense: number; balance: number
   prevIncome?: number; prevExpense?: number
 }) {
+  // 「残り」は唯一負になり得るチップ。マイナス時は符号と色で赤字を明示する
   const chips: { label: string; value: number; color: string; bgAlpha: string; borderAlpha: string; trend: string | null }[] = [
     { label: '収入', value: income, color: KAI.success, bgAlpha: 'rgba(74,222,128,.07)', borderAlpha: 'rgba(74,222,128,.2)', trend: trendLabel(income, prevIncome) },
     { label: '支出', value: expense, color: KAI.danger, bgAlpha: 'rgba(251,113,133,.07)', borderAlpha: 'rgba(251,113,133,.2)', trend: trendLabel(expense, prevExpense) },
-    { label: '残り', value: balance, color: KAI.blue, bgAlpha: 'rgba(122,167,255,.07)', borderAlpha: 'rgba(122,167,255,.2)', trend: null },
+    {
+      label: '残り', value: balance,
+      color: balance < 0 ? KAI.danger : KAI.blue,
+      bgAlpha: balance < 0 ? 'rgba(251,113,133,.07)' : 'rgba(122,167,255,.07)',
+      borderAlpha: balance < 0 ? 'rgba(251,113,133,.2)' : 'rgba(122,167,255,.2)',
+      trend: null,
+    },
   ]
   return (
     <div style={{ display: 'flex', gap: 8 }}>
@@ -103,7 +110,7 @@ function SummaryChips({
         }}>
           <div style={{ fontSize: 8.5, color: KAI.text3, fontWeight: 700, letterSpacing: '.06em', marginBottom: 2 }}>{c.label}</div>
           <div style={{ fontSize: 13, fontWeight: 700, color: c.color, ...MONO }}>
-            {c.label === '残り' && c.value >= 0 ? '+' : ''}¥{Math.abs(c.value).toLocaleString('ja-JP')}
+            {c.label === '残り' ? (c.value >= 0 ? '+' : '−') : ''}¥{Math.abs(c.value).toLocaleString('ja-JP')}
           </div>
           {c.trend && (
             <div style={{ fontSize: 8, color: KAI.text4, marginTop: 1, ...MONO }}>{c.trend}</div>
@@ -152,18 +159,26 @@ export function TransactionsView({ month, initialView = 'list' }: Props) {
   const pendingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const pendingIdsRef = useRef<string[]>([])
 
+  const [deleteError, setDeleteError] = useState<string | null>(null)
+
   async function commitDelete(ids: string[]) {
+    pendingIdsRef.current = []
     try {
-      if (ids.length === 1) {
-        await fetch(`/api/transactions/${ids[0]}`, { method: 'DELETE' })
-      } else {
-        await fetch('/api/transactions/bulk-delete', {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ids }),
-        })
+      const res = ids.length === 1
+        ? await fetch(`/api/transactions/${ids[0]}`, { method: 'DELETE' })
+        : await fetch('/api/transactions/bulk-delete', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ids }),
+          })
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}))
+        setDeleteError(typeof j.error === 'string' ? j.error : '削除に失敗しました。一覧を再読み込みします。')
       }
+    } catch {
+      setDeleteError('通信エラーで削除できませんでした。')
     } finally {
+      // 失敗時も invalidate して実際のDB状態に一覧を合わせる（silent failure で行が幽霊化しない）
       qc.invalidateQueries({ queryKey: ['transactions'] })
     }
   }
@@ -171,6 +186,27 @@ export function TransactionsView({ month, initialView = 'list' }: Props) {
   useEffect(() => {
     pendingIdsRef.current = pendingDelete?.ids ?? []
   }, [pendingDelete])
+
+  // リロード・タブclose時は保留中の削除を keepalive fetch で確定させる
+  // （unmount cleanupはSPA内遷移しか拾えず、「削除しました」表示後にリロードで復活していた）
+  useEffect(() => {
+    const flush = () => {
+      const ids = pendingIdsRef.current
+      if (!ids.length) return
+      pendingIdsRef.current = []
+      if (ids.length === 1) {
+        fetch(`/api/transactions/${ids[0]}`, { method: 'DELETE', keepalive: true }).catch(() => {})
+      } else {
+        fetch('/api/transactions/bulk-delete', {
+          method: 'DELETE', keepalive: true,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ids }),
+        }).catch(() => {})
+      }
+    }
+    window.addEventListener('pagehide', flush)
+    return () => window.removeEventListener('pagehide', flush)
+  }, [])
 
   // アンマウント時（画面遷移等）は保留中の削除を即確定させる（消え忘れ防止）
   useEffect(() => () => {
@@ -228,15 +264,23 @@ export function TransactionsView({ month, initialView = 'list' }: Props) {
     }
   }
 
+  const [classifyError, setClassifyError] = useState<string | null>(null)
+
   async function handleClassify() {
     setClassifying(true)
     setClassifyResult(null)
+    setClassifyError(null)
     try {
       const res  = await fetch('/api/transactions/classify', { method: 'POST' })
-      if (!res.ok) throw new Error('分類に失敗しました')
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}))
+        throw new Error(typeof j.error === 'string' ? j.error : 'AI分類に失敗しました')
+      }
       const data = await res.json() as { classified: number; total: number }
       setClassifyResult(data)
       qc.invalidateQueries({ queryKey: ['transactions'] })
+    } catch (err) {
+      setClassifyError(err instanceof Error ? err.message : 'AI分類に失敗しました')
     } finally {
       setClassifying(false)
     }
@@ -260,6 +304,8 @@ export function TransactionsView({ month, initialView = 'list' }: Props) {
   const { data: txRes, isLoading } = useQuery<{ data: Transaction[] }>({
     queryKey: ['transactions', month, filters.q, filters.cat, filters.dir, filters.from, filters.to, filters.min, filters.max],
     queryFn:  () => fetch(apiUrl).then((r) => { if (!r.ok) throw new Error('取得に失敗しました'); return r.json() }),
+    // フィルタ・月変更時に前回データを保持し、全画面スケルトン化とフォーカス喪失を防ぐ
+    placeholderData: keepPreviousData,
   })
   const { data: catRes } = useQuery<{ data: Category[] }>({
     queryKey: ['categories'],
@@ -358,6 +404,21 @@ export function TransactionsView({ month, initialView = 'list' }: Props) {
           >
             元に戻す
           </button>
+        </div>
+      )}
+
+      {/* ── 削除失敗トースト ── */}
+      {deleteError && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 10,
+          background: 'rgba(251,113,133,.08)', border: `1px solid ${KAI.danger}44`,
+          borderRadius: 12, padding: '9px 13px',
+        }}>
+          <span style={{ flex: 1, fontSize: 12, color: KAI.danger }}>{deleteError}</span>
+          <button
+            type="button" onClick={() => setDeleteError(null)}
+            style={{ fontSize: 11, padding: '4px 10px', borderRadius: 8, background: KAI.overlayWeak, border: `1px solid ${KAI.border2}`, color: KAI.text3, cursor: 'pointer', fontFamily: 'inherit' }}
+          >閉じる</button>
         </div>
       )}
 
@@ -462,6 +523,9 @@ export function TransactionsView({ month, initialView = 'list' }: Props) {
       />
 
       {/* AI auto-classify button (shown only when uncategorized exist) */}
+      {view === 'list' && classifyError && (
+        <p style={{ fontSize: 11.5, color: KAI.danger, margin: 0, padding: '0 2px' }}>{classifyError}</p>
+      )}
       {view === 'list' && (() => {
         const BAD = ['未分類', 'その他', '不明']
         const uncategorized = transactions.filter((t) => !t.category_id || BAD.includes(t.categories?.name ?? '')).length
@@ -534,7 +598,7 @@ export function TransactionsView({ month, initialView = 'list' }: Props) {
 
       {view === 'calendar' ? (
         <div className="overflow-hidden">
-          <CalendarView transactions={transactions} categories={allCats} month={month} />
+          <CalendarView transactions={transactions} categories={allCats} month={month} onEdit={setEditingTx} />
         </div>
       ) : (
         <>

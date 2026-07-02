@@ -18,7 +18,11 @@ export const BORDER       = 'var(--kai-border)'
 export const BORDER2      = 'var(--kai-border2)'
 export const BORDER_STRONG = 'var(--kai-border-strong)'
 
-export const today = () => new Date().toISOString().split('T')[0]
+import { todayJST } from '@/lib/jst'
+
+// JSTの「今日」。toISOString()直裁だとUTC日付になり、日本時間の朝9時まで前日が
+// デフォルトになってしまう（家計簿の入力日として致命的）ため必ずJSTを使う。
+export const today = () => todayJST()
 
 export interface ImportResult {
   inserted: number

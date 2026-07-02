@@ -1,7 +1,8 @@
 'use client'
 
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useQueryClient } from '@tanstack/react-query'
 import { ReceiptCapture } from '@/components/transactions/ReceiptCapture'
 import type { OcrResult } from '@/lib/ocr'
 import { CORAL, BLUE, VIOLET, AMBER, TEXT1, TEXT3, TEXT4, BG, OcrPrefill } from './tabs/_shared'
@@ -17,6 +18,13 @@ type Step = 'picker' | 'manual' | 'csv' | 'mf' | 'receipt'
 function SheetChrome({ onBackdropClick, children }: { onBackdropClick: () => void; children: React.ReactNode }) {
   const { sheetRef, onTouchStart, onTouchMove, onTouchEnd } = useSwipeDismiss({ onDismiss: onBackdropClick })
 
+  // ESC で閉じる（role="dialog" の体裁だけでなく実際に閉じられるように）
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onBackdropClick() }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [onBackdropClick])
+
   return (
     <>
       <div
@@ -26,14 +34,21 @@ function SheetChrome({ onBackdropClick, children }: { onBackdropClick: () => voi
       />
       <div
         ref={sheetRef}
-        style={{ position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 51, background: BG, backdropFilter: 'blur(28px) saturate(160%)', WebkitBackdropFilter: 'blur(28px) saturate(160%)', border: '1px solid var(--kai-border-strong)', borderBottomWidth: 0, borderRadius: '24px 24px 0 0', padding: '20px 20px calc(env(safe-area-inset-bottom, 20px) + 28px)', animation: 'kai-sheet-up 0.22s cubic-bezier(.16,1,.3,1) both', boxShadow: '0 -16px 48px rgba(0,0,0,0.6)', maxHeight: '92dvh', overflowY: 'auto' }}
+        style={{ position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 51, background: BG, backdropFilter: 'blur(28px) saturate(160%)', WebkitBackdropFilter: 'blur(28px) saturate(160%)', border: '1px solid var(--kai-border-strong)', borderBottomWidth: 0, borderRadius: '24px 24px 0 0', padding: '0 20px calc(env(safe-area-inset-bottom, 20px) + 28px)', animation: 'kai-sheet-up 0.22s cubic-bezier(.16,1,.3,1) both', boxShadow: '0 -16px 48px rgba(0,0,0,0.6)', maxHeight: '92dvh', overflowY: 'auto' }}
         role="dialog"
         aria-modal="true"
-        onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
-        onTouchEnd={onTouchEnd}
       >
-        <div style={{ width: 36, height: 4, borderRadius: 99, background: 'var(--kai-border-strong)', margin: '0 auto 20px', cursor: 'grab' }} />
+        {/* スワイプで閉じられるのはハンドル部分のみ。
+            シート全面に付けるとキーパッド操作・シート内スクロールと干渉して誤って閉じる
+            （CalendarView の DayDetailOverlay と同じ修正方針） */}
+        <div
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
+          style={{ padding: '20px 0 0', cursor: 'grab', touchAction: 'none' }}
+        >
+          <div style={{ width: 36, height: 4, borderRadius: 99, background: 'var(--kai-border-strong)', margin: '0 auto 20px' }} />
+        </div>
         {children}
       </div>
     </>
@@ -72,7 +87,7 @@ function PickerStep({ onPick, onClose, isDemo }: { onPick: (s: Step) => void; on
     <>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
         <div>
-          <p style={{ fontSize: 16, fontWeight: 700, color: TEXT1 }}>支出を追加</p>
+          <p style={{ fontSize: 16, fontWeight: 700, color: TEXT1 }}>取引を追加</p>
           <p style={{ fontSize: 12, color: TEXT4, marginTop: 2 }}>どの方法で記録しますか？</p>
         </div>
         <button onClick={onClose} style={{ width: 44, height: 44, minWidth: 44, borderRadius: '50%', background: 'var(--kai-overlay-border)', border: '1px solid var(--kai-border2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: TEXT3, cursor: 'pointer' }} aria-label="閉じる">
@@ -111,6 +126,7 @@ interface Props {
 
 export function AddPickerSheet({ open, onClose, onDone }: Props) {
   const router = useRouter()
+  const qc = useQueryClient()
   const isDemo = useIsDemo()
   const [step, setStep] = useState<Step>('picker')
   const [ocrPrefill, setOcrPrefill] = useState<OcrPrefill | undefined>()
@@ -125,16 +141,19 @@ export function AddPickerSheet({ open, onClose, onDone }: Props) {
     setStep('picker')
     setOcrPrefill(undefined)
     onClose()
+    // 取引一覧はTanStack Queryキャッシュなので router.refresh() だけでは反映されない
+    qc.invalidateQueries({ queryKey: ['transactions'] })
     if (onDone) onDone()
     else router.refresh()
-  }, [onClose, onDone, router])
+  }, [onClose, onDone, router, qc])
 
   const handleImportDone = useCallback(() => {
     setStep('picker')
     setOcrPrefill(undefined)
     onClose()
+    qc.invalidateQueries({ queryKey: ['transactions'] })
     router.push('/transactions')
-  }, [onClose, router])
+  }, [onClose, router, qc])
 
   function handleOcrResult(data: OcrResult) {
     setOcrPrefill({

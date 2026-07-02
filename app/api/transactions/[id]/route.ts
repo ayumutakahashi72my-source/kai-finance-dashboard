@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/api-guard'
-import { todayJST } from '@/lib/jst'
+import { todayJST, isValidCalendarDate } from '@/lib/jst'
 import { recalculateScore } from '@/lib/score-calculator'
 import { normalizeKeyword, logCorrection, upsertCategoryRag } from '@/lib/ai-classifier'
 import { embedTextsWithCache } from '@/lib/embedder'
@@ -10,7 +10,7 @@ import { z } from 'zod'
 const UpdateSchema = z.object({
   amount: z.number().int().refine((n) => n !== 0).optional(),
   payee: z.string().min(1).max(100).optional(),
-  occurred_on: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  occurred_on: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(isValidCalendarDate, '存在しない日付です').optional(),
   category_id: z.string().uuid().nullable().optional(),
   is_fixed: z.boolean().optional(),
   excluded: z.boolean().optional(),

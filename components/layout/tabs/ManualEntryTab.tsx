@@ -75,6 +75,7 @@ export function ManualEntryTab({ onBack, onDone, prefill }: {
   const [done, setDone]         = useState(false)
   const [autoClassifyEnabled, setAutoClassifyEnabled] = useState(true)
   const classifyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const classifyAbortRef = useRef<AbortController | null>(null)
 
   useEffect(() => {
     getCategories().then((cats) => setCategories(cats as Category[]))
@@ -97,33 +98,41 @@ export function ManualEntryTab({ onBack, onDone, prefill }: {
   useEffect(() => {
     if (classifyTimerRef.current) clearTimeout(classifyTimerRef.current)
     const trimmed = memo.trim()
+    // 収入は支出カテゴリ分類の対象外（給与に「外食」等を提案しない）
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (!autoClassifyEnabled || trimmed.length < 2) { setAiSuggestId(null); return }
+    if (!autoClassifyEnabled || isIncome || trimmed.length < 2) { setAiSuggestId(null); return }
     classifyTimerRef.current = setTimeout(async () => {
+      // 旧リクエストを中断（遅延した古い応答が新しい入力の提案を上書きするレースを防ぐ）
+      classifyAbortRef.current?.abort()
+      const controller = new AbortController()
+      classifyAbortRef.current = controller
       setClassifying(true)
       try {
         const res = await fetch('/api/transactions/classify-one', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ payee: trimmed }),
+          signal: controller.signal,
         })
         const data = await res.json() as { category_id: string | null }
-        if (data.category_id) {
+        if (!controller.signal.aborted && data.category_id) {
           setAiSuggestId(data.category_id)
           if (!userOverrode) setCatId(data.category_id)
         }
-      } catch { /* ignore */ } finally {
-        setClassifying(false)
+      } catch { /* abort・通信エラーは無視 */ } finally {
+        if (classifyAbortRef.current === controller) setClassifying(false)
       }
     }, 700)
-  }, [memo, userOverrode, autoClassifyEnabled])
+    return () => { if (classifyTimerRef.current) clearTimeout(classifyTimerRef.current) }
+  }, [memo, userOverrode, autoClassifyEnabled, isIncome])
 
   const handleKey = useCallback((k: string) => {
     setAmount(prev => {
       if (k === 'del') return prev.slice(0, -1)
       if (k === '00') return prev.length > 0 ? prev + '00' : prev
       if (k === '0' && prev === '') return prev
-      if (prev.length >= 10) return prev
+      if (prev.length >= 9) return prev // 9億9,999万まで（DB int4上限の手前）
+      if (k === '00' && prev.length >= 8) return prev
       return prev + k
     })
   }, [])

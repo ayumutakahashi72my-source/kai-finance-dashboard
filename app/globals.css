@@ -95,6 +95,15 @@
   from { transform: translateY(110%); }
   to   { transform: translateY(0); }
 }
+/* CalendarView の日別詳細オーバーレイ用 */
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+@keyframes fadeScaleIn {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.95); }
+  to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
 
 /* ── Splash / Loading 画面用 keyframes ── */
 @keyframes kai-splash-fade {

@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { KAI } from '@/lib/kai-tokens'
 import { resolveIconName } from '@/lib/category-icons'
 import { CategoryIcon } from '@/components/ui/CategoryIcon'
@@ -12,6 +12,8 @@ const MONO: React.CSSProperties = {
 
 const REVEAL = 72   // スワイプで露出する削除ボタンの幅
 const DRAG_THRESHOLD = 6 // これ未満の移動量はタップ扱い（編集を開く）
+// スワイプ露出の排他制御用（別の行が開いたら自分を閉じる）
+const REVEAL_EVENT = 'kai-row-reveal'
 
 /**
  * 取引一覧の1行。
@@ -42,6 +44,15 @@ export function TransactionRow({
   const [isDragging, setIsDragging] = useState(false)
   const gesture = useRef({ startX: 0, dragging: false, moved: false, baseX: 0 })
 
+  // 他の行がスワイプで開いたら自分を閉じる（同時に複数行の削除ボタンが露出しない）
+  useEffect(() => {
+    const onReveal = (e: Event) => {
+      if ((e as CustomEvent<string>).detail !== tx.id) setDragX(0)
+    }
+    window.addEventListener(REVEAL_EVENT, onReveal)
+    return () => window.removeEventListener(REVEAL_EVENT, onReveal)
+  }, [tx.id])
+
   function onPointerDown(e: React.PointerEvent) {
     if (selectMode) return
     if (e.pointerType === 'mouse' && e.button !== 0) return
@@ -60,7 +71,11 @@ export function TransactionRow({
     if (!gesture.current.dragging) return
     gesture.current.dragging = false
     setIsDragging(false)
-    setDragX((x) => (x < -REVEAL / 2 ? -REVEAL : 0))
+    setDragX((x) => {
+      const open = x < -REVEAL / 2
+      if (open) window.dispatchEvent(new CustomEvent(REVEAL_EVENT, { detail: tx.id }))
+      return open ? -REVEAL : 0
+    })
   }
   function handleClick() {
     if (selectMode) { onToggleSelect?.(tx); return }
@@ -68,6 +83,16 @@ export function TransactionRow({
     if (dragX < -1) { setDragX(0); return } // 開いた状態でのタップは閉じる
     onEdit(tx)
   }
+  function handleKeyDown(e: React.KeyboardEvent) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      handleClick()
+    } else if (e.key === 'Delete' || e.key === 'Backspace') {
+      if (!selectMode) { e.preventDefault(); onDeleteRequest(tx) }
+    }
+  }
+
+  const revealOpen = dragX <= -REVEAL
 
   const uncategorized = !tx.category_id
   const iconSize = compact ? 28 : 38
@@ -86,6 +111,8 @@ export function TransactionRow({
             type="button"
             onClick={() => { onDeleteRequest(tx); setDragX(0) }}
             aria-label={`${tx.payee}を削除`}
+            aria-hidden={!revealOpen}
+            tabIndex={revealOpen ? 0 : -1}
             style={{ width: '100%', height: '100%', background: 'none', border: 'none', color: '#fff', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}
           >
             削除
@@ -99,8 +126,10 @@ export function TransactionRow({
         onPointerUp={endDrag}
         onPointerCancel={endDrag}
         onClick={handleClick}
+        onKeyDown={handleKeyDown}
         role="button"
         tabIndex={0}
+        aria-label={`${tx.payee} ¥${Math.abs(tx.amount).toLocaleString('ja-JP')} を編集`}
         style={{
           position: 'relative', display: 'flex', alignItems: 'center', gap: compact ? 10 : 12,
           padding: compact ? '10px 14px' : '12px 14px',

@@ -18,11 +18,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ category_id: null, category_name: null, confidence: 0 })
   }
 
+  // learn:false — 入力中のインクリメンタル提案用途のため、断片文字列を
+  // category_rag に学習させない（確定時の学習は createTransaction 側で行う）
   const { categoryIdMap } = await classifyTransactions(
     [{ index: 0, payee, category_hint: '' }],
     householdId,
     supabase,
-    user.id
+    user.id,
+    { learn: false }
   )
 
   const categoryId = categoryIdMap.get(0) ?? null
