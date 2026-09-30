@@ -141,12 +141,13 @@ export default async function SettingsPage() {
   const isOwner = member?.role === 'owner'
   const householdId = member?.household_id
 
-  const [householdRes, memberCountRes, goalCountRes, correctionCountRes, categoryCountRes] = await Promise.all([
+  const [householdRes, memberCountRes, goalCountRes, correctionCountRes, categoryCountRes, lastSyncRes] = await Promise.all([
     householdId ? supabase.from('households').select('name').eq('id', householdId).single() : Promise.resolve({ data: null }),
     householdId ? supabase.from('household_members').select('id', { count: 'exact', head: true }).eq('household_id', householdId) : Promise.resolve({ count: 0 }),
-    householdId ? supabase.from('goals').select('id', { count: 'exact', head: true }).eq('household_id', householdId) : Promise.resolve({ count: 0 }),
+    householdId ? supabase.from('financial_goals').select('id', { count: 'exact', head: true }).eq('household_id', householdId).eq('is_active', true) : Promise.resolve({ count: 0 }),
     householdId ? supabase.from('category_corrections').select('id', { count: 'exact', head: true }).eq('household_id', householdId) : Promise.resolve({ count: 0 }),
     householdId ? supabase.from('categories').select('id', { count: 'exact', head: true }).eq('household_id', householdId) : Promise.resolve({ count: 0 }),
+    householdId ? supabase.from('mf_sync_logs').select('status').eq('household_id', householdId).order('created_at', { ascending: false }).limit(1).maybeSingle() : Promise.resolve({ data: null }),
   ])
 
   const householdName = householdRes.data?.name ?? 'マイホーム'
@@ -154,6 +155,13 @@ export default async function SettingsPage() {
   const goalCount = (goalCountRes as { count: number | null }).count ?? 0
   const correctionCount = (correctionCountRes as { count: number | null }).count ?? 0
   const categoryCount = (categoryCountRes as { count: number | null }).count ?? 0
+  // 直近のMF同期結果（未同期ならバッジ非表示）
+  const lastSyncStatus = (lastSyncRes as { data: { status: string } | null }).data?.status ?? null
+  const syncBadge = lastSyncStatus === 'success'
+    ? { label: '同期済み', color: KAI.mint, bg: 'rgba(94,234,212,.10)', border: 'rgba(94,234,212,.25)' }
+    : lastSyncStatus === 'error'
+      ? { label: '同期エラー', color: KAI.danger, bg: 'rgba(251,113,133,.10)', border: 'rgba(251,113,133,.25)' }
+      : null
 
   return (
     <div className="min-h-screen" style={{ background: KAI.bgCard }}>
@@ -170,10 +178,12 @@ export default async function SettingsPage() {
           <div className="lg:hidden"><KaiSystemBrand size="sm" /></div>
           <h1 className="hidden text-[22px] font-bold lg:block" style={{ color: KAI.text1 }}>設定</h1>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(94,234,212,.10)', border: '1px solid rgba(94,234,212,.25)', borderRadius: 99, padding: '5px 11px' }}>
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: KAI.mint }} />
-              <span style={{ fontSize: 10.5, fontWeight: 700, color: KAI.mint }}>同期済み</span>
-            </div>
+            {syncBadge && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: syncBadge.bg, border: `1px solid ${syncBadge.border}`, borderRadius: 99, padding: '5px 11px' }}>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: syncBadge.color }} />
+                <span style={{ fontSize: 10.5, fontWeight: 700, color: syncBadge.color }}>{syncBadge.label}</span>
+              </div>
+            )}
             <ProfileDropdown displayName={displayName} avatarUrl={avatarUrl} />
           </div>
         </header>

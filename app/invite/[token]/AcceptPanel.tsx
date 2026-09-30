@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { KAI } from '@/lib/kai-tokens'
 import { Users, CheckCircle, XCircle, Loader2 } from 'lucide-react'
 
@@ -45,7 +46,14 @@ export default function AcceptPanel({ token, householdName, isValid }: Props) {
       <div style={panel}>
         <XCircle size={40} style={{ color: KAI.danger, margin: '0 auto 16px' }}/>
         <p style={{ fontSize: 16, fontWeight: 700, color: KAI.text1, marginBottom: 8 }}>招待リンクが無効です</p>
-        <p style={{ fontSize: 13, color: KAI.text4 }}>有効期限切れか、すでに使用済みのリンクです。</p>
+        <p style={{ fontSize: 13, color: KAI.text4, marginBottom: 20 }}>有効期限切れか、すでに使用済みのリンクです。</p>
+        <Link href="/" style={{
+          display: 'inline-block', padding: '10px 24px', borderRadius: 10,
+          background: KAI.overlayWeak, border: `1px solid ${KAI.borderStrong}`,
+          color: KAI.text1, fontSize: 13, textDecoration: 'none',
+        }}>
+          ダッシュボードへ
+        </Link>
       </div>
     )
   }

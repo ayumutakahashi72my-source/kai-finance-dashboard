@@ -18,8 +18,8 @@ export function NowTab({ transactions, allTransactions, month, streak }: {
     <>
       <div className="lg:hidden space-y-3">
         <AnomalyBanner month={month} />
-        <CategoryRingHero categoryData={categoryData} />
-        <GoalSection transactions={transactions} />
+        <CategoryRingHero categoryData={categoryData} month={month} />
+        <GoalSection transactions={transactions} month={month} />
         <CategoryChips categoryData={categoryData} />
         <DashKpiRow transactions={transactions} />
       </div>

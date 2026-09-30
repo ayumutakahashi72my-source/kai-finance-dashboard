@@ -33,6 +33,28 @@ function deadlineLabel(deadline: string): string {
     : rem === 0 ? `あと ${years} 年` : `あと ${years} 年 ${rem} ヶ月`
 }
 
+/* ─── Deadline helpers ─── */
+const MAX_GOAL_YEARS = 50
+
+/** ローカル日付を YYYY-MM-DD に（toISOString は UTC 変換で JST 早朝に前日になるため使わない） */
+function toLocalDateStr(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+function addYears(n: number): Date {
+  const d = new Date()
+  d.setFullYear(d.getFullYear() + n)
+  return d
+}
+
+/** 期限の妥当性チェック（エラーメッセージ or null） */
+function validateDeadline(deadline: string): string | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(deadline)) return `期限を入力してください（1〜${MAX_GOAL_YEARS}年後）`
+  if (deadline <= toLocalDateStr(new Date())) return '期限は今日より後の日付を設定してください'
+  if (deadline > toLocalDateStr(addYears(MAX_GOAL_YEARS))) return `期限は${MAX_GOAL_YEARS}年以内で設定してください`
+  return null
+}
+
 /* ─── Deadline input (shared by create & edit) ─── */
 interface DeadlineInputProps {
   value: string                      // YYYY-MM-DD (current resolved deadline)
@@ -58,10 +80,8 @@ function DeadlineInput({ value, onChange, initialMode = 'years' }: DeadlineInput
   function applyYears(yStr: string) {
     setYears(yStr)
     const n = parseInt(yStr, 10)
-    if (!n || n <= 0) { onChange(''); return }
-    const d = new Date()
-    d.setFullYear(d.getFullYear() + n)
-    onChange(d.toISOString().slice(0, 10))
+    if (!n || n <= 0 || n > MAX_GOAL_YEARS) { onChange(''); return }
+    onChange(toLocalDateStr(addYears(n)))
   }
 
   function applyDate(d: string) {
@@ -76,7 +96,13 @@ function DeadlineInput({ value, onChange, initialMode = 'years' }: DeadlineInput
           <button
             key={m}
             type="button"
-            onClick={() => setMode(m)}
+            onClick={() => {
+              if (m === mode) return
+              setMode(m)
+              // 表示中の入力と送信される期限を一致させる
+              if (m === 'date') applyDate(value)
+              else applyYears(years)
+            }}
             style={{
               padding: '5px 14px', borderRadius: 7, fontSize: 11, fontWeight: 600,
               cursor: 'pointer', border: 'none',
@@ -105,21 +131,21 @@ function DeadlineInput({ value, onChange, initialMode = 'years' }: DeadlineInput
             }}
           />
           <span style={{ fontSize: 14, color: KAI.text2, fontWeight: 600 }}>年後</span>
-          {years && !isNaN(parseInt(years, 10)) && (
-            <span style={{ fontSize: 11, color: KAI.text3 }}>
-              （{(() => {
-                const d = new Date()
-                d.setFullYear(d.getFullYear() + parseInt(years, 10))
-                return `${d.getFullYear()}年${d.getMonth() + 1}月`
-              })()}）
-            </span>
-          )}
+          {years && (() => {
+            const n = parseInt(years, 10)
+            if (!n || n > MAX_GOAL_YEARS) {
+              return <span style={{ fontSize: 11, color: KAI.danger }}>1〜{MAX_GOAL_YEARS}年で入力</span>
+            }
+            const d = addYears(n)
+            return <span style={{ fontSize: 11, color: KAI.text3 }}>（{d.getFullYear()}年{d.getMonth() + 1}月）</span>
+          })()}
         </div>
       ) : (
         <input
           type="date"
           value={dateStr}
-          min={new Date().toISOString().slice(0, 10)}
+          min={toLocalDateStr(new Date())}
+          max={toLocalDateStr(addYears(MAX_GOAL_YEARS))}
           onChange={(e) => applyDate(e.target.value)}
           style={{
             padding: '10px 12px', borderRadius: 9,
@@ -153,7 +179,10 @@ function CreateForm({ onCancel, onCreated }: CreateFormProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       })
-      if (!res.ok) throw new Error((await res.json()).error ?? '作成に失敗しました')
+      if (!res.ok) {
+        const body = await res.json().catch(() => null)
+        throw new Error(typeof body?.error === 'string' ? body.error : '作成に失敗しました')
+      }
       return res.json()
     },
     onSuccess: () => {
@@ -168,8 +197,8 @@ function CreateForm({ onCancel, onCreated }: CreateFormProps) {
     if (!name.trim()) { setError('目標名を入力してください'); return }
     const amt = parseInt(amount.replace(/,/g, ''), 10)
     if (!amt || amt < 1000) { setError('金額は1,000円以上で設定してください'); return }
-    if (!deadline) { setError('期限を入力してください'); return }
-    if (new Date(deadline) <= new Date()) { setError('期限は今日より後の日付を設定してください'); return }
+    const deadlineError = validateDeadline(deadline)
+    if (deadlineError) { setError(deadlineError); return }
     createMut.mutate({ name: name.trim(), target_amount: amt, deadline })
   }
 
@@ -317,6 +346,7 @@ function GoalCard({ goal, onDeleted, onUpdated }: GoalCardProps) {
       setEditing(false)
       onUpdated()
     },
+    onError: (e: Error) => setEditError(e.message),
   })
 
   async function handleCalculate() {
@@ -341,8 +371,8 @@ function GoalCard({ goal, onDeleted, onUpdated }: GoalCardProps) {
     if (!name.trim()) { setEditError('目標名を入力してください'); return }
     const amt = parseInt(amount.replace(/,/g, ''), 10)
     if (!amt || amt < 1000) { setEditError('金額は1,000円以上で設定してください'); return }
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(deadline)) { setEditError('期限を入力してください'); return }
-    if (new Date(deadline) <= new Date()) { setEditError('期限は今日より後の日付を設定してください'); return }
+    const deadlineError = validateDeadline(deadline)
+    if (deadlineError) { setEditError(deadlineError); return }
     patchMut.mutate({ name: name.trim(), target_amount: amt, deadline })
   }
 
@@ -516,6 +546,9 @@ function GoalCard({ goal, onDeleted, onUpdated }: GoalCardProps) {
             </button>
             {calcError && (
               <p style={{ fontSize: 11, color: KAI.danger, margin: 0 }}>{calcError}</p>
+            )}
+            {deleteMut.isError && (
+              <p style={{ fontSize: 11, color: KAI.danger, margin: 0 }}>{deleteMut.error.message}</p>
             )}
           </div>
         </>

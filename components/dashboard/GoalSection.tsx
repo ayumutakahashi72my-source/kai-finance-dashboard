@@ -7,8 +7,9 @@ import type { FinancialGoal } from '@/components/dashboard/GoalProgressCard'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { KAI } from '@/lib/kai-tokens'
 import type { Transaction } from '@/lib/types'
+import { monthLabel } from '@/lib/jst'
 
-export function GoalSection({ transactions }: { transactions: Transaction[] }) {
+export function GoalSection({ transactions, month }: { transactions: Transaction[]; month?: string }) {
   const { data, isLoading, error } = useQuery<{ goals: FinancialGoal[] }>({
     queryKey: ['goals'],
     queryFn: async () => {
@@ -52,6 +53,7 @@ export function GoalSection({ transactions }: { transactions: Transaction[] }) {
       currentMonthExpense={currentMonthExpense}
       currentMonthIncome={currentMonthIncome}
       aggregate={aggregate}
+      periodLabel={month ? monthLabel(month) : undefined}
     />
   )
 }

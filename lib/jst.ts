@@ -34,3 +34,18 @@ export function jstToDateKey(date: Date): string {
 export function todayJST(): string {
   return jstNow().toISOString().split('T')[0]
 }
+
+/** 'YYYY-MM' を表示ラベルに変換（当月なら「今月」、それ以外は「M月」） */
+export function monthLabel(month: string): string {
+  if (month === jstMonthStr()) return '今月'
+  return `${Number(month.slice(5, 7))}月`
+}
+
+/** 'YYYY-MM' の日数と経過日数（過去月=全日経過 / 未来月=0日） */
+export function monthProgress(month: string): { daysTotal: number; dayElapsed: number; daysLeft: number } {
+  const [y, m] = month.split('-').map(Number)
+  const daysTotal = jstDaysInMonth(y, m)
+  const current = jstMonthStr()
+  const dayElapsed = month === current ? jstDayOfMonth() : month < current ? daysTotal : 0
+  return { daysTotal, dayElapsed, daysLeft: daysTotal - dayElapsed }
+}

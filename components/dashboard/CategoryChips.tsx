@@ -1,6 +1,7 @@
 'use client'
 
 import { CategoryIcon } from '@/components/ui/CategoryIcon'
+import { resolveIconName } from '@/lib/category-icons'
 import { useCountUp } from '@/components/kai/hooks'
 import { KAI } from '@/lib/kai-tokens'
 import { TEXT, MONO_FONT } from './dashboard-utils'
@@ -15,7 +16,7 @@ function CategoryChipItem({ name, value, total, color, icon, idx }: {
     <div style={{ background: KAI.overlayWeak, border: `1px solid ${KAI.border}`, borderRadius: 14, padding: '10px 12px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
         <div style={{ width: 22, height: 22, borderRadius: 7, background: `${color}22`, border: `1px solid ${color}44`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          {icon ? <CategoryIcon name={icon} size={12} color={color} /> : <span style={{ color, fontSize: 11 }}>·</span>}
+          <CategoryIcon name={icon ?? resolveIconName(name) ?? 'Tag'} size={12} color={color} />
         </div>
         <span style={{ fontSize: 12, color: KAI.text1, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{name}</span>
       </div>

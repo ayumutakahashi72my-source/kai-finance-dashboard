@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useCountUp } from '@/components/kai/hooks'
 import { KAI, yen } from '@/lib/kai-tokens'
-import { jstNow } from '@/lib/jst'
+import { jstMonthStr, monthLabel, monthProgress } from '@/lib/jst'
 import { CORAL, TEXT, TEXT2, TEXT3, MONO_FONT, panel } from './dashboard-utils'
 import type { CategoryData } from './dashboard-utils'
 
@@ -41,7 +41,7 @@ function donutArcPath(cx: number, cy: number, outerR: number, innerR: number, st
   ].join(' ')
 }
 
-export function CategoryRingHero({ categoryData }: { categoryData: CategoryData }) {
+export function CategoryRingHero({ categoryData, month = jstMonthStr() }: { categoryData: CategoryData; month?: string }) {
   const [hovered,  setHovered]  = useState<string | null>(null)
   const [selected, setSelected] = useState<string | null>(null)
   const active = hovered ?? selected
@@ -49,14 +49,21 @@ export function CategoryRingHero({ categoryData }: { categoryData: CategoryData 
   const totalExpense  = categoryData.reduce((s, [, { amount }]) => s + amount, 0)
   const totalAnimated = useCountUp(totalExpense, { duration: 1400 })
 
-  const now2     = jstNow()
-  const daysLeft = new Date(Date.UTC(now2.getUTCFullYear(), now2.getUTCMonth() + 1, 0)).getUTCDate() - now2.getUTCDate()
+  const isCurrentMonth = month === jstMonthStr()
+  const { daysLeft } = monthProgress(month)
+  const periodLabel = monthLabel(month)
 
   const top5 = categoryData.slice(0, 5)
   const restAmount = categoryData.slice(5).reduce((s, [, { amount }]) => s + amount, 0)
+  // 上位5件に「その他」カテゴリが含まれる場合は残りをそこへ合算（key重複・凡例重複を防ぐ）
+  const hasOtherInTop5 = top5.some(([n]) => n === 'その他')
   const segments: [string, { amount: number; color: string }][] = [
-    ...top5,
-    ...(restAmount > 0 ? [['その他', { amount: restAmount, color: '#5e5e72' }] as [string, { amount: number; color: string }]] : []),
+    ...top5.map(([n, v]): [string, { amount: number; color: string }] =>
+      n === 'その他' ? [n, { ...v, amount: v.amount + restAmount }] : [n, v]
+    ),
+    ...(restAmount > 0 && !hasOtherInTop5
+      ? [['その他', { amount: restAmount, color: '#5e5e72' }] as [string, { amount: number; color: string }]]
+      : []),
   ]
 
   const GAP_DEG = segments.length > 1 ? 2.5 : 0
@@ -73,7 +80,7 @@ export function CategoryRingHero({ categoryData }: { categoryData: CategoryData 
 
   const activeArc  = active ? arcs.find((a) => a.name === active) : null
   const displayAmt = activeArc?.amount ?? totalExpense
-  const displayLbl = activeArc?.name ?? '今月の支出'
+  const displayLbl = activeArc?.name ?? `${periodLabel}の支出`
   const displayClr = activeArc?.color ?? CORAL
   const displayPct = activeArc?.pct ?? null
   const amtStr     = activeArc ? yen(displayAmt) : yen(totalAnimated)
@@ -82,7 +89,7 @@ export function CategoryRingHero({ categoryData }: { categoryData: CategoryData 
     <div style={{ ...panel, padding: '14px 16px', animation: 'kai-rise .8s ease-out both' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
         <p style={{ fontSize: 11, color: TEXT3, fontWeight: 700, letterSpacing: '.08em' }}>カテゴリ別支出</p>
-        <p style={{ fontSize: 9, color: KAI.text4, fontFamily: MONO_FONT }}>残り {daysLeft}日</p>
+        {isCurrentMonth && <p style={{ fontSize: 9, color: KAI.text4, fontFamily: MONO_FONT }}>残り {daysLeft}日</p>}
       </div>
 
       <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
@@ -114,7 +121,7 @@ export function CategoryRingHero({ categoryData }: { categoryData: CategoryData 
                   {amtStr}
                 </text>
                 <text x={CX} y={CY + 28} textAnchor="middle" fontSize="10" fontWeight="700" fill={displayPct !== null ? displayClr : KAI.text4} style={{ transition: 'fill .18s' }}>
-                  {displayPct !== null ? `${displayPct}%` : '今月'}
+                  {displayPct !== null ? `${displayPct}%` : periodLabel}
                 </text>
               </>
             )}

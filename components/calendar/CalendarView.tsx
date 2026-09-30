@@ -397,7 +397,7 @@ export function CalendarView({ transactions, categories, month }: Props) {
               {data && (
                 <div className="flex w-full flex-col items-start gap-0.5">
                   {data.expense > 0 && (
-                    <span className="text-[8px] font-bold leading-none" style={{ color: KAI.danger, fontFamily: 'var(--font-jetbrains),monospace' }}>
+                    <span className="text-[8px] font-bold leading-none" style={{ color: !isSelected && ratio >= 0.5 ? KAI.text1 : KAI.danger, fontFamily: 'var(--font-jetbrains),monospace' }}>
                       {data.expense >= 10000 ? `${(data.expense / 10000).toFixed(data.expense >= 100000 ? 0 : 1)}万` : `${Math.round(data.expense / 100) * 100}`}
                     </span>
                   )}

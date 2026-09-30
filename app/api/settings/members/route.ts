@@ -6,14 +6,16 @@ export async function GET() {
   const auth = await requireAuth({ requireAdmin: true })
   if (!auth.ok) return auth.response
 
-  const { supabase } = auth
+  const { supabase, user } = auth
 
   const { data, error } = await supabase.rpc('get_household_members_with_email')
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  return NextResponse.json(data)
+  // 自分自身の権限は変更不可（PATCH で拒否）なので UI 側で判別できるようフラグを付与
+  const members = ((data ?? []) as { user_id: string }[]).map((m) => ({ ...m, is_self: m.user_id === user.id }))
+  return NextResponse.json(members)
 }
 
 const patchSchema = z.object({

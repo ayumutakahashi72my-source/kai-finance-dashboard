@@ -3,6 +3,7 @@
 import { useRef, useState } from 'react'
 import { ReceiptAnalyzingV2 } from '@/components/transactions/ReceiptAnalyzingV2'
 import { KAI } from '@/lib/kai-tokens'
+import { todayJST } from '@/lib/jst'
 import type { OcrResult } from '@/lib/ocr'
 
 interface Props {
@@ -31,7 +32,7 @@ export function ReceiptCapture({ onResult, onCancel }: Props) {
         }}
         onError={() => {
           setSelectedFile(null)
-          onResult({ payee: '', amount: 0, occurred_on: new Date().toISOString().split('T')[0], confidence: 0 })
+          onResult({ payee: '', amount: 0, occurred_on: todayJST(), confidence: 0 })
         }}
         onCancel={() => setSelectedFile(null)}
       />
