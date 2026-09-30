@@ -22,13 +22,13 @@ export function DesktopTrendChart({ monthlyData }: {
         </div>
       </div>
       <ResponsiveContainer width="100%" height={180}>
-        <AreaChart data={monthlyData} margin={{ left: -10, right: 4 }}>
+        <AreaChart data={monthlyData} margin={{ left: 0, right: 4 }}>
           <defs>
             <linearGradient id="dI" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={UP} stopOpacity={0.3}/><stop offset="100%" stopColor={UP} stopOpacity={0}/></linearGradient>
             <linearGradient id="dE" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={DOWN} stopOpacity={0.3}/><stop offset="100%" stopColor={DOWN} stopOpacity={0}/></linearGradient>
           </defs>
           <XAxis dataKey="m" tick={{ fontSize: 10, fill: TEXT3, fontFamily: MONO_FONT }} axisLine={false} tickLine={false}/>
-          <YAxis tick={{ fontSize: 9, fill: TEXT3 }} axisLine={false} tickLine={false} tickFormatter={(v: number) => `${(v / 10000).toFixed(0)}万`} width={28}/>
+          <YAxis tick={{ fontSize: 9, fill: TEXT3 }} axisLine={false} tickLine={false} tickFormatter={(v: number) => `${(v / 10000).toFixed(0)}万`} width={40}/>
           <Tooltip content={<TooltipDark/>}/>
           <Area type="monotone" dataKey="inc" name="収入" stroke={UP}   strokeWidth={2} fill="url(#dI)" dot={false}/>
           <Area type="monotone" dataKey="exp" name="支出" stroke={DOWN} strokeWidth={2} fill="url(#dE)" dot={false}/>

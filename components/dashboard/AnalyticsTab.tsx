@@ -172,7 +172,7 @@ function MonthlyView({ allTransactions, currentMonth }: { allTransactions: Trans
                   <span style={{ fontSize: 12, color: TEXT2, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.name}</span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
                     <span style={{ fontFamily: MONO_FONT, fontSize: 12, fontWeight: 600, color: row.diff > 0 ? DOWN : UP }}>
-                      {row.diff > 0 ? '+' : ''}{fmtK(row.diff)}
+                      {row.diff > 0 ? '+' : row.diff < 0 ? '−' : ''}{fmtK(row.diff)}
                     </span>
                     <span style={{ fontFamily: MONO_FONT, fontSize: 11, padding: '2px 6px', borderRadius: 99, background: row.diff > 0 ? 'rgba(251,113,133,.12)' : 'rgba(74,222,128,.12)', color: row.diff > 0 ? DOWN : UP, border: `1px solid ${row.diff > 0 ? 'rgba(251,113,133,.25)' : 'rgba(74,222,128,.25)'}`, fontWeight: 600 }}>
                       {row.diff > 0
@@ -248,7 +248,7 @@ function MonthlyView({ allTransactions, currentMonth }: { allTransactions: Trans
         <ResponsiveContainer width="100%" height={160}>
           <BarChart data={dailyPattern} margin={{ left: -10, right: 4 }}>
             <XAxis dataKey="day" tick={{ fontSize: 10, fill: TEXT3, fontFamily: MONO_FONT }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fontSize: 9, fill: TEXT3, fontFamily: MONO_FONT }} axisLine={false} tickLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} width={28} />
+            <YAxis tick={{ fontSize: 9, fill: TEXT3, fontFamily: MONO_FONT }} axisLine={false} tickLine={false} tickFormatter={(v: number) => `${v >= 10000 ? Math.round(v / 1000) : (v / 1000).toFixed(1).replace(/\.0$/, '')}k`} width={32} />
             <Tooltip
               content={({ active, payload, label }) => {
                 if (!active || !payload?.length) return null

@@ -1,6 +1,7 @@
 'use client'
 
 import { CategoryIcon } from '@/components/ui/CategoryIcon'
+import { resolveIconName } from '@/lib/category-icons'
 import { Icon } from '@/components/kai/shared'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars -- used conditionally
 import { KAI, yen } from '@/lib/kai-tokens'
@@ -12,10 +13,14 @@ import {
 import type { CategoryData } from './dashboard-utils'
 
 export function DesktopKpiCard({
-  label, value, unit, delta, deltaGood, color, series, delay = 0,
+  label, value, unit, delta, deltaGood, deltaUp, deltaSuffix = 'vs 先月', color, series, delay = 0,
 }: {
   label: string; value: string; unit?: string
-  delta: string; deltaGood: boolean; color: string; series: number[]; delay?: number
+  delta: string; deltaGood: boolean
+  /** 矢印の向き（true=増加 / false=減少 / undefined=矢印なし）。良し悪しは deltaGood で色分け */
+  deltaUp?: boolean
+  deltaSuffix?: string
+  color: string; series: number[]; delay?: number
 }) {
   const W = 76, H = 26
   const max = Math.max(...series, 1)
@@ -34,9 +39,9 @@ export function DesktopKpiCard({
       </div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 11, fontWeight: 600, color: deltaGood ? UP : DOWN }}>
-          <Icon name={deltaGood ? 'arrowDown' : 'arrowUp'} size={10} stroke={2.5}/>
+          {deltaUp !== undefined && <Icon name={deltaUp ? 'arrowUp' : 'arrowDown'} size={10} stroke={2.5}/>}
           {delta}
-          <span style={{ color: TEXT3, fontWeight: 400, marginLeft: 3 }}>vs 先月</span>
+          {deltaSuffix && <span style={{ color: TEXT3, fontWeight: 400, marginLeft: 3 }}>{deltaSuffix}</span>}
         </div>
         <svg width={W} height={H} style={{ display: 'block', overflow: 'visible' }}>
           <polyline points={pts} fill="none" stroke={color} strokeWidth={1.6} strokeLinejoin="round" strokeLinecap="round"/>
@@ -66,7 +71,7 @@ export function DesktopRecentTx({ transactions }: { transactions: Transaction[] 
           animation: `kai-rise .3s ${.08 + i * .025}s ease-out both`,
         }}>
           <div style={{ width: 30, height: 30, borderRadius: 9, flexShrink: 0, background: `${t.categories?.color ?? pickColor(t.categories?.name ?? '')}18`, border: `1px solid ${t.categories?.color ?? pickColor(t.categories?.name ?? '')}2a`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <CategoryIcon name={t.categories?.icon} size={14} />
+            <CategoryIcon name={t.categories?.icon ?? resolveIconName(t.categories?.name ?? '') ?? 'Tag'} size={14} color={t.categories?.color ?? pickColor(t.categories?.name ?? '')} />
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 12, color: TEXT2, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.payee}</div>

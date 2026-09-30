@@ -400,7 +400,7 @@ export function CategoryTransactionsPage({ catName, color, month, initialTxs, ca
             background: 'rgba(251,113,133,.06)', border: '1px solid rgba(251,113,133,.18)',
             borderRadius: 12, padding: '10px 14px',
           }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: '#fb7185', letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 4 }}>出費</div>
+            <div style={{ fontSize: 10, fontWeight: 700, color: '#fb7185', letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 4 }}>支出</div>
             <div style={{ fontSize: 18, fontWeight: 800, color: '#fb7185', fontFamily: MONO, letterSpacing: '-.02em' }}>
               ¥{totalExpense.toLocaleString('ja-JP')}
             </div>
@@ -427,13 +427,13 @@ export function CategoryTransactionsPage({ catName, color, month, initialTxs, ca
           </div>
         ) : (
           <>
-            {/* 出費セクション */}
+            {/* 支出セクション */}
             {expenses.length > 0 && (
               <div style={{ marginBottom: 20 }}>
                 <div style={{
                   fontSize: 10, fontWeight: 700, letterSpacing: '.12em', textTransform: 'uppercase',
                   color: '#fb7185', marginBottom: 8, paddingLeft: 2,
-                }}>出費</div>
+                }}>支出</div>
                 {renderTxGroups(expenseGroups, '#fb7185')}
               </div>
             )}

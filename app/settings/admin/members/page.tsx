@@ -15,6 +15,7 @@ interface Member {
   joined_at:    string
   email:        string
   display_name: string
+  is_self?:     boolean
 }
 
 const MONO: React.CSSProperties = {
@@ -247,15 +248,17 @@ export default function AdminMembersPage() {
                 {/* トグルボタン */}
                 <button
                   onClick={() => mutate({ userId: m.user_id, isAdmin: !m.is_admin })}
-                  disabled={isPending}
-                  title={m.is_admin ? '管理者権限を外す' : '管理者権限を付与'}
+                  disabled={isPending || m.is_self}
+                  title={m.is_self ? '自分自身の権限は変更できません' : m.is_admin ? '管理者権限を外す' : '管理者権限を付与'}
+                  aria-label={m.is_self ? '自分自身の権限は変更できません' : m.is_admin ? '管理者権限を外す' : '管理者権限を付与'}
                   style={{
                     width: 34, height: 34, borderRadius: 9, flexShrink: 0,
                     border: `1px solid ${m.is_admin ? KAI.danger + '44' : KAI.success + '44'}`,
                     background: m.is_admin ? `${KAI.danger}0f` : `${KAI.success}0f`,
                     color: m.is_admin ? KAI.danger : KAI.success,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    cursor: isPending ? 'not-allowed' : 'pointer',
+                    cursor: isPending || m.is_self ? 'not-allowed' : 'pointer',
+                    opacity: m.is_self ? 0.35 : 1,
                     transition: 'opacity .15s',
                   }}
                 >

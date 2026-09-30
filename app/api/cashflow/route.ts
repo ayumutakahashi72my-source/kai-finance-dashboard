@@ -17,8 +17,9 @@ export async function GET(req: NextRequest) {
 
   if (error) {
     // Fallback: JS-side aggregation if RPC not available
-    const cutoff = jstNow()
-    cutoff.setUTCMonth(cutoff.getUTCMonth() - months)
+    // 当月を含む直近 N ヶ月（N ヶ月前の月初から）
+    const now = jstNow()
+    const cutoff = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - (months - 1), 1))
     const cutoffStr = cutoff.toISOString().slice(0, 10)
 
     const { data: rows, error: txErr } = await supabase

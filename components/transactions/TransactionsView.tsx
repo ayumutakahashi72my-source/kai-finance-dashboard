@@ -76,7 +76,9 @@ function SummaryChips({ income, expense, balance }: { income: number; expense: n
   const chips: { label: string; value: number; color: string; bgAlpha: string; borderAlpha: string }[] = [
     { label: '収入', value: income, color: KAI.success, bgAlpha: 'rgba(74,222,128,.07)', borderAlpha: 'rgba(74,222,128,.2)' },
     { label: '支出', value: expense, color: KAI.danger, bgAlpha: 'rgba(251,113,133,.07)', borderAlpha: 'rgba(251,113,133,.2)' },
-    { label: '残り', value: balance, color: KAI.blue, bgAlpha: 'rgba(122,167,255,.07)', borderAlpha: 'rgba(122,167,255,.2)' },
+    balance >= 0
+      ? { label: '残り', value: balance, color: KAI.blue, bgAlpha: 'rgba(122,167,255,.07)', borderAlpha: 'rgba(122,167,255,.2)' }
+      : { label: '残り', value: balance, color: KAI.danger, bgAlpha: 'rgba(251,113,133,.07)', borderAlpha: 'rgba(251,113,133,.2)' },
   ]
   return (
     <div style={{ display: 'flex', gap: 8 }}>
@@ -87,7 +89,7 @@ function SummaryChips({ income, expense, balance }: { income: number; expense: n
         }}>
           <div style={{ fontSize: 8.5, color: KAI.text3, fontWeight: 700, letterSpacing: '.06em', marginBottom: 2 }}>{c.label}</div>
           <div style={{ fontSize: 13, fontWeight: 700, color: c.color, ...MONO }}>
-            {c.label === '残り' && c.value >= 0 ? '+' : c.label === '残り' && c.value < 0 ? '' : ''}¥{Math.abs(c.value).toLocaleString('ja-JP')}
+            {c.label === '残り' ? (c.value >= 0 ? '+' : '−') : ''}¥{Math.abs(c.value).toLocaleString('ja-JP')}
           </div>
         </div>
       ))}
@@ -186,6 +188,8 @@ export function TransactionsView({ month, initialView = 'list' }: Props) {
       const catMeta = allCats.find((c) => c.name === name)
       return { id: catMeta?.id ?? '', name, color: catMeta?.color ?? CAT_COLORS[i % CAT_COLORS.length], used }
     })
+    // id を解決できないカテゴリ（カテゴリ一覧の読込中・未分類）はフィルタできないので除外（key 重複も防ぐ）
+    .filter((c) => c.id !== '')
     .sort((a, b) => b.used - a.used)
 
   function handleRefresh() {

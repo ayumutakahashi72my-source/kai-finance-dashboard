@@ -2,10 +2,26 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/api-guard'
 import { z } from 'zod'
 
+const MAX_GOAL_YEARS = 50
+
+/** YYYY-MM-DD の実在日付かつ 50 年以内 */
+const DeadlineSchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/)
+  .refine((s) => {
+    const d = new Date(`${s}T00:00:00Z`)
+    return !isNaN(d.getTime()) && d.toISOString().slice(0, 10) === s
+  }, '存在しない日付です')
+  .refine((s) => {
+    const max = new Date()
+    max.setUTCFullYear(max.getUTCFullYear() + MAX_GOAL_YEARS)
+    return s <= max.toISOString().slice(0, 10)
+  }, `期限は${MAX_GOAL_YEARS}年以内で設定してください`)
+
 const UpdateSchema = z.object({
   name:          z.string().min(1).max(50).optional(),
   target_amount: z.number().int().positive().optional(),
-  deadline:      z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  deadline:      DeadlineSchema.optional(),
 })
 
 export async function PATCH(
@@ -21,7 +37,7 @@ export async function PATCH(
   const body = await req.json()
   const parsed = UpdateSchema.safeParse(body)
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 })
+    return NextResponse.json({ error: parsed.error.issues[0]?.message ?? '入力内容が不正です', details: parsed.error.flatten() }, { status: 422 })
   }
 
   // target_amount / deadline が変わったら AI 試算データは無効化（再試算が必要）

@@ -29,6 +29,8 @@ interface Props {
     totalMonthlySavings: number
     totalSpendingLimit: number | null
   }
+  /** 表示中の月ラベル（「今月」/「9月」など） */
+  periodLabel?: string
 }
 
 const RISK = {
@@ -117,7 +119,7 @@ function MiniRing({ percent, color, topLabel, centerMain, centerSub, bottomMain,
   )
 }
 
-export function GoalProgressCard({ goal, currentMonthExpense, currentMonthIncome, aggregate }: Props) {
+export function GoalProgressCard({ goal, currentMonthExpense, currentMonthIncome, aggregate, periodLabel = '今月' }: Props) {
   const [expanded, setExpanded] = useState(false)
 
   const risk      = goal.risk_level ? RISK[goal.risk_level] : null
@@ -239,7 +241,7 @@ export function GoalProgressCard({ goal, currentMonthExpense, currentMonthIncome
             <MiniRing
               percent={spendPct}
               color={spendColor}
-              topLabel="今月の支出ペース"
+              topLabel={`${periodLabel}の支出ペース`}
               centerMain={`${spendPct}%`}
               centerSub="使用済み"
               bottomMain={yen(remaining)}
@@ -257,7 +259,7 @@ export function GoalProgressCard({ goal, currentMonthExpense, currentMonthIncome
               centerMain={`${savPct}%`}
               centerSub="達成率"
               bottomMain={yen(savings)}
-              bottomSub={`今月貯蓄 / 目標 ${yen(savTarget)}`}
+              bottomSub={`${periodLabel}貯蓄 / 目標 ${yen(savTarget)}`}
             />
           </div>
 

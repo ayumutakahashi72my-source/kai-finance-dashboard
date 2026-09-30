@@ -1,5 +1,7 @@
 'use client'
 
+import { todayJST } from '@/lib/jst'
+
 // Design tokens (inline to avoid 'use client' boundary issues with KAI shared)
 export const CORAL  = '#fb9477'
 export const BLUE   = '#7aa7ff'
@@ -18,7 +20,8 @@ export const BORDER       = 'var(--kai-border)'
 export const BORDER2      = 'var(--kai-border2)'
 export const BORDER_STRONG = 'var(--kai-border-strong)'
 
-export const today = () => new Date().toISOString().split('T')[0]
+// JST 基準（toISOString は UTC のため 0:00〜8:59 JST に前日になる）
+export const today = () => todayJST()
 
 export interface ImportResult {
   inserted: number

@@ -52,7 +52,14 @@ async function AuthenticatedInviteView({ token, userId }: { token: string; userI
         padding: '36px 32px', textAlign: 'center', maxWidth: 400, width: '100%',
       }}>
         <p style={{ fontSize: 16, fontWeight: 700, color: KAI.danger, marginBottom: 8 }}>招待リンクが見つかりません</p>
-        <p style={{ fontSize: 13, color: KAI.text3 }}>リンクが正しいか確認してください。</p>
+        <p style={{ fontSize: 13, color: KAI.text3, marginBottom: 20 }}>リンクが正しいか確認してください。</p>
+        <Link href="/" style={{
+          display: 'inline-block', padding: '10px 24px', borderRadius: 10,
+          background: KAI.overlayWeak, border: `1px solid ${KAI.borderStrong}`,
+          color: KAI.text1, fontSize: 13, textDecoration: 'none',
+        }}>
+          ダッシュボードへ
+        </Link>
       </div>
     )
   }

@@ -108,7 +108,7 @@ export function NotificationToggle() {
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3">
         <div>
           <p className="text-sm font-medium text-[var(--kai-text1)]">月次レポート通知</p>
           <p className="mt-0.5 text-xs text-[var(--kai-text3)]">
@@ -120,7 +120,7 @@ export function NotificationToggle() {
         <button
           onClick={subscribed ? handleDisable : handleEnable}
           disabled={loading}
-          className={`flex items-center gap-1.5 rounded-[10px] px-4 py-2 text-[13px] font-semibold transition-colors disabled:opacity-50 ${
+          className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[10px] px-4 py-2 text-[13px] font-semibold transition-colors disabled:opacity-50 ${
             subscribed
               ? 'border border-[#fb7185]/30 bg-[#fb7185]/10 text-[#fb7185] hover:bg-[#fb7185]/20'
               : 'border border-[#fb9477]/30 bg-[#fb9477]/10 text-[#fb9477] hover:bg-[#fb9477]/20'

@@ -103,14 +103,15 @@ function CategoryIconDisplay({ name, size = 14, color }: { name: string; size?: 
 /* ─── CategoryBar (カテゴリ別横棒グラフ) ────────────────────────── */
 
 function CategoryBar({
-  cat, idx, totalBudget, onManage,
+  cat, idx, totalExpense, onManage,
 }: {
   cat: { name: string; color: string; used: number; budget: number }
   idx: number
-  totalBudget: number
+  totalExpense: number
   onManage: () => void
 }) {
-  const effectiveBudget = cat.budget > 0 ? cat.budget : totalBudget
+  // 予算未設定のカテゴリは「支出全体に占める割合」を表示（ラベル「支出の N%」と一致させる）
+  const effectiveBudget = cat.budget > 0 ? cat.budget : totalExpense
   const pct             = effectiveBudget > 0 ? Math.min(100, (cat.used / effectiveBudget) * 100) : 0
   const animatedPct     = useCountUp(pct, { duration: 1100, delay: 200 + idx * 70 })
   const over            = cat.budget > 0 && cat.used > cat.budget
@@ -292,14 +293,6 @@ export function BudgetDashboard({ month: monthProp }: { month?: string } = {}) {
     }
   }).sort((a, b) => b.used - a.used)
 
-  /* 合計予算: AI提案合計 → 先月収入 → 支出×1.2 */
-  const aiTotal     = budget?.suggestions.reduce((s, x) => s + x.suggested_amount, 0) ?? 0
-  const totalBudget = aiTotal > 0
-    ? aiTotal
-    : prevMonthIncome > 0
-      ? prevMonthIncome
-      : Math.round(totalExpense * 1.2)
-
   /* 期間 */
   const { year: mYear, month: mMonth } = parseMonth(month)
   const periodLabel = `${mYear}年${mMonth}月`
@@ -346,7 +339,7 @@ export function BudgetDashboard({ month: monthProp }: { month?: string } = {}) {
             border: `1px solid ${balance >= 0 ? 'rgba(74,222,128,.25)' : 'rgba(251,113,133,.25)'}`,
             borderRadius: 8, padding: '3px 10px',
           }}>
-            {balance >= 0 ? '+' : ''}¥{Math.abs(balance).toLocaleString('ja-JP')}
+            {balance >= 0 ? '+' : '−'}¥{Math.abs(balance).toLocaleString('ja-JP')}
           </span>
         </div>
 
@@ -449,7 +442,7 @@ export function BudgetDashboard({ month: monthProp }: { month?: string } = {}) {
                 ) : (
                   <CategoryBar
                     cat={c} idx={i}
-                    totalBudget={totalBudget}
+                    totalExpense={totalExpense}
                     onManage={() => router.push(`/budget/category/${encodeURIComponent(c.name)}?month=${month}`)}
                   />
                 )}

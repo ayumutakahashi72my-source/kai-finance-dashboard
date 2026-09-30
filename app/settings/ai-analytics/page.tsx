@@ -188,7 +188,7 @@ export default function AiAnalyticsPage() {
         {data && (
           <>
             {/* Mobile layout */}
-            <div className="lg:hidden" style={{ padding: '4px 16px 120px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div className="flex flex-col lg:hidden" style={{ padding: '4px 16px 120px', gap: 12 }}>
               <MobileContent data={data} />
             </div>
 
@@ -430,6 +430,23 @@ function DesktopContent({ data }: { data: AnalyticsData }) {
               <span style={{ flex: 1, fontSize: 12.5, color: KAI.text2 }}>{item.payee}</span>
               <span style={{ fontSize: 11, color: KAI.text4, ...MONO }}>conf {(item.confidence ?? 0).toFixed(2)}</span>
               <span style={{ fontSize: 11, color: KAI.text3, width: 96 }}>{item.category_name ?? '未分類'}</span>
+              <Link href="/settings/corrections" style={{
+                fontSize: 10.5, color: KAI.mint, fontFamily: 'inherit',
+                background: 'rgba(94,234,212,.10)', border: '1px solid rgba(94,234,212,.22)',
+                borderRadius: 7, padding: '4px 10px', cursor: 'pointer', textDecoration: 'none',
+              }}>修正</Link>
+            </div>
+          ))}
+          {/* 分類失敗（件数バッジに含まれるので一覧にも表示する） */}
+          {data.failedRows.slice(0, 5).map((row, i) => (
+            <div key={`failed-${i}`} style={{
+              display: 'flex', alignItems: 'center', gap: 12, padding: '9px 12px',
+              background: KAI.overlayWeak, border: `1px solid ${KAI.border}`, borderRadius: 10,
+            }}>
+              <span style={{ width: 7, height: 7, borderRadius: 2, background: KAI.danger, flexShrink: 0 }} />
+              <span style={{ flex: 1, fontSize: 12.5, color: KAI.text2 }}>{row.payee}</span>
+              <span style={{ fontSize: 11, color: KAI.text4, ...MONO }}>{row.latency_ms}ms</span>
+              <span style={{ fontSize: 11, color: KAI.danger, width: 96 }}>分類失敗</span>
               <Link href="/settings/corrections" style={{
                 fontSize: 10.5, color: KAI.mint, fontFamily: 'inherit',
                 background: 'rgba(94,234,212,.10)', border: '1px solid rgba(94,234,212,.22)',
